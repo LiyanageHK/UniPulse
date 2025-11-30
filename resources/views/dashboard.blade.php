@@ -1,4 +1,5 @@
 <x-app-layout>
+
 <div class="max-w-7xl mx-auto py-8 px-4">
 
     <!-- HEADER -->
@@ -220,6 +221,7 @@
                             ? implode(', ', $user->preferred_support_types) 
                             : ($user->preferred_support_types ?? 'Not specified') }}
                     </p>
+
                 </div>
             </div>
         </div>

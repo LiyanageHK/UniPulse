@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WeeklyCheckinController;
+use App\Http\Controllers\ChatSupportController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/chat-support', [\App\Http\Controllers\ChatSupportController::class, 'index'])->name('chat.support');
 });
 
 require __DIR__.'/auth.php';

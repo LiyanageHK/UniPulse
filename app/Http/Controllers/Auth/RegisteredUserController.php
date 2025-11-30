@@ -45,6 +45,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Redirect to onboarding instead of home
+        return redirect()->route('onboarding.step1');
     }
 }

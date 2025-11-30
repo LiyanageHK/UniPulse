@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 Route::get('/', function () {
     return view('home');
 });
+Route::get('/chat-support', function () {
+    return view('chat-support');
+});
 
 Route::middleware(['auth'])->group(function () {
 
@@ -47,7 +50,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/chat-support', [\App\Http\Controllers\ChatSupportController::class, 'index'])->name('chat.support');
+   // Route::get('/chat-support', [\App\Http\Controllers\ChatSupportController::class, 'index'])->name('chat.support');
 });
 
 require __DIR__.'/auth.php';

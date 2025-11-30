@@ -109,7 +109,9 @@
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Student Profiling</a>
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Risk Detection</a>
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Conversational Support</a>
-                        <a href="{{ route('peer.matching') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>
+
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>
+
                     </div>
                 </div>
 
@@ -144,11 +146,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
-                <div id="mobile-services-menu" class="hidden mt-1 pl-4">
+
+                    <div id="mobile-services-menu" class="hidden mt-1 pl-4">
                     <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Student Profiling</a>
                     <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Risk Detection</a>
                     <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Conversational Support</a>
-                    <a href="{{ route('peer.matching') }}" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Peer Matching</a>
+                    <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Peer Matching</a>
+
                 </div>
             </div>
 

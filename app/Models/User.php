@@ -71,4 +71,12 @@ class User extends Authenticatable
         'is_employed' => 'boolean',
         'onboarding_completed' => 'boolean',
     ];
+
+    /**
+     * Get the user's memories.
+     */
+    public function memories()
+    {
+        return $this->hasMany(Memory::class);
+    }
 }

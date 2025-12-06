@@ -15,7 +15,7 @@
 		@endif
 	</head>
 	<body class="font-sans antialiased">
-		<div class="min-h-screen bg-gray-50 text-black/80 dark:bg-black dark:text-white/80">
+		<div class="min-h-screen bg-gray-50 text-black/80">
 			@include('layouts.header')
 
 			<main class="mx-auto max-w-4xl p-6 text-center">

@@ -5,18 +5,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WeeklyCheckinController;
 use App\Http\Controllers\ChatSupportController;
 use App\Http\Controllers\CrisisManagementController;
-use App\Http\Controllers\CrisisManagementController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('home');
 });
-
-// Public chat information page (accessible without login)
-Route::get('/conversational-support', function () {
-    return view('chat-info');
-})->name('chat.info');
 
 // Public chat information page (accessible without login)
 Route::get('/conversational-support', function () {

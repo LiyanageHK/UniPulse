@@ -13,7 +13,7 @@ class AiChatService
     protected string $apiKey;
     protected string $model;
     protected string $apiUrl;
-    protected string $provider;
+    protected bool $useGitHubModels;
 
     protected RagRetrievalService $ragRetrieval;
     protected CrisisDetectionService $crisisDetection;

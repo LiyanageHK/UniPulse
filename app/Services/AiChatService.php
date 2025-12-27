@@ -13,7 +13,7 @@ class AiChatService
     protected string $apiKey;
     protected string $model;
     protected string $apiUrl;
-    protected bool $useGitHubModels;
+    protected string $provider;
 
     protected RagRetrievalService $ragRetrieval;
     protected CrisisDetectionService $crisisDetection;
@@ -135,24 +135,43 @@ class AiChatService
         // 8. Create embedding for user message (async in production)
         $this->knowledgeBase->createMessageEmbedding($userMessageModel);
 
-        // 9. If crisis flags detected, include counselor recommendations
+        // 9. If RED crisis flags detected, include counselor recommendations matched by category
         $counselorRecommendations = [];
         $crisisResources = [];
         
-        if (!empty($crisisFlags)) {
-            $counselorRecommendations = $this->getCounselorRecommendations($user, $crisisFlags);
-            $crisisResources = $this->getCrisisResources($crisisFlags);
+        // Log crisis flags detected
+        Log::info('Crisis flags detected', [
+            'message_id' => $userMessageModel->id,
+            'total_flags' => count($crisisFlags),
+            'flags' => $crisisFlags,
+        ]);
+        
+        // Only show counselors and resources for RED (serious) flags
+        $redFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'red');
+        
+        Log::info('Red flags filtered', [
+            'red_count' => count($redFlags),
+            'red_flags' => array_values($redFlags),
+        ]);
+        
+        if (!empty($redFlags)) {
+            // Get counselors matched to the specific crisis categories
+            $counselorRecommendations = $this->getCounselorRecommendationsByCategory($user, array_values($redFlags));
+            $crisisResources = $this->getCrisisResources(array_values($redFlags));
             
-            // Create crisis alert for red flags
-            foreach ($crisisFlags as $flag) {
-                if ($flag['severity'] === 'red') {
-                    $crisisFlag = $conversation->crisisFlags()
-                        ->where('message_id', $userMessageModel->id)
-                        ->first();
-                    
-                    if ($crisisFlag) {
-                        $this->crisisAlert->createCrisisAlert($crisisFlag);
-                    }
+            Log::info('Counselor recommendations retrieved', [
+                'count' => count($counselorRecommendations),
+                'recommendations' => $counselorRecommendations,
+            ]);
+            
+            // Create crisis alerts for red flags
+            foreach ($redFlags as $flag) {
+                $crisisFlag = $conversation->crisisFlags()
+                    ->where('message_id', $userMessageModel->id)
+                    ->first();
+                
+                if ($crisisFlag) {
+                    $this->crisisAlert->createCrisisAlert($crisisFlag);
                 }
             }
         }
@@ -210,7 +229,7 @@ class AiChatService
             ->get();
         
         // Skip the last message (current user message) and take the 10 before it
-        $recentMessages = $allMessages->slice(max(0, $allMessages->count() - 11), 10);
+        $recentMessages = $allMessages->slice(max(0, $allMessages->count() - 11), 10);//
 
         foreach ($recentMessages as $msg) {
             $messages[] = [
@@ -396,6 +415,112 @@ CONCERNING;
             $city,
             3
         )->toArray();
+    }
+
+    /**
+     * Get counselor recommendations matched to specific crisis categories.
+     * Only called for RED flags.
+     */
+    protected function getCounselorRecommendationsByCategory(User $user, array $redFlags): array
+    {
+        if (empty($redFlags)) {
+            return [];
+        }
+
+        // Get unique crisis categories from red flags
+        $categories = array_unique(array_column($redFlags, 'category'));
+        
+        // Get city from user profile
+        $city = $user->university ?? null;
+
+        // Get all available counselors
+        $counselors = \App\Models\Counselor::available();
+        
+        // Prefer counselors in user's city or online
+        if ($city) {
+            $counselors = $counselors->where(function ($q) use ($city) {
+                $q->where('city', 'like', "%{$city}%")
+                  ->orWhere('offers_online', true);
+            });
+        }
+        
+        $counselors = $counselors->get();
+
+        // Score counselors based on category match
+        $scoredCounselors = $counselors->map(function ($counselor) use ($categories) {
+            $score = 0;
+            $matchedCategories = [];
+
+            foreach ($categories as $category) {
+                if ($counselor->matchesCrisisCategory($category)) {
+                    $score += 15; // High score for category match
+                    $matchedCategories[] = $this->getCategoryLabel($category);
+                }
+            }
+
+            // Mental health counselors are always relevant for crisis
+            if ($counselor->category === \App\Models\Counselor::CATEGORY_MENTAL_HEALTH) {
+                $score += 5;
+            }
+
+            // Online availability is helpful
+            if ($counselor->offers_online) {
+                $score += 3;
+            }
+
+            return [
+                'counselor' => $counselor,
+                'score' => $score,
+                'matched_categories' => $matchedCategories,
+            ];
+        });
+
+        // Get top 3 counselors with highest scores
+        $topCounselors = $scoredCounselors
+            ->filter(fn($item) => $item['score'] > 0) // Only counselors with some match
+            ->sortByDesc('score')
+            ->take(3);
+
+        // If no category-matched counselors, get any mental health counselors
+        if ($topCounselors->isEmpty()) {
+            $topCounselors = $scoredCounselors
+                ->sortByDesc('score')
+                ->take(3);
+        }
+
+        return $topCounselors->map(fn($item) => [
+            'id' => $item['counselor']->id,
+            'name' => $item['counselor']->name,
+            'title' => $item['counselor']->title,
+            'specializations' => $item['counselor']->specializations,
+            'city' => $item['counselor']->city,
+            'email' => $item['counselor']->email,
+            'phone' => $item['counselor']->phone,
+            'office_location' => $item['counselor']->office_location,
+            'offers_online' => $item['counselor']->offers_online,
+            'online_booking_url' => $item['counselor']->online_booking_url,
+            'match_reason' => !empty($item['matched_categories']) 
+                ? 'Specializes in: ' . implode(', ', $item['matched_categories'])
+                : 'General mental health support',
+        ])->values()->toArray();
+    }
+
+    /**
+     * Get display label for a crisis category.
+     */
+    protected function getCategoryLabel(string $category): string
+    {
+        return match($category) {
+            \App\Models\CrisisFlag::CATEGORY_SUICIDE_RISK => 'Suicide Prevention',
+            \App\Models\CrisisFlag::CATEGORY_SELF_HARM => 'Self-Harm Support',
+            \App\Models\CrisisFlag::CATEGORY_DEPRESSION => 'Depression',
+            \App\Models\CrisisFlag::CATEGORY_ANXIETY => 'Anxiety',
+            \App\Models\CrisisFlag::CATEGORY_STRESS => 'Stress Management',
+            \App\Models\CrisisFlag::CATEGORY_LONELINESS => 'Loneliness & Social Support',
+            \App\Models\CrisisFlag::CATEGORY_HOPELESSNESS => 'Hope & Resilience',
+            \App\Models\CrisisFlag::CATEGORY_GENERAL => 'General Mental Health',
+            default => ucfirst(str_replace('_', ' ', $category)),
+        };
     }
 
     /**

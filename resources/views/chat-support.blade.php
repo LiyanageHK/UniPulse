@@ -119,6 +119,7 @@
             background: #f9fafb;
             font-weight: 600;
         }
+
         
         /* Layout */
         .chat-container {
@@ -940,6 +941,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Messages will appear here -->
+                <div id="messagesContent" style="display: none;"></div>
+
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="message-avatar" style="background: #10a37f; color: white;">AI</div>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <form class="input-form" onsubmit="sendMessage(event)">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Type your message here..." 
+                        rows="1"
+                        onkeydown="handleKeyPress(event)"
+                    ></textarea>
+                    <button type="submit" class="send-btn" id="sendBtn">Send</button>
+                </form>
             </div>
         </div>
     </div>

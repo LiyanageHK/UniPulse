@@ -12,6 +12,15 @@ Route::get('/', function () {
     return view('home');
 });
 
+// Public pages
+Route::get('/terms-of-service', function () {
+    return view('terms-of-service');
+})->name('terms');
+
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy');
+
 // Public chat information page (accessible without login)
 Route::get('/conversational-support', function () {
     return view('chat-info');

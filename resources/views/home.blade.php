@@ -12,9 +12,10 @@
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 		<!-- Vite / Assets -->
-		@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-			@vite(['resources/css/app.css', 'resources/js/app.js'])
-		@endif
+		@vite(['resources/css/app.css', 'resources/js/app.js'])
+
+		<!-- Premium Home Page Styling -->
+		<link rel="stylesheet" href="{{ asset('css/home-improvements.css') }}">
 
 		<style>
 			body {

@@ -229,6 +229,30 @@ class ChatSupportController extends Controller
     }
 
     /**
+     * Unarchive a conversation.
+     */
+    public function unarchiveConversation(Request $request, $id)
+    {
+        $user = Auth::user();
+        $conversation = Conversation::findOrFail($id);
+
+        // Verify user owns this conversation
+        if ($conversation->user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access to conversation',
+            ], 403);
+        }
+
+        $conversation->update(['status' => 'active']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversation restored successfully',
+        ]);
+    }
+
+    /**
      * Rename a conversation.
      */
     public function renameConversation(Request $request, $id)

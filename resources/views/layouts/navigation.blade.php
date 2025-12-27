@@ -24,7 +24,7 @@
                         Peer Matching
                     </x-nav-link>
                     <x-nav-link :href="route('chat.support')" :active="request()->routeIs('chat.support')">
-                    💬 Conversational Support
+                     Conversational Support
                     </x-nav-link>
                 </div>
             </div>
@@ -88,7 +88,7 @@
                 Peer Matching
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('chat.support')" :active="request()->routeIs('chat.support')">
-                💬 Conversational Support
+                Conversational Support
             </x-responsive-nav-link>
         </div>
 

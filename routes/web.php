@@ -74,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/conversations', [ChatSupportController::class, 'listConversations'])->name('list');
         Route::patch('/conversation/{id}/rename', [ChatSupportController::class, 'renameConversation'])->name('rename');
         Route::post('/conversation/{id}/archive', [ChatSupportController::class, 'archiveConversation'])->name('archive');
+        Route::post('/conversation/{id}/unarchive', [ChatSupportController::class, 'unarchiveConversation'])->name('unarchive');
         Route::delete('/conversation/{id}', [ChatSupportController::class, 'deleteConversation'])->name('delete');
         
         // Memory management endpoints

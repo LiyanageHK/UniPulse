@@ -13,9 +13,18 @@ class CrisisDetectionService
     
     // Red Flag Keywords - Critical (Immediate automated escalation)
     protected array $redFlagKeywords = [
+        // Suicide-related
         'suicide', 'suicidal', 'kill myself', 'end it all', 'end my life',
-        'self-harm', 'self harm', 'cut myself', 'hurt myself', 'harm myself',
-        'want to die', 'better off dead', 'no reason to live',
+        'want to die', 'wanna die', 'better off dead', 'no reason to live',
+        'don\'t want to live', 'dont want to live', 'do not want to live',
+        'don\'t want to be here', 'dont want to be here',
+        'don\'t want to exist', 'dont want to exist',
+        'wish i was dead', 'wish i were dead', 'wish i wasn\'t alive',
+        'take my own life', 'ending my life', 'ending it all',
+        // Self-harm related
+        'self-harm', 'self harm', 'cut myself', 'cutting myself',
+        'hurt myself', 'hurting myself', 'harm myself', 'harming myself',
+        'burning myself', 'hitting myself',
     ];
 
     // Yellow Flag Keywords - Concerning (Activate crisis support protocol)

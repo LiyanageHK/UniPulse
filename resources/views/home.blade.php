@@ -417,84 +417,280 @@
 					</p>
 				</div>
 
-				<div class="grid md:grid-cols-3 gap-8">
-					<!-- Testimonial 1 -->
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-						<div class="flex items-center mb-6">
-							<div class="flex text-yellow-400">
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-								</div>
-							</div>
-							<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-								"UniPulse has been a lifesaver during my studies. The AI chatbot is always there when I need someone to talk to, and the counselors are incredibly supportive."
-							</p>
-							<div class="flex items-center gap-4">
-								<div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-									S
-								</div>
-								<div>
-									<p class="font-bold text-gray-900">Sarah Johnson</p>
-									<p class="text-gray-600 text-sm">Psychology Major, Year 3</p>
-								</div>
-							</div>
-						</div>
+				<div class="grid md:grid-cols-3 gap-8" id="testimonialsContainer">
+					<!-- Testimonials will be loaded dynamically -->
+					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
+						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
+						<div class="h-20 bg-gray-200 rounded mb-6"></div>
+						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+					</div>
+					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
+						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
+						<div class="h-20 bg-gray-200 rounded mb-6"></div>
+						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+					</div>
+					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
+						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
+						<div class="h-20 bg-gray-200 rounded mb-6"></div>
+						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+					</div>
+				</div>
+				</div>
+			</section>
 
-					<!-- Testimonial 2 -->
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-						<div class="flex items-center mb-6">
-							<div class="flex text-yellow-400">
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-								</div>
-							</div>
-							<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-								"The peer matching feature helped me find friends who understood what I was going through. I no longer feel alone in my struggles."
-							</p>
-							<div class="flex items-center gap-4">
-								<div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-									M
-								</div>
-								<div>
-									<p class="font-bold text-gray-900">Michael Chen</p>
-									<p class="text-gray-600 text-sm">Engineering Student, Year 2</p>
-								</div>
-							</div>
-						</div>
+			<script>
+				// Load testimonials from API
+				document.addEventListener('DOMContentLoaded', async function() {
+					const container = document.getElementById('testimonialsContainer');
+					const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
+					
+					// Default testimonials as fallback
+					const defaultTestimonials = [
+						{
+							content: "UniPulse has been a lifesaver during my studies. The AI chatbot is always there when I need someone to talk to, and the counselors are incredibly supportive.",
+							rating: 5,
+							display_name: "Sarah J.",
+							display_initial: "S"
+						},
+						{
+							content: "The peer matching feature helped me find friends who understood what I was going through. I no longer feel alone in my struggles.",
+							rating: 5,
+							display_name: "Michael C.",
+							display_initial: "M"
+						},
+						{
+							content: "The progress tracking tools helped me understand my mental health patterns and celebrate small victories. It's incredibly empowering!",
+							rating: 5,
+							display_name: "Emily R.",
+							display_initial: "E"
+						}
+					];
 
-					<!-- Testimonial 3 -->
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-						<div class="flex items-center mb-6">
-							<div class="flex text-yellow-400">
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
-									<i class="fas fa-star"></i>
+					try {
+						const response = await fetch('/api/feedback/approved?limit=6');
+						const data = await response.json();
+						
+						let testimonials = defaultTestimonials;
+						if (data.success && data.feedbacks && data.feedbacks.length > 0) {
+							testimonials = data.feedbacks;
+						}
+						
+						// Render testimonials
+						container.innerHTML = testimonials.slice(0, 3).map((feedback, index) => {
+							const colorClass = avatarColors[index % avatarColors.length];
+							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
+							
+							return `
+								<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
+									<div class="flex items-center mb-6">
+										<div class="flex text-yellow-400">${stars}</div>
+									</div>
+									<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
+										"${feedback.content}"
+									</p>
+									<div class="flex items-center gap-4">
+										<div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white font-bold text-xl">
+											${feedback.display_initial}
+										</div>
+										<div>
+											<p class="font-bold text-gray-900">${feedback.display_name}</p>
+											<p class="text-gray-600 text-sm">UniPulse User</p>
+										</div>
+									</div>
 								</div>
+							`;
+						}).join('');
+						
+					} catch (error) {
+						console.error('Failed to load testimonials:', error);
+						// Keep the loading skeleton or show defaults
+						container.innerHTML = defaultTestimonials.map((feedback, index) => {
+							const colorClass = avatarColors[index % avatarColors.length];
+							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
+							
+							return `
+								<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
+									<div class="flex items-center mb-6">
+										<div class="flex text-yellow-400">${stars}</div>
+									</div>
+									<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
+										"${feedback.content}"
+									</p>
+									<div class="flex items-center gap-4">
+										<div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white font-bold text-xl">
+											${feedback.display_initial}
+										</div>
+										<div>
+											<p class="font-bold text-gray-900">${feedback.display_name}</p>
+											<p class="text-gray-600 text-sm">UniPulse User</p>
+										</div>
+									</div>
+								</div>
+							`;
+						}).join('');
+					}
+				});
+			</script>
+
+			<!-- Share Your Feedback Section (Guest) -->
+			<section class="py-20 bg-white">
+				<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div class="text-center mb-12">
+						<h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+							Share Your <span class="gradient-text">Experience</span>
+						</h2>
+						<p class="text-lg text-gray-600">
+							Used UniPulse? We'd love to hear from you! Your feedback helps others discover our platform.
+						</p>
+					</div>
+
+					<div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 shadow-lg border border-blue-100" id="guestFeedbackCard">
+						<form id="guestFeedbackForm" onsubmit="return submitGuestFeedback(event)">
+							<input type="hidden" name="_token" value="{{ csrf_token() }}">
+							
+							<!-- Star Rating -->
+							<div class="mb-6">
+								<label class="block text-gray-700 font-semibold mb-3">Your Rating</label>
+								<div class="flex gap-2" id="guestStarRating">
+									<span class="star-btn text-3xl cursor-pointer text-gray-300 hover:text-yellow-400 transition-colors" data-rating="1">★</span>
+									<span class="star-btn text-3xl cursor-pointer text-gray-300 hover:text-yellow-400 transition-colors" data-rating="2">★</span>
+									<span class="star-btn text-3xl cursor-pointer text-gray-300 hover:text-yellow-400 transition-colors" data-rating="3">★</span>
+									<span class="star-btn text-3xl cursor-pointer text-gray-300 hover:text-yellow-400 transition-colors" data-rating="4">★</span>
+									<span class="star-btn text-3xl cursor-pointer text-gray-300 hover:text-yellow-400 transition-colors" data-rating="5">★</span>
+								</div>
+								<input type="hidden" id="guestRating" name="rating" value="0">
 							</div>
-							<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-								"The progress tracking tools helped me understand my mental health patterns and celebrate small victories. It's incredibly empowering!"
-							</p>
-							<div class="flex items-center gap-4">
-								<div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-									E
-								</div>
-								<div>
-									<p class="font-bold text-gray-900">Emily Rodriguez</p>
-									<p class="text-gray-600 text-sm">Business Major, Year 4</p>
-								</div>
+
+							<!-- Name Input -->
+							<div class="mb-6">
+								<label class="block text-gray-700 font-semibold mb-2" for="guestName">Your Name *</label>
+								<input type="text" id="guestName" name="guest_name" required 
+									class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+									placeholder="Enter your name">
 							</div>
+
+							<!-- Email Input (Optional) -->
+							<div class="mb-6">
+								<label class="block text-gray-700 font-semibold mb-2" for="guestEmail">Email (Optional)</label>
+								<input type="email" id="guestEmail" name="guest_email" 
+									class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+									placeholder="your.email@university.edu">
+							</div>
+
+							<!-- Feedback Content -->
+							<div class="mb-6">
+								<label class="block text-gray-700 font-semibold mb-2" for="guestContent">Your Feedback *</label>
+								<textarea id="guestContent" name="content" required rows="4"
+									class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
+									placeholder="Share your experience with UniPulse (even 'Amazing!' works!)"></textarea>
+							</div>
+
+							<!-- Show Name Option -->
+							<div class="mb-6">
+								<label class="flex items-center gap-3 cursor-pointer">
+									<input type="checkbox" id="guestShowName" name="show_name" checked 
+										class="w-5 h-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500">
+									<span class="text-gray-600">Display my name with my feedback</span>
+								</label>
+							</div>
+
+							<!-- Submit Button -->
+							<button type="submit" id="guestSubmitBtn"
+								class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
+								<i class="fas fa-paper-plane"></i>
+								Submit Feedback
+							</button>
+						</form>
+
+						<!-- Success Message (Hidden by default) -->
+						<div id="guestFeedbackSuccess" class="hidden text-center py-12">
+							<h3 class="text-2xl font-bold text-gray-900">Thank you for the feedback!</h3>
 						</div>
 					</div>
 				</div>
 			</section>
+
+			<script>
+				// Guest feedback star rating
+				let guestRating = 0;
+				document.querySelectorAll('#guestStarRating .star-btn').forEach(star => {
+					star.addEventListener('click', function() {
+						guestRating = parseInt(this.dataset.rating);
+						document.getElementById('guestRating').value = guestRating;
+						updateGuestStars();
+					});
+				});
+
+				function updateGuestStars() {
+					document.querySelectorAll('#guestStarRating .star-btn').forEach((star, index) => {
+						if (index < guestRating) {
+							star.classList.remove('text-gray-300');
+							star.classList.add('text-yellow-400');
+						} else {
+							star.classList.add('text-gray-300');
+							star.classList.remove('text-yellow-400');
+						}
+					});
+				}
+
+				async function submitGuestFeedback(event) {
+					event.preventDefault();
+					
+					const content = document.getElementById('guestContent').value.trim();
+					const name = document.getElementById('guestName').value.trim();
+					const email = document.getElementById('guestEmail').value.trim();
+					const showName = document.getElementById('guestShowName').checked;
+					
+					// Validation
+					if (guestRating === 0) {
+						alert('Please select a star rating.');
+						return false;
+					}
+					if (content.length < 1) {
+						alert('Please write something about your experience.');
+						return false;
+					}
+
+					const submitBtn = document.getElementById('guestSubmitBtn');
+					submitBtn.disabled = true;
+					submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+					try {
+						const response = await fetch('/api/feedback/guest', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+								'X-CSRF-TOKEN': '{{ csrf_token() }}'
+							},
+							body: JSON.stringify({
+								content: content,
+								rating: guestRating,
+								guest_name: name,
+								guest_email: email,
+								show_name: showName
+							})
+						});
+
+						const data = await response.json();
+
+						if (data.success) {
+							document.getElementById('guestFeedbackForm').classList.add('hidden');
+							document.getElementById('guestFeedbackSuccess').classList.remove('hidden');
+						} else {
+							alert(data.error || 'Failed to submit feedback. Please try again.');
+							submitBtn.disabled = false;
+							submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
+						}
+					} catch (error) {
+						console.error('Feedback error:', error);
+						alert('Something went wrong. Please try again.');
+						submitBtn.disabled = false;
+						submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
+					}
+
+					return false;
+				}
+			</script>
 
 			<!-- FAQ Section -->
 			<section class="py-24 bg-gradient-to-b from-gray-50 to-white">

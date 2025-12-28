@@ -487,4 +487,88 @@ class ChatSupportController extends Controller
             'deleted_count' => $count,
         ]);
     }
+
+    /**
+     * Get all counselors grouped by category.
+     */
+    public function getCounselors(Request $request)
+    {
+        $counselors = \App\Models\Counselor::available()
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        // Group by category
+        $grouped = $counselors->groupBy('category')->map(function ($items, $category) {
+            return [
+                'category' => $category,
+                'label' => $this->getCounselorCategoryLabel($category),
+                'counselors' => $items->map(function ($counselor) {
+                    return [
+                        'id' => $counselor->id,
+                        'name' => $counselor->name,
+                        'title' => $counselor->title,
+                        'office_location' => $counselor->office_location,
+                        'phone' => $counselor->phone,
+                        'email' => $counselor->email,
+                        'offers_online' => $counselor->offers_online,
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'categories' => $grouped,
+            'total' => $counselors->count(),
+        ]);
+    }
+
+    /**
+     * Get display label for counselor category.
+     */
+    private function getCounselorCategoryLabel(string $category): string
+    {
+        return match($category) {
+            'academic' => 'Academic & Study Support',
+            'mental_health' => 'Mental Health & Wellness',
+            'social' => 'Social Integration & Peer Relationships',
+            'crisis' => 'Crisis & Emergency Intervention',
+            'career' => 'Career Guidance & Future Planning',
+            'relationship' => 'Relationship & Love Affairs',
+            'family' => 'Family & Home-Related Issues',
+            'physical' => 'Physical Health & Lifestyle',
+            'financial' => 'Financial Wellness',
+            'personal_development' => 'Extracurricular & Personal Development',
+            default => ucfirst(str_replace('_', ' ', $category)),
+        };
+    }
+
+    /**
+     * Get counselors by a specific category.
+     */
+    public function getCounselorsByCategory(Request $request, string $category)
+    {
+        $counselors = \App\Models\Counselor::available()
+            ->where('category', $category)
+            ->orderBy('name')
+            ->get();
+
+        $formattedCounselors = $counselors->map(function ($counselor) {
+            return [
+                'id' => $counselor->id,
+                'name' => $counselor->name,
+                'title' => $counselor->title,
+                'office_location' => $counselor->office_location,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'category' => $category,
+            'label' => $this->getCounselorCategoryLabel($category),
+            'counselors' => $formattedCounselors,
+            'total' => $counselors->count(),
+        ]);
+    }
 }

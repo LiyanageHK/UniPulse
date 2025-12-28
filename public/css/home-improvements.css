@@ -1,0 +1,242 @@
+/* Premium Home Page Styling for UniPulse */
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	font-family: 'Poppins', 'Figtree', sans-serif;
+	overflow-x: hidden;
+}
+
+/* Hero Section with Dynamic Gradient */
+.hero-gradient {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+	background-size: 400% 400%;
+	animation: gradientShift 15s ease infinite;
+	position: relative;
+}
+
+@keyframes gradientShift {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
+
+.hero-gradient::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+	opacity: 0.5;
+}
+
+/* Glassmorphism Cards */
+.feature-card {
+	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(10px);
+	background: rgba(255, 255, 255, 0.9);
+}
+
+.feature-card:hover {
+	transform: translateY(-16px) scale(1.02);
+	box-shadow: 0 30px 70px -12px rgba(99, 102, 241, 0.4), 0 0 40px rgba(139, 92, 246, 0.3);
+	border-color: rgba(139, 92, 246, 0.5);
+	background: rgba(255, 255, 255, 1);
+}
+
+.service-card {
+	transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+	background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+	position: relative;
+	overflow: hidden;
+}
+
+.service-card::before {
+	content: '';
+	position: absolute;
+	top: -50%;
+	left: -50%;
+	width: 200%;
+	height: 200%;
+	background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+	opacity: 0;
+	transition: opacity 0.5s ease;
+}
+
+.service-card:hover::before {
+	opacity: 1;
+}
+
+.service-card:hover {
+	transform: scale(1.08) rotate(-1deg);
+	box-shadow: 0 35px 70px -15px rgba(99, 102, 241, 0.4), 0 0 50px rgba(139, 92, 246, 0.2);
+}
+
+/* Enhanced Pulse Animation */
+.pulse-animation {
+	animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.6;
+		transform: scale(1.05);
+	}
+}
+
+/* Statistics with Gradient Background */
+.stat-number {
+	font-family: 'Poppins', sans-serif;
+	font-weight: 900;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	text-shadow: 0 4px 8px rgba(102, 126, 234, 0.1);
+}
+
+/* Enhanced Glow Effect */
+.glow-effect {
+	box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 0 80px rgba(99, 102, 241, 0.3);
+	animation: glow 3s ease-in-out infinite;
+}
+
+@keyframes glow {
+	0%, 100% {
+		box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 0 80px rgba(99, 102, 241, 0.3);
+	}
+	50% {
+		box-shadow: 0 0 60px rgba(139, 92, 246, 0.7), 0 0 120px rgba(99, 102, 241, 0.5);
+	}
+}
+
+/* Enhanced Gradient Text */
+.gradient-text {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+	background-size: 200% 200%;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	animation: gradientText 5s ease infinite;
+}
+
+@keyframes gradientText {
+	0%, 100% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+}
+
+/* Floating Animation with Rotation */
+@keyframes float {
+	0%, 100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-25px) rotate(3deg);
+	}
+}
+
+.float-animation {
+	animation: float 6s ease-in-out infinite;
+}
+
+/* Enhanced Testimonial Cards */
+.testimonial-card {
+	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+	border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.testimonial-card:hover {
+	transform: translateY(-8px) scale(1.03);
+	box-shadow: 0 25px 50px rgba(139, 92, 246, 0.2);
+	border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Button Hover Effects */
+.hero-gradient a {
+	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	overflow: hidden;
+}
+
+.hero-gradient a::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0;
+	height: 0;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.3);
+	transform: translate(-50%, -50%);
+	transition: width 0.6s, height 0.6s;
+}
+
+.hero-gradient a:hover::before {
+	width: 300px;
+	height: 300px;
+}
+
+/* Smooth Scroll */
+html {
+	scroll-behavior: smooth;
+}
+
+/* Enhanced Service Icons */
+.service-card .glow-effect {
+	transition: all 0.5s ease;
+}
+
+.service-card:hover .glow-effect {
+	transform: scale(1.1) rotate(5deg);
+}
+
+/* FAQ Accordion Effect */
+.faq-item {
+	transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+	transform: translateX(10px);
+}
+
+/* Animated Underlines for Links */
+.service-card a {
+	position: relative;
+	padding-bottom: 2px;
+}
+
+.service-card a::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 0;
+	height: 2px;
+	background: linear-gradient(90deg, #667eea, #764ba2);
+	transition: width 0.3s ease;
+}
+
+.service-card a:hover::after {
+	width: 100%;
+}
+
+/* Step Numbers Animation */
+.step-number {
+	transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.step-number:hover {
+	transform: scale(1.15) rotate(360deg);
+}

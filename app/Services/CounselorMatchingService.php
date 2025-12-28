@@ -5,78 +5,64 @@ namespace App\Services;
 use App\Models\Counselor;
 use App\Models\CrisisFlag;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CounselorMatchingService
 {
     /**
-     * Find matching counselor based on crisis category and location.
+     * Find matching counselor based on crisis category.
+     * Uses direct category mapping (no specialization matching).
      */
     public function findMatchingCounselor(string $crisisCategory, ?string $city = null): ?Counselor
     {
-        // Start with available counselors
+        // Get counselors matching the crisis category
         $query = Counselor::available();
 
-        // Filter by city if provided
-        if ($city) {
-            // Try exact city match first
-            $counselor = $query->clone()->inCity($city)->first();
-            if ($counselor) {
-                return $this->selectBestMatch(
-                    $query->clone()->inCity($city)->get(),
-                    $crisisCategory
-                );
+        // Get counselors that match the crisis category
+        $matchingCounselors = $query->get()->filter(function ($counselor) use ($crisisCategory) {
+            return $counselor->matchesCrisisCategory($crisisCategory);
+        });
+
+        if ($matchingCounselors->isNotEmpty()) {
+            // Prefer city match if provided
+            if ($city) {
+                $cityMatch = $matchingCounselors->filter(function ($counselor) use ($city) {
+                    return stripos($counselor->city, $city) !== false || $counselor->city === 'All Cities';
+                })->first();
+                
+                if ($cityMatch) {
+                    return $cityMatch;
+                }
             }
+
+            // Prefer online counselors
+            $onlineMatch = $matchingCounselors->where('offers_online', true)->first();
+            if ($onlineMatch) {
+                return $onlineMatch;
+            }
+
+            // Return any matching counselor
+            return $matchingCounselors->first();
         }
 
-        // Try online counselors
-        $onlineCounselors = Counselor::available()->offersOnline()->get();
-        if ($onlineCounselors->isNotEmpty()) {
-            return $this->selectBestMatch($onlineCounselors, $crisisCategory);
-        }
-
-        // Fallback to any available counselor
-        $anyCounselor = Counselor::available()->first();
+        // Fallback: Return any available counselor (preferably crisis category)
+        $crisisCounselor = Counselor::available()
+            ->where('category', Counselor::CATEGORY_CRISIS)
+            ->first();
         
-        // If no counselors available, return null (system will alert via email)
-        return $anyCounselor;
+        return $crisisCounselor ?? Counselor::available()->first();
     }
 
     /**
-     * Select best matching counselor from a collection based on specialization.
+     * Get counselors by crisis flag category.
      */
-    protected function selectBestMatch(Collection $counselors, string $crisisCategory): ?Counselor
+    public function getCounselorsByCrisisCategory(string $crisisCategory): Collection
     {
-        // Score each counselor
-        $scored = $counselors->map(function ($counselor) use ($crisisCategory) {
-            $score = 0;
-
-            // Check if counselor matches crisis category
-            if ($counselor->matchesCrisisCategory($crisisCategory)) {
-                $score += 10;
-            }
-
-            // Mental health counselors are preferred for all crisis situations
-            if ($counselor->category === Counselor::CATEGORY_MENTAL_HEALTH) {
-                $score += 5;
-            }
-
-            // Online availability is a plus
-            if ($counselor->offers_online) {
-                $score += 2;
-            }
-
-            return [
-                'counselor' => $counselor,
-                'score' => $score,
-            ];
-        });
-
-        // Get highest scoring counselor
-        $best = $scored->sortByDesc('score')->first();
-
-        return $best ? $best['counselor'] : null;
+        return Counselor::available()
+            ->get()
+            ->filter(function ($counselor) use ($crisisCategory) {
+                return $counselor->matchesCrisisCategory($crisisCategory);
+            });
     }
 
     /**
@@ -92,36 +78,35 @@ class CounselorMatchingService
 
         $categories = $recentFlags->pluck('category')->unique();
 
-        // Build query
-        $query = Counselor::available();
+        // Get all available counselors
+        $counselors = Counselor::available()->get();
 
         // Filter by city if provided
         if ($city) {
-            $query->where(function ($q) use ($city) {
-                $q->inCity($city)->orWhere('offers_online', true);
+            $counselors = $counselors->filter(function ($counselor) use ($city) {
+                return stripos($counselor->city, $city) !== false 
+                    || $counselor->city === 'All Cities' 
+                    || $counselor->offers_online;
             });
         }
 
-        // Get all matching counselors
-        $counselors = $query->get();
-
-        // Score and filter
+        // Score and filter based on category match
         $scoredCounselors = $counselors->map(function ($counselor) use ($categories) {
             $score = 0;
 
-            // Check matches for each category
+            // Check matches for each crisis category
             foreach ($categories as $category) {
                 if ($counselor->matchesCrisisCategory($category)) {
                     $score += 10;
                 }
             }
 
-            // Mental health counselors are preferred
-            if ($counselor->category === Counselor::CATEGORY_MENTAL_HEALTH) {
+            // Crisis category counselors are preferred for emergencies
+            if ($counselor->category === Counselor::CATEGORY_CRISIS) {
                 $score += 5;
             }
 
-            // Online availability
+            // Online availability bonus
             if ($counselor->offers_online) {
                 $score += 3;
             }
@@ -140,7 +125,7 @@ class CounselorMatchingService
                 'id' => $item['counselor']->id,
                 'name' => $item['counselor']->name,
                 'title' => $item['counselor']->title,
-                'specializations' => $item['counselor']->specializations,
+                'category' => $this->getCategoryLabel($item['counselor']->category),
                 'city' => $item['counselor']->city,
                 'email' => $item['counselor']->email,
                 'phone' => $item['counselor']->phone,
@@ -157,78 +142,33 @@ class CounselorMatchingService
      */
     protected function getMatchReason(Counselor $counselor, Collection $categories): string
     {
-        $matches = [];
-
         foreach ($categories as $category) {
             if ($counselor->matchesCrisisCategory($category)) {
-                $matches[] = $this->getCategoryLabel($category);
+                return $this->getCategoryLabel($counselor->category) . ' specialist';
             }
         }
 
-        if (empty($matches)) {
-            return 'General mental health support';
-        }
-
-        return 'Specializes in: ' . implode(', ', array_unique($matches));
+        return $this->getCategoryLabel($counselor->category) . ' support';
     }
 
     /**
-     * Get display label for a crisis category.
+     * Get display label for a counselor category.
      */
     protected function getCategoryLabel(string $category): string
     {
         return match($category) {
-            CrisisFlag::CATEGORY_SUICIDE_RISK => 'Suicide Prevention',
-            CrisisFlag::CATEGORY_SELF_HARM => 'Self-Harm Support',
-            CrisisFlag::CATEGORY_DEPRESSION => 'Depression',
-            CrisisFlag::CATEGORY_ANXIETY => 'Anxiety',
-            CrisisFlag::CATEGORY_STRESS => 'Stress Management',
-            CrisisFlag::CATEGORY_LONELINESS => 'Loneliness & Social Support',
-            CrisisFlag::CATEGORY_HOPELESSNESS => 'Hope & Resilience',
-            CrisisFlag::CATEGORY_GENERAL => 'General Mental Health',
+            Counselor::CATEGORY_ACADEMIC => 'Academic & Study Support',
+            Counselor::CATEGORY_MENTAL_HEALTH => 'Mental Health & Wellness',
+            Counselor::CATEGORY_SOCIAL => 'Social Integration & Peer Relationships',
+            Counselor::CATEGORY_CRISIS => 'Crisis & Emergency Intervention',
+            Counselor::CATEGORY_CAREER => 'Career Guidance & Future Planning',
+            Counselor::CATEGORY_RELATIONSHIP => 'Relationship & Love Affairs',
+            Counselor::CATEGORY_FAMILY => 'Family & Home-Related Issues',
+            Counselor::CATEGORY_PHYSICAL => 'Physical Health & Lifestyle',
+            Counselor::CATEGORY_FINANCIAL => 'Financial Wellness',
+            Counselor::CATEGORY_PERSONAL_DEVELOPMENT => 'Extracurricular & Personal Development',
             default => ucfirst(str_replace('_', ' ', $category)),
         };
-    }
-
-    /**
-     * Search for counselors via web (fallback when no local match).
-     */
-    public function searchCounselorsOnline(string $category, string $city): array
-    {
-        // This would integrate with a web search API or external counselor directory
-        // For now, returning a placeholder
-
-        try {
-            // Example: Google Custom Search API or Mental Health Organization API
-            // $results = Http::get('https://api.counselordirectory.com/search', [
-            //     'category' => $category,
-            //     'location' => $city,
-            //     'country' => 'LK',
-            // ]);
-
-            Log::info('Web search for counselors: ' . $category . ' in ' . $city);
-
-            // Placeholder return
-            return [
-                [
-                    'name' => 'National Mental Health Center',
-                    'phone' => '011-2882254',
-                    'location' => $city,
-                    'type' => 'Government Facility',
-                    'services' => ['Crisis intervention', 'Counseling', 'Psychiatric care'],
-                ],
-                [
-                    'name' => 'Private Counseling Services',
-                    'phone' => 'Search online for local providers',
-                    'location' => $city,
-                    'type' => 'Private Practice',
-                    'services' => ['Individual counseling', 'Therapy'],
-                ],
-            ];
-        } catch (\Exception $e) {
-            Log::error('Online counselor search failed: ' . $e->getMessage());
-            return [];
-        }
     }
 
     /**

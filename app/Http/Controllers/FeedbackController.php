@@ -1,0 +1,239 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Feedback;
+use App\Services\FeedbackValidationService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+class FeedbackController extends Controller
+{
+    protected FeedbackValidationService $validationService;
+
+    public function __construct(FeedbackValidationService $validationService)
+    {
+        $this->validationService = $validationService;
+    }
+
+    /**
+     * Submit new feedback.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'content' => 'required|string|min:20|max:1000',
+            'rating' => 'required|integer|min:1|max:5',
+            'show_name' => 'boolean',
+        ]);
+
+        $user = Auth::user();
+
+        // Check if user already submitted feedback recently (24h limit)
+        $recentFeedback = Feedback::where('user_id', $user->id)
+            ->where('created_at', '>', now()->subHours(24))
+            ->exists();
+
+        if ($recentFeedback) {
+            return response()->json([
+                'success' => false,
+                'error' => 'You can only submit feedback once every 24 hours.',
+            ], 429);
+        }
+
+        try {
+            // Validate content with LLM
+            $validation = $this->validationService->validateFeedback(
+                $request->content,
+                $request->rating
+            );
+
+            // Create feedback
+            $feedback = Feedback::create([
+                'user_id' => $user->id,
+                'content' => $request->content,
+                'rating' => $request->rating,
+                'show_name' => $request->show_name ?? true,
+                'llm_validation_score' => $validation['score'],
+                'llm_validation_notes' => $validation['notes'],
+                'status' => 'pending',
+            ]);
+
+            // Auto-approve if conditions met
+            if ($feedback->canAutoApprove()) {
+                $feedback->update([
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                ]);
+            }
+
+            Log::info('Feedback submitted', [
+                'feedback_id' => $feedback->id,
+                'user_id' => $user->id,
+                'rating' => $feedback->rating,
+                'llm_score' => $validation['score'],
+                'status' => $feedback->status,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $feedback->status === 'approved' 
+                    ? 'Thank you! Your feedback has been published.' 
+                    : 'Thank you! Your feedback has been submitted for review.',
+                'feedback' => [
+                    'id' => $feedback->id,
+                    'status' => $feedback->status,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Feedback submission failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to submit feedback. Please try again.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Submit feedback as a guest (no login required).
+     */
+    public function storeGuest(Request $request)
+    {
+        $request->validate([
+            'content' => 'required|string|min:1|max:1000',
+            'rating' => 'required|integer|min:1|max:5',
+            'guest_name' => 'required|string|max:100',
+            'guest_email' => 'nullable|email|max:255',
+            'show_name' => 'boolean',
+        ]);
+
+        // Rate limiting by IP (max 3 submissions per day)
+        $ip = $request->ip();
+        $recentFeedbackCount = Feedback::where('created_at', '>', now()->subHours(24))
+            ->whereNull('user_id')
+            ->count();
+
+        // Simple rate limit - allow max 10 guest submissions per day total
+        if ($recentFeedbackCount >= 10) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Too many submissions today. Please try again tomorrow.',
+            ], 429);
+        }
+
+        try {
+            // Validate content with LLM
+            $validation = $this->validationService->validateFeedback(
+                $request->content,
+                $request->rating
+            );
+
+            // Create guest feedback
+            $feedback = Feedback::create([
+                'user_id' => null,
+                'guest_name' => $request->guest_name,
+                'guest_email' => $request->guest_email,
+                'content' => $request->content,
+                'rating' => $request->rating,
+                'show_name' => $request->show_name ?? true,
+                'llm_validation_score' => $validation['score'],
+                'llm_validation_notes' => $validation['notes'],
+                'status' => 'pending',
+            ]);
+
+            // Auto-approve if conditions met
+            if ($feedback->canAutoApprove()) {
+                $feedback->update([
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                ]);
+            }
+
+            Log::info('Guest feedback submitted', [
+                'feedback_id' => $feedback->id,
+                'guest_name' => $request->guest_name,
+                'rating' => $feedback->rating,
+                'llm_score' => $validation['score'],
+                'status' => $feedback->status,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $feedback->status === 'approved' 
+                    ? 'Thank you! Your feedback has been published.' 
+                    : 'Thank you! Your feedback has been submitted for review.',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Guest feedback submission failed', [
+                'guest_name' => $request->guest_name,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to submit feedback. Please try again.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get approved feedback for public display (home page).
+     */
+    public function getApproved(Request $request)
+    {
+        $limit = $request->query('limit', 6);
+
+        $feedbacks = Feedback::approved()
+            ->highRated()
+            ->with('user:id,name')
+            ->orderBy('approved_at', 'desc')
+            ->limit(min($limit, 12))
+            ->get()
+            ->map(function ($feedback) {
+                return [
+                    'id' => $feedback->id,
+                    'content' => $feedback->content,
+                    'rating' => $feedback->rating,
+                    'display_name' => $feedback->display_name,
+                    'display_initial' => $feedback->display_initial,
+                    'approved_at' => $feedback->approved_at->diffForHumans(),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'feedbacks' => $feedbacks,
+        ]);
+    }
+
+    /**
+     * Check if user has already submitted feedback.
+     */
+    public function checkStatus()
+    {
+        $user = Auth::user();
+
+        $recentFeedback = Feedback::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $canSubmit = !$recentFeedback || $recentFeedback->created_at < now()->subHours(24);
+
+        return response()->json([
+            'success' => true,
+            'can_submit' => $canSubmit,
+            'last_feedback' => $recentFeedback ? [
+                'status' => $recentFeedback->status,
+                'submitted_at' => $recentFeedback->created_at->diffForHumans(),
+                'rating' => $recentFeedback->rating,
+            ] : null,
+        ]);
+    }
+}

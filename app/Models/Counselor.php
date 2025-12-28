@@ -35,11 +35,17 @@ class Counselor extends Model
         'offers_online' => 'boolean',
     ];
 
-    // Counselor categories matching crisis flag categories
-    const CATEGORY_MENTAL_HEALTH = 'mental_health';
-    const CATEGORY_ACADEMIC = 'academic';
-    const CATEGORY_CAREER = 'career';
-    const CATEGORY_FINANCIAL = 'financial';
+    // Counselor categories matching the provided data
+    const CATEGORY_ACADEMIC = 'academic';                    // Academic & Study Support
+    const CATEGORY_MENTAL_HEALTH = 'mental_health';          // Mental Health & Wellness
+    const CATEGORY_SOCIAL = 'social';                        // Social Integration & Peer Relationships
+    const CATEGORY_CRISIS = 'crisis';                        // Crisis & Emergency Intervention
+    const CATEGORY_CAREER = 'career';                        // Career Guidance & Future Planning
+    const CATEGORY_RELATIONSHIP = 'relationship';            // Relationship & Love Affairs
+    const CATEGORY_FAMILY = 'family';                        // Family & Home-Related Issues
+    const CATEGORY_PHYSICAL = 'physical';                    // Physical Health & Lifestyle (Psych Focus)
+    const CATEGORY_FINANCIAL = 'financial';                  // Financial Wellness
+    const CATEGORY_PERSONAL_DEVELOPMENT = 'personal_development'; // Extracurricular & Personal Development
 
     /**
      * Get the crisis alerts for this counselor.
@@ -74,14 +80,6 @@ class Counselor extends Model
     }
 
     /**
-     * Scope a query to filter by specialization.
-     */
-    public function scopeWithSpecialization($query, string $specialization)
-    {
-        return $query->whereJsonContains('specializations', $specialization);
-    }
-
-    /**
      * Scope a query to only include online counselors.
      */
     public function scopeOffersOnline($query)
@@ -104,22 +102,43 @@ class Counselor extends Model
 
     /**
      * Check if counselor matches a crisis flag category.
+     * Uses direct category mapping (no specialization matching).
      */
     public function matchesCrisisCategory(string $crisisCategory): bool
     {
-        // Map crisis categories to counselor specializations
+        // Map crisis categories to counselor categories
         $categoryMap = [
-            CrisisFlag::CATEGORY_SUICIDE_RISK => ['suicide_prevention', 'crisis_intervention', 'mental_health'],
-            CrisisFlag::CATEGORY_SELF_HARM => ['self_harm', 'crisis_intervention', 'mental_health'],
-            CrisisFlag::CATEGORY_DEPRESSION => ['depression', 'mental_health', 'mood_disorders'],
-            CrisisFlag::CATEGORY_ANXIETY => ['anxiety', 'mental_health', 'stress_management'],
-            CrisisFlag::CATEGORY_HOPELESSNESS => ['depression', 'mental_health', 'crisis_intervention'],
-            CrisisFlag::CATEGORY_STRESS => ['stress_management', 'academic_counseling', 'mental_health'],
-            CrisisFlag::CATEGORY_LONELINESS => ['social_support', 'mental_health', 'peer_support'],
+            CrisisFlag::CATEGORY_SUICIDE_RISK => self::CATEGORY_CRISIS,
+            CrisisFlag::CATEGORY_SELF_HARM => self::CATEGORY_CRISIS,
+            CrisisFlag::CATEGORY_DEPRESSION => self::CATEGORY_MENTAL_HEALTH,
+            CrisisFlag::CATEGORY_ANXIETY => self::CATEGORY_MENTAL_HEALTH,
+            CrisisFlag::CATEGORY_HOPELESSNESS => self::CATEGORY_MENTAL_HEALTH,
+            CrisisFlag::CATEGORY_STRESS => self::CATEGORY_ACADEMIC,
+            CrisisFlag::CATEGORY_LONELINESS => self::CATEGORY_SOCIAL,
         ];
 
-        $relevantSpecs = $categoryMap[$crisisCategory] ?? [];
+        $matchingCategory = $categoryMap[$crisisCategory] ?? self::CATEGORY_MENTAL_HEALTH;
         
-        return !empty(array_intersect($this->specializations ?? [], $relevantSpecs));
+        return $this->category === $matchingCategory;
+    }
+
+    /**
+     * Get the display label for the counselor's category.
+     */
+    public function getCategoryLabel(): string
+    {
+        return match($this->category) {
+            self::CATEGORY_ACADEMIC => 'Academic & Study Support',
+            self::CATEGORY_MENTAL_HEALTH => 'Mental Health & Wellness',
+            self::CATEGORY_SOCIAL => 'Social Integration & Peer Relationships',
+            self::CATEGORY_CRISIS => 'Crisis & Emergency Intervention',
+            self::CATEGORY_CAREER => 'Career Guidance & Future Planning',
+            self::CATEGORY_RELATIONSHIP => 'Relationship & Love Affairs',
+            self::CATEGORY_FAMILY => 'Family & Home-Related Issues',
+            self::CATEGORY_PHYSICAL => 'Physical Health & Lifestyle',
+            self::CATEGORY_FINANCIAL => 'Financial Wellness',
+            self::CATEGORY_PERSONAL_DEVELOPMENT => 'Extracurricular & Personal Development',
+            default => ucfirst(str_replace('_', ' ', $this->category)),
+        };
     }
 }

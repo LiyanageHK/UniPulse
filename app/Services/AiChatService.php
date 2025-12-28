@@ -135,9 +135,10 @@ class AiChatService
         // 8. Create embedding for user message (async in production)
         $this->knowledgeBase->createMessageEmbedding($userMessageModel);
 
-        // 9. If RED crisis flags detected, include counselor recommendations matched by category
+        // 9. Build severity-based crisis response
         $counselorRecommendations = [];
         $crisisResources = [];
+        $crisisResponse = null;
         
         // Log crisis flags detected
         Log::info('Crisis flags detected', [
@@ -146,23 +147,27 @@ class AiChatService
             'flags' => $crisisFlags,
         ]);
         
-        // Only show counselors and resources for RED (serious) flags
+        // Filter flags by severity
         $redFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'red');
+        $yellowFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'yellow');
+        $blueFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'blue');
         
-        Log::info('Red flags filtered', [
+        Log::info('Flags filtered by severity', [
             'red_count' => count($redFlags),
-            'red_flags' => array_values($redFlags),
+            'yellow_count' => count($yellowFlags),
+            'blue_count' => count($blueFlags),
         ]);
         
+        // Handle based on highest severity
         if (!empty($redFlags)) {
-            // Get counselors matched to the specific crisis categories
-            $counselorRecommendations = $this->getCounselorRecommendationsByCategory($user, array_values($redFlags));
+            // RED: Show category buttons for user to select
+            $crisisResponse = [
+                'type' => 'crisis_red',
+                'severity' => 'red',
+                'categories' => $this->getCounselorCategories(),
+                'hotlines' => $this->getCrisisHotlines(),
+            ];
             $crisisResources = $this->getCrisisResources(array_values($redFlags));
-            
-            Log::info('Counselor recommendations retrieved', [
-                'count' => count($counselorRecommendations),
-                'recommendations' => $counselorRecommendations,
-            ]);
             
             // Create crisis alerts for red flags
             foreach ($redFlags as $flag) {
@@ -174,12 +179,39 @@ class AiChatService
                     $this->crisisAlert->createCrisisAlert($crisisFlag);
                 }
             }
+        } elseif (!empty($yellowFlags)) {
+            // YELLOW: Ask caring escalation questions
+            $crisisResponse = [
+                'type' => 'crisis_yellow',
+                'severity' => 'yellow',
+                'escalation_questions' => [
+                    'I want to make sure I understand what you\'re going through. Have you been having any thoughts of harming yourself?',
+                    'Are you in a safe place right now?',
+                ],
+                'offer_support' => true,
+            ];
+        } elseif (!empty($blueFlags)) {
+            // BLUE: Kind continuation with optional support offer
+            $crisisResponse = [
+                'type' => 'crisis_blue',
+                'severity' => 'blue',
+                'offer_support_option' => true,
+                'support_message' => 'If you\'d like to speak with a professional counselor, I can show you available support options.',
+            ];
+        }
+
+        // Update message metadata with crisis response for persistence
+        if ($crisisResponse) {
+            $metadata = $assistantMessage->metadata ?? [];
+            $metadata['crisis_response'] = $crisisResponse;
+            $assistantMessage->update(['metadata' => $metadata]);
         }
 
         return [
             'message' => $aiResponse,
             'message_id' => $assistantMessage->id,
             'crisis_flags' => $crisisFlags, // Only for internal use, not shown to student
+            'crisis_response' => $crisisResponse,
             'counselor_recommendations' => $counselorRecommendations,
             'crisis_resources' => $crisisResources,
             'conversation_updated' => true,
@@ -545,6 +577,40 @@ CONCERNING;
         ];
 
         return $resources;
+    }
+
+    /**
+     * Get all counselor categories for category buttons.
+     */
+    protected function getCounselorCategories(): array
+    {
+        return [
+            ['key' => 'academic', 'label' => 'Academic & Study Support', 'color' => '#3b82f6'],
+            ['key' => 'mental_health', 'label' => 'Mental Health & Wellness', 'color' => '#8b5cf6'],
+            ['key' => 'social', 'label' => 'Social & Peer Relationships', 'color' => '#06b6d4'],
+            ['key' => 'crisis', 'label' => 'Crisis & Emergency', 'color' => '#ef4444'],
+            ['key' => 'career', 'label' => 'Career Guidance', 'color' => '#f59e0b'],
+            ['key' => 'relationship', 'label' => 'Relationship Support', 'color' => '#ec4899'],
+            ['key' => 'family', 'label' => 'Family & Home Issues', 'color' => '#10b981'],
+            ['key' => 'physical', 'label' => 'Physical Health', 'color' => '#14b8a6'],
+            ['key' => 'financial', 'label' => 'Financial Wellness', 'color' => '#84cc16'],
+            ['key' => 'personal_development', 'label' => 'Personal Development', 'color' => '#6366f1'],
+        ];
+    }
+
+    /**
+     * Get crisis hotlines for immediate help.
+     */
+    protected function getCrisisHotlines(): array
+    {
+        return [
+            ['number' => '119', 'name' => 'Police Sri Lanka', 'available' => '24/7'],
+            ['number' => '1926', 'name' => 'National Mental Health Helpline (NIMH)', 'available' => '24/7'],
+            ['number' => '1333', 'name' => 'CCCline - Crisis Support', 'available' => '24/7'],
+            ['number' => '1375', 'name' => 'Lanka Life Line (LLL)', 'available' => '24/7'],
+            ['number' => '+94 767 520 620', 'name' => 'Sri Lanka Sumithrayo', 'available' => '24/7'],
+            ['number' => '+94 775 676 555', 'name' => 'Women In Need (WIN)', 'available' => '24/7'],
+        ];
     }
 
     /**

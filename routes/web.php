@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WeeklyCheckinController;
 use App\Http\Controllers\ChatSupportController;
 use App\Http\Controllers\CrisisManagementController;
+use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,6 +26,12 @@ Route::get('/privacy-policy', function () {
 Route::get('/conversational-support', function () {
     return view('chat-info');
 })->name('chat.info');
+
+// Public API for approved feedback (for home page)
+Route::get('/api/feedback/approved', [FeedbackController::class, 'getApproved'])->name('feedback.approved');
+
+// Public guest feedback submission (no login required)
+Route::post('/api/feedback/guest', [FeedbackController::class, 'storeGuest'])->name('feedback.guest');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -82,6 +89,10 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');
         Route::delete('/memory/{id}', [ChatSupportController::class, 'deleteMemory'])->name('memory.delete');
         Route::delete('/memories/clear', [ChatSupportController::class, 'clearAllMemories'])->name('memories.clear');
+        
+        // Counselors endpoint
+        Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');
+        Route::get('/counselors/{category}', [ChatSupportController::class, 'getCounselorsByCategory'])->name('counselors.category');
     });
     
     // Crisis Management Routes (Admin/Counselor Only)

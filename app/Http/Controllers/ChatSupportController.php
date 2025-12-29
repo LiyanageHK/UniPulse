@@ -489,6 +489,160 @@ class ChatSupportController extends Controller
     }
 
     /**
+     * Archive all active conversations for the authenticated user.
+     */
+    public function archiveAllConversations(Request $request)
+    {
+        $user = Auth::user();
+        
+        $count = Conversation::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->update(['status' => 'archived']);
+        
+        Log::info('All active conversations archived', [
+            'user_id' => $user->id,
+            'count' => $count,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'All active conversations archived successfully',
+            'archived_count' => $count,
+        ]);
+    }
+
+    /**
+     * Unarchive all archived conversations for the authenticated user.
+     */
+    public function unarchiveAllConversations(Request $request)
+    {
+        $user = Auth::user();
+        
+        $count = Conversation::where('user_id', $user->id)
+            ->where('status', 'archived')
+            ->update(['status' => 'active']);
+        
+        Log::info('All archived conversations unarchived', [
+            'user_id' => $user->id,
+            'count' => $count,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'All archived conversations restored successfully',
+            'unarchived_count' => $count,
+        ]);
+    }
+
+    /**
+     * Delete all active conversations for the authenticated user.
+     */
+    public function deleteAllActiveConversations(Request $request)
+    {
+        $user = Auth::user();
+        
+        $conversations = Conversation::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->get();
+        
+        $deletedCount = 0;
+        
+        foreach ($conversations as $conversation) {
+            try {
+                // Delete all related data
+                $crisisFlagIds = $conversation->crisisFlags()->pluck('id')->toArray();
+                if (!empty($crisisFlagIds)) {
+                    \App\Models\CrisisAlert::whereIn('crisis_flag_id', $crisisFlagIds)->delete();
+                }
+                
+                $conversation->crisisFlags()->delete();
+                ConversationEmbedding::where('conversation_id', $conversation->id)->delete();
+                Memory::where('source_conversation_id', $conversation->id)->delete();
+                
+                $messageIds = $conversation->messages()->pluck('id')->toArray();
+                if (!empty($messageIds)) {
+                    ConversationEmbedding::whereIn('message_id', $messageIds)->delete();
+                    Memory::whereIn('source_message_id', $messageIds)->delete();
+                    $conversation->messages()->delete();
+                }
+                
+                $conversation->delete();
+                $deletedCount++;
+            } catch (\Exception $e) {
+                Log::error('Failed to delete conversation in bulk delete', [
+                    'conversation_id' => $conversation->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        
+        Log::info('All active conversations deleted', [
+            'user_id' => $user->id,
+            'count' => $deletedCount,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'All active conversations deleted successfully',
+            'deleted_count' => $deletedCount,
+        ]);
+    }
+
+    /**
+     * Delete all archived conversations for the authenticated user.
+     */
+    public function deleteAllArchivedConversations(Request $request)
+    {
+        $user = Auth::user();
+        
+        $conversations = Conversation::where('user_id', $user->id)
+            ->where('status', 'archived')
+            ->get();
+        
+        $deletedCount = 0;
+        
+        foreach ($conversations as $conversation) {
+            try {
+                // Delete all related data
+                $crisisFlagIds = $conversation->crisisFlags()->pluck('id')->toArray();
+                if (!empty($crisisFlagIds)) {
+                    \App\Models\CrisisAlert::whereIn('crisis_flag_id', $crisisFlagIds)->delete();
+                }
+                
+                $conversation->crisisFlags()->delete();
+                ConversationEmbedding::where('conversation_id', $conversation->id)->delete();
+                Memory::where('source_conversation_id', $conversation->id)->delete();
+                
+                $messageIds = $conversation->messages()->pluck('id')->toArray();
+                if (!empty($messageIds)) {
+                    ConversationEmbedding::whereIn('message_id', $messageIds)->delete();
+                    Memory::whereIn('source_message_id', $messageIds)->delete();
+                    $conversation->messages()->delete();
+                }
+                
+                $conversation->delete();
+                $deletedCount++;
+            } catch (\Exception $e) {
+                Log::error('Failed to delete conversation in bulk delete', [
+                    'conversation_id' => $conversation->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        
+        Log::info('All archived conversations deleted', [
+            'user_id' => $user->id,
+            'count' => $deletedCount,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'All archived conversations deleted successfully',
+            'deleted_count' => $deletedCount,
+        ]);
+    }
+
+    /**
      * Get all counselors grouped by category.
      */
     public function getCounselors(Request $request)

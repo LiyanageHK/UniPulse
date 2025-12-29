@@ -1683,6 +1683,24 @@
                 transform: translateX(100px);
             }
         }
+
+        /* Data Control Tabs */
+        .data-control-tab.active {
+            color: #2563eb !important;
+            border-bottom-color: #2563eb !important;
+        }
+
+        .data-control-tab:hover {
+            color: #2563eb;
+        }
+
+        .data-control-panel {
+            display: none;
+        }
+
+        .data-control-panel.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -1905,21 +1923,55 @@
                     <div class="settings-panel" id="panel-data">
                         <h3 class="settings-panel-title">Data Controls</h3>
                         
-                        <div class="settings-group">
-                            <div class="settings-group-title">Chat History</div>
-                            <div class="settings-row">
-                                <div class="settings-row-info">
-                                    <div class="settings-row-label">Archive All Chats</div>
-                                    <div class="settings-row-desc">Move all active conversations to archive</div>
+                        <!-- Sub-tabs for Active/Archived Chats -->
+                        <div class="data-control-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 0;">
+                            <button class="data-control-tab active" onclick="switchDataControlTab('active')" data-tab="active" style="background: none; border: none; padding: 12px 24px; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;">
+                                Active Chats
+                            </button>
+                            <button class="data-control-tab" onclick="switchDataControlTab('archived')" data-tab="archived" style="background: none; border: none; padding: 12px 24px; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;">
+                                Archived Chats
+                            </button>
+                        </div>
+
+                        <!-- Active Chats Panel -->
+                        <div class="data-control-panel active" id="data-panel-active">
+                            <div class="settings-group">
+                                <div class="settings-group-title">CHAT HISTORY</div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Archive All Chats</div>
+                                        <div class="settings-row-desc">Move all active conversations to archive</div>
+                                    </div>
+                                    <button class="settings-btn" onclick="showArchiveAllModal()">Archive All</button>
                                 </div>
-                                <button class="settings-btn" onclick="showArchiveAllModal()">Archive All</button>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Delete All Active Chats</div>
+                                        <div class="settings-row-desc">Permanently delete all active conversations</div>
+                                    </div>
+                                    <button class="settings-btn danger" onclick="showDeleteActiveModal()">Delete</button>
+                                </div>
                             </div>
-                            <div class="settings-row">
-                                <div class="settings-row-info">
-                                    <div class="settings-row-label">Delete All Archived</div>
-                                    <div class="settings-row-desc">Permanently delete all archived conversations</div>
+                        </div>
+
+                        <!-- Archived Chats Panel -->
+                        <div class="data-control-panel" id="data-panel-archived">
+                            <div class="settings-group">
+                                <div class="settings-group-title">CHAT HISTORY</div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Unarchive All Chats</div>
+                                        <div class="settings-row-desc">Move all archived conversations back to active</div>
+                                    </div>
+                                    <button class="settings-btn" onclick="showUnarchiveAllModal()">Unarchive All</button>
                                 </div>
-                                <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete</button>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Delete All Archived</div>
+                                        <div class="settings-row-desc">Permanently delete all archived conversations</div>
+                                    </div>
+                                    <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete</button>
+                                </div>
                             </div>
                         </div>
 
@@ -2017,6 +2069,70 @@
                 <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
                     <button class="btn btn-secondary" onclick="closeDeleteArchivedModal(event)">Cancel</button>
                     <button class="btn btn-danger" onclick="confirmDeleteArchived()" style="display: flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Yes, Delete All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unarchive All Confirmation Modal -->
+    <div class="modal-overlay" id="unarchiveAllModal" onclick="closeUnarchiveAllModal(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px; color: #10b981;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0 3-3m-3 3-3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                    </svg>
+                    Unarchive All Chats
+                </div>
+                <button class="modal-close" onclick="closeUnarchiveAllModal(event)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 15px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+                    Are you sure you want to restore <strong>all archived conversations</strong>?
+                </p>
+                <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin-bottom: 16px;">
+                    All archived chats will be moved back to your active conversations.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeUnarchiveAllModal(event)">Cancel</button>
+                    <button class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border: 1px solid rgba(16, 185, 129, 0.5);" onclick="confirmUnarchiveAll()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; flex-shrink: 0;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0 3-3m-3 3-3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                        </svg>
+                        Yes, Unarchive All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Active Confirmation Modal -->
+    <div class="modal-overlay" id="deleteActiveModal" onclick="closeDeleteActiveModal(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px; color: #dc2626;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    Delete All Active Chats
+                </div>
+                <button class="modal-close" onclick="closeDeleteActiveModal(event)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 15px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+                    Are you sure you want to <strong>permanently delete ALL active conversations</strong>?
+                </p>
+                <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin-bottom: 16px;">
+                    This action <strong>cannot be undone</strong>. All your current active chats will be permanently removed.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeDeleteActiveModal(event)">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmDeleteActive()" style="display: flex; align-items: center; gap: 6px;">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                         </svg>
@@ -2974,27 +3090,19 @@
             closeArchiveAllModal();
             
             try {
-                const response = await fetch('/chat/conversations?status=active', {
+                const response = await fetch('/chat/conversations/archive-all', {
+                    method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrfToken }
                 });
                 const data = await response.json();
                 
-                if (data.success && data.conversations.length > 0) {
-                    let archived = 0;
-                    for (const conv of data.conversations) {
-                        const res = await fetch(`/chat/conversation/${conv.id}/archive`, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrfToken }
-                        });
-                        if ((await res.json()).success) archived++;
-                    }
-                    
+                if (data.success) {
                     startNewConversation();
                     await loadConversations();
                     await loadChatStatistics();
-                    showToast('success', 'All Chats Archived', `${archived} conversation(s) moved to archive.`);
+                    showToast('success', 'All Chats Archived', `${data.archived_count} conversation(s) moved to archive.`);
                 } else {
-                    showToast('error', 'No Active Chats', 'There are no active conversations to archive.');
+                    showToast('error', 'Archive Failed', data.error || 'Something went wrong.');
                 }
             } catch (error) {
                 console.error('Archive all error:', error);
@@ -3005,6 +3113,89 @@
         // Archive all active conversations (legacy - now uses modal)
         async function archiveAllConversations() {
             showArchiveAllModal();
+        }
+
+        // Switch between Active and Archived tabs in Data Controls
+        function switchDataControlTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.data-control-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            
+            // Update panels
+            document.getElementById('data-panel-active').classList.toggle('active', tab === 'active');
+            document.getElementById('data-panel-archived').classList.toggle('active', tab === 'archived');
+        }
+
+        // Show unarchive all confirmation modal
+        function showUnarchiveAllModal() {
+            document.getElementById('unarchiveAllModal').classList.add('active');
+        }
+
+        // Close unarchive all modal
+        function closeUnarchiveAllModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('unarchiveAllModal').classList.remove('active');
+        }
+
+        // Confirm and unarchive all conversations
+        async function confirmUnarchiveAll() {
+            closeUnarchiveAllModal();
+            
+            try {
+                const response = await fetch('/chat/conversations/unarchive-all', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    await loadConversations();
+                    await loadChatStatistics();
+                    showToast('success', 'All Chats Restored', `${data.unarchived_count} conversation(s) restored to active.`);
+                } else {
+                    showToast('error', 'Restore Failed', data.error || 'Something went wrong.');
+                }
+            } catch (error) {
+                console.error('Unarchive all error:', error);
+                showToast('error', 'Restore Failed', 'Something went wrong. Please try again.');
+            }
+        }
+
+        // Show delete active modal
+        function showDeleteActiveModal() {
+            document.getElementById('deleteActiveModal').classList.add('active');
+        }
+
+        // Close delete active modal
+        function closeDeleteActiveModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('deleteActiveModal').classList.remove('active');
+        }
+
+        // Confirm and delete all active conversations
+        async function confirmDeleteActive() {
+            closeDeleteActiveModal();
+            
+            try {
+                const response = await fetch('/chat/conversations/delete-active', {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrfToken }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    startNewConversation();
+                    await loadConversations();
+                    await loadChatStatistics();
+                    showToast('success', 'All Active Chats Deleted', `${data.deleted_count} conversation(s) permanently deleted.`);
+                } else {
+                    showToast('error', 'Delete Failed', data.error || 'Something went wrong.');
+                }
+            } catch (error) {
+                console.error('Delete active error:', error);
+                showToast('error', 'Delete Failed', 'Something went wrong. Please try again.');
+            }
         }
 
         // Show delete archived confirmation modal
@@ -3023,26 +3214,18 @@
             closeDeleteArchivedModal();
             
             try {
-                const response = await fetch('/chat/conversations?status=archived', {
+                const response = await fetch('/chat/conversations/delete-archived', {
+                    method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': csrfToken }
                 });
                 const data = await response.json();
                 
-                if (data.success && data.conversations.length > 0) {
-                    let deleted = 0;
-                    for (const conv of data.conversations) {
-                        const res = await fetch(`/chat/conversation/${conv.id}`, {
-                            method: 'DELETE',
-                            headers: { 'X-CSRF-TOKEN': csrfToken }
-                        });
-                        if ((await res.json()).success) deleted++;
-                    }
-                    
+                if (data.success) {
                     await loadConversations();
                     await loadChatStatistics();
-                    showToast('success', 'Archived Chats Deleted', `${deleted} conversation(s) permanently deleted.`);
+                    showToast('success', 'Archived Chats Deleted', `${data.deleted_count} conversation(s) permanently deleted.`);
                 } else {
-                    showToast('error', 'No Archived Chats', 'There are no archived conversations to delete.');
+                    showToast('error', 'Delete Failed', data.error || 'Something went wrong.');
                 }
             } catch (error) {
                 console.error('Delete all archived error:', error);

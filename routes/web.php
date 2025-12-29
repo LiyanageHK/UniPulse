@@ -90,6 +90,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/memory/{id}', [ChatSupportController::class, 'deleteMemory'])->name('memory.delete');
         Route::delete('/memories/clear', [ChatSupportController::class, 'clearAllMemories'])->name('memories.clear');
         
+        // Bulk conversation operations
+        Route::post('/conversations/archive-all', [ChatSupportController::class, 'archiveAllConversations'])->name('conversations.archive-all');
+        Route::post('/conversations/unarchive-all', [ChatSupportController::class, 'unarchiveAllConversations'])->name('conversations.unarchive-all');
+        Route::delete('/conversations/delete-active', [ChatSupportController::class, 'deleteAllActiveConversations'])->name('conversations.delete-active');
+        Route::delete('/conversations/delete-archived', [ChatSupportController::class, 'deleteAllArchivedConversations'])->name('conversations.delete-archived');
+        
         // Counselors endpoint
         Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');
         Route::get('/counselors/{category}', [ChatSupportController::class, 'getCounselorsByCategory'])->name('counselors.category');

@@ -119,7 +119,7 @@
 							</p>
 							<p class="text-lg mb-10 text-blue-100 leading-relaxed max-w-lg">
 								A comprehensive AI-powered platform designed to support your mental health, 
-								enhance engagement, and connect you with personalized campus resources.
+								enhance engagement, and connect you with personalized university peers.
 							</p>
 							
 							<!-- CTA Buttons -->

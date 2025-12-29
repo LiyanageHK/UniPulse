@@ -1,16 +1,37 @@
 <?php
-
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WeeklyCheckinController;
 use App\Http\Controllers\ChatSupportController;
+use App\Http\Controllers\CrisisManagementController;
+use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('home');
 });
+
+// Public pages
+Route::get('/terms-of-service', function () {
+    return view('terms-of-service');
+})->name('terms');
+
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy');
+
+// Public chat information page (accessible without login)
+Route::get('/conversational-support', function () {
+    return view('chat-info');
+})->name('chat.info');
+
+// Public API for approved feedback (for home page)
+Route::get('/api/feedback/approved', [FeedbackController::class, 'getApproved'])->name('feedback.approved');
+
+// Public guest feedback submission (no login required)
+Route::post('/api/feedback/guest', [FeedbackController::class, 'storeGuest'])->name('feedback.guest');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -47,7 +68,50 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/chat-support', [\App\Http\Controllers\ChatSupportController::class, 'index'])->name('chat.support');
+
+    // Chat Support Routes (Authentication Required)
+    Route::prefix('chat')->name('chat.')->group(function () {
+        // Chat interface page
+        Route::get('/support', [ChatSupportController::class, 'index'])->name('support');
+        
+        // API endpoints
+        Route::post('/conversation/start', [ChatSupportController::class, 'startConversation'])->name('start');
+        Route::post('/message', [ChatSupportController::class, 'sendMessage'])->name('send');
+        Route::get('/conversation/{id}', [ChatSupportController::class, 'getConversation'])->name('conversation');
+        Route::get('/conversations', [ChatSupportController::class, 'listConversations'])->name('list');
+        Route::patch('/conversation/{id}/rename', [ChatSupportController::class, 'renameConversation'])->name('rename');
+        Route::post('/conversation/{id}/archive', [ChatSupportController::class, 'archiveConversation'])->name('archive');
+        Route::post('/conversation/{id}/unarchive', [ChatSupportController::class, 'unarchiveConversation'])->name('unarchive');
+        Route::delete('/conversation/{id}', [ChatSupportController::class, 'deleteConversation'])->name('delete');
+        
+        // Memory management endpoints
+        Route::get('/memories', [ChatSupportController::class, 'getMemories'])->name('memories');
+        Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');
+        Route::delete('/memory/{id}', [ChatSupportController::class, 'deleteMemory'])->name('memory.delete');
+        Route::delete('/memories/clear', [ChatSupportController::class, 'clearAllMemories'])->name('memories.clear');
+        
+        // Bulk conversation operations
+        Route::post('/conversations/archive-all', [ChatSupportController::class, 'archiveAllConversations'])->name('conversations.archive-all');
+        Route::post('/conversations/unarchive-all', [ChatSupportController::class, 'unarchiveAllConversations'])->name('conversations.unarchive-all');
+        Route::delete('/conversations/delete-active', [ChatSupportController::class, 'deleteAllActiveConversations'])->name('conversations.delete-active');
+        Route::delete('/conversations/delete-archived', [ChatSupportController::class, 'deleteAllArchivedConversations'])->name('conversations.delete-archived');
+        
+        // Counselors endpoint
+        Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');
+        Route::get('/counselors/{category}', [ChatSupportController::class, 'getCounselorsByCategory'])->name('counselors.category');
+    });
+    
+    // Crisis Management Routes (Admin/Counselor Only)
+    // TODO: Add admin middleware when role system is implemented
+    Route::prefix('crisis')->name('crisis.')->group(function () {
+        Route::get('/alerts', [CrisisManagementController::class, 'listCrisisAlerts'])->name('alerts');
+        Route::get('/alerts/critical', [CrisisManagementController::class, 'getCriticalAlerts'])->name('alerts.critical');
+        Route::post('/alert/{id}/acknowledge', [CrisisManagementController::class, 'acknowledgeAlert'])->name('acknowledge');
+        Route::post('/alert/{id}/resolve', [CrisisManagementController::class, 'resolveAlert'])->name('resolve');
+        Route::get('/conversation/{id}/flags', [CrisisManagementController::class, 'viewConversationFlags'])->name('flags');
+        Route::post('/flag/{id}/review', [CrisisManagementController::class, 'reviewFlag'])->name('flag.review');
+        Route::get('/dashboard/stats', [CrisisManagementController::class, 'getDashboardStats'])->name('dashboard.stats');
+    });
 });
 
 require __DIR__.'/auth.php';

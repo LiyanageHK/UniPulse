@@ -1,5 +1,4 @@
 <x-app-layout>
-
 <div class="max-w-7xl mx-auto py-8 px-4">
 
     <!-- HEADER -->
@@ -76,6 +75,34 @@
 
     </div>
 
+    <!-- AI RECOMMENDATION -->
+    @if(isset($aiRecommendation))
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Recommended Actions</h2>
+            <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                <p class="mb-2 text-gray-700">
+                    @if($aiRecommendation['type'] === 'risk_detection')
+                        ⚠️ Your emotional status requires attention. 
+                        @if($aiRecommendation['link'] && $aiRecommendation['link'] !== '#')
+                            Please check the <a href="{{ $aiRecommendation['link'] }}" class="text-blue-600 font-semibold underline">Risk Detection Component</a>.
+                        @else
+                            Please check the Risk Detection component (link not available).
+                        @endif
+                    @elseif($aiRecommendation['type'] === 'encouragement')
+                        💡 {{ $aiRecommendation['message'] ?? 'Keep up your good progress! Stay motivated.' }}
+                    @else
+                        💡 Based on your KPIs, we recommend exploring: 
+                        @if($aiRecommendation['link'] && $aiRecommendation['link'] !== '#')
+                            <a href="{{ $aiRecommendation['link'] }}" class="text-blue-600 font-semibold underline">{{ ucfirst($aiRecommendation['type']) }}</a>.
+                        @else
+                            {{ ucfirst($aiRecommendation['type']) }} (link not available).
+                        @endif
+                    @endif
+                </p>
+            </div>
+        </div>
+    @endif
+
     <!-- KPI TREND CHARTS -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-12">
 
@@ -111,16 +138,11 @@
                 tooltip: { mode: 'index', intersect: false }
             },
             scales: {
-                y: {
-                    min: 0,
-                    max: 5,
-                    ticks: { stepSize: 1 }
-                }
+                y: { min: 0, max: 5, ticks: { stepSize: 1 } }
             },
             tension: 0.3
         };
 
-        @if($kpiHistory->count() > 0)
         new Chart(document.getElementById('motivationChart'), {
             type: 'line',
             data: {
@@ -174,12 +196,6 @@
             },
             options: chartOptions
         });
-        @else
-        // Show message if no historical data
-        document.getElementById('motivationChart').getContext('2d').fillText('No historical data yet', 10, 10);
-        document.getElementById('socialChart').getContext('2d').fillText('No historical data yet', 10, 10);
-        document.getElementById('emotionalChart').getContext('2d').fillText('No historical data yet', 10, 10);
-        @endif
     </script>
     @else
     <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">

@@ -376,10 +376,69 @@
                                 </div>
                             @endforeach
 
-                        </div>
+                            </div>
 
-                        {{-- Support types --}}
-                        <div>
+                            {{-- Additional wellbeing fields copied from onboarding --}}
+
+                            <!-- Stress Level -->
+                            <div class="mt-4">
+                                <label class="text-sm font-semibold text-gray-700">Stress Level</label>
+                                <div class="flex gap-3 mt-2">
+                                    @foreach(['Low','Moderate','High'] as $lvl)
+                                        <label class="flex items-center gap-2">
+                                            <input type="radio" name="stress_level" value="{{ $lvl }}" {{ ($user->stress_level ?? '')==$lvl ? 'checked' : '' }}>
+                                            <span class="px-3 py-1 rounded border">{{ $lvl }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Group Work Comfort (1-5) -->
+                            <div class="mt-4">
+                                <label class="text-sm font-semibold text-gray-700">Comfort with Group Work (1 - Low, 5 - High)</label>
+                                <div class="flex gap-3 mt-2">
+                                    @for($i=1;$i<=5;$i++)
+                                        <label class="flex items-center gap-2">
+                                            <input type="radio" name="group_work_comfort" value="{{ $i }}" {{ ($user->group_work_comfort ?? '')==$i ? 'checked' : '' }}>
+                                            <span class="px-3 py-1 rounded border">{{ $i }}</span>
+                                        </label>
+                                    @endfor
+                                </div>
+                            </div>
+
+                            <!-- Communication Preferences -->
+                            <div class="mt-4">
+                                <label class="text-sm font-semibold text-gray-700">Preferred Communication Methods</label>
+                                <div class="flex flex-wrap gap-3 mt-3">
+                                    @foreach(['Texts','In-person','Calls'] as $method)
+                                        <label class="flex items-center gap-2 px-3 py-1 rounded-lg border cursor-pointer {{ in_array($method,$communication)?'bg-gray-100 border-gray-300':'bg-white' }}">
+                                            <input type="checkbox" name="communication_preferences[]" value="{{ $method }}" {{ in_array($method,$communication)?'checked':'' }}>
+                                            <span class="text-sm">{{ $method }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Living Arrangement -->
+                            <div class="mt-4">
+                                <label class="text-sm font-semibold text-gray-700">Living Arrangement</label>
+                                <select name="living_arrangement" class="mt-2 w-full border rounded-lg px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    @foreach(['Hostel','Boarding','Home','Other'] as $la)
+                                        <option value="{{ $la }}" {{ old('living_arrangement',$user->living_arrangement)==$la?'selected':'' }}>{{ $la }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Employment -->
+                            <div class="mt-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="is_employed" value="1" {{ $user->is_employed ? 'checked' : '' }}>
+                                    <span class="text-sm">I am currently employed</span>
+                                </label>
+                            </div>
+
+                            {{-- Support types --}}
+                            <div>
                             <label class="text-sm font-semibold text-gray-700">Preferred Support Types</label>
                             <div class="flex flex-wrap gap-3 mt-3">
                                 @foreach(['Peer Matching','Counseling','Study Groups','Chatbot'] as $pst)

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\WeeklyCheckin;
 use App\Models\KpiSnapshot;
+use App\Services\AiRecommender;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,21 +13,47 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        // Normalize to Y-m-d for consistent date comparisons
+        $weekStart = Carbon::now()->startOfWeek()->toDateString();
 
-        // Redirect if onboarding not completed
+        // ✅ STEP 1 — Redirect if onboarding not completed
         if (!$user->onboarding_completed) {
             return redirect()->route('onboarding.step1');
         }
 
-        $weekStart = Carbon::now()->startOfWeek();
-        
-        // STEP 1: Check if user has ANY KPI snapshots at all
+        // ✅ STEP 2 — Require a weekly check-in: if last check-in is older than 7 days,
+        // redirect the user to complete a new one (rolling 7-day policy).
+        $last = WeeklyCheckin::where('user_id', $user->id)
+            ->orderBy('week_start', 'desc')
+            ->first();
+
+        if (!$last || Carbon::parse($last->week_start)->lt(Carbon::now()->subDays(7))) {
+            return redirect()->route('weekly.checkin')
+                ->with('info', 'Please complete a weekly check-in.');
+        }
+
+        // Use the most recent checkin for KPI calculations
+        $checkin = $last;
+
+        // ✅ STEP 3 — Calculate KPI for current week from the weekly checkin
+        $kpiData = $this->calculateKPIsFromCheckin($checkin);
+
+        // ✅ STEP 4 — Save current week snapshot
+        KpiSnapshot::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'week_start' => $weekStart,
+            ],
+            [
+                'motivation_kpi' => $kpiData['motivationScore'],
+                'social_kpi' => $kpiData['socialScore'],
+                'emotional_kpi' => $kpiData['emotionalScore'],
+            ]
+        );
+
+        // ✅ STEP 5 — Ensure first KPI snapshot exists for history
         $hasAnySnapshots = KpiSnapshot::where('user_id', $user->id)->exists();
-        
-        // If user has no snapshots at all, create initial one from onboarding data
         if (!$hasAnySnapshots) {
-            $kpiData = $this->calculateKPIsFromOnboarding($user);
-            
             KpiSnapshot::create([
                 'user_id' => $user->id,
                 'week_start' => $weekStart,
@@ -37,62 +63,45 @@ class DashboardController extends Controller
             ]);
         }
 
-        // STEP 2: Check for current week data
-        $checkin = WeeklyCheckin::where('user_id', $user->id)
-            ->where('week_start', $weekStart)
-            ->first();
-
-        $currentSnapshot = KpiSnapshot::where('user_id', $user->id)
-            ->where('week_start', $weekStart)
-            ->first();
-
-        // STEP 3: Calculate current KPIs for UI (but don't create DB records unnecessarily)
-        if ($checkin) {
-            // Use check-in data for UI (latest data)
-            $kpiData = $this->calculateKPIsFromCheckin($checkin);
-            
-            // If no snapshot exists for this week, create one
-            if (!$currentSnapshot) {
-                KpiSnapshot::create([
-                    'user_id' => $user->id,
-                    'week_start' => $weekStart,
-                    'motivation_kpi' => $kpiData['motivationScore'],
-                    'social_kpi' => $kpiData['socialScore'],
-                    'emotional_kpi' => $kpiData['emotionalScore']
-                ]);
-            }
-        } 
-        elseif ($currentSnapshot) {
-            // Use existing snapshot for current week
-            $kpiData = [
-                'motivationScore' => $currentSnapshot->motivation_kpi,
-                'socialScore' => $currentSnapshot->social_kpi,
-                'emotionalScore' => $currentSnapshot->emotional_kpi,
-                'motivationInterpretation' => $this->interpretMotivation($currentSnapshot->motivation_kpi),
-                'socialInterpretation' => $this->interpretSocial($currentSnapshot->social_kpi),
-                'emotionalInterpretation' => $this->interpretEmotional($currentSnapshot->emotional_kpi)
-            ];
-        }
-        else {
-            // No check-in and no snapshot for current week - use onboarding data for UI only
-            $kpiData = $this->calculateKPIsFromOnboarding($user);
-            // Don't create snapshot - we only want snapshots for actual data submissions
-        }
-
-        // STEP 4: Get ALL KPI history for charts
+        // ✅ STEP 6 — Load KPI history
         $kpiHistory = KpiSnapshot::where('user_id', $user->id)
             ->orderBy('week_start', 'asc')
             ->get();
 
-        return view('dashboard', array_merge($kpiData, [
+        // ✅ STEP 7 — Generate AI recommendation
+        $aiRecommender = new AiRecommender();
+
+        // Always prioritize risk detection if emotional KPI is very low (<= 2.0 per spec)
+        if ($kpiData['emotionalScore'] <= 2.0) {
+            $recommendation = [
+                'type' => 'risk_detection',
+                'component' => 'risk_detection',
+                'link' => '#' // temporary link
+            ];
+        } else {
+            $recommendation = $aiRecommender->recommend(
+                $kpiData['motivationScore'],
+                $kpiData['socialScore'],
+                $kpiData['emotionalScore']
+            );
+        }
+
+        return view('dashboard', [
             'user' => $user,
-            'kpiHistory' => $kpiHistory
-        ]));
+            'motivationScore' => $kpiData['motivationScore'],
+            'socialScore' => $kpiData['socialScore'],
+            'emotionalScore' => $kpiData['emotionalScore'],
+            'motivationInterpretation' => $kpiData['motivationInterpretation'],
+            'socialInterpretation' => $kpiData['socialInterpretation'],
+            'emotionalInterpretation' => $kpiData['emotionalInterpretation'],
+            'kpiHistory' => $kpiHistory,
+            'aiRecommendation' => $recommendation
+        ]);
     }
 
+    // =============================================================
     private function calculateKPIsFromCheckin($checkin)
     {
-        // Motivation KPI from check-in
         $motivationScore = round((
             $checkin->studies_interesting +
             $checkin->academic_confidence +
@@ -101,7 +110,6 @@ class DashboardController extends Controller
             (6 - $checkin->hard_to_stay_focused)
         ) / 5, 2);
 
-        // Social Inclusion KPI from check-in
         $socialScore = round((
             $checkin->peer_connection +
             $checkin->peer_interaction +
@@ -111,15 +119,20 @@ class DashboardController extends Controller
             (6 - $checkin->no_one_to_talk)
         ) / 6, 2);
 
-        // Emotional Status KPI from check-in
+        // Emotional score per spec: 11 components
         $emotionalScore = round((
-            $checkin->mood + 
-            (6 - $checkin->tense) + 
-            (6 - $checkin->overwhelmed) + 
+            $checkin->mood +
+            (6 - $checkin->tense) +
+            (6 - $checkin->overwhelmed) +
             (6 - $checkin->worry) +
+            (6 - $checkin->sleep_trouble) +
+            $checkin->openness_to_mentor +
+            $checkin->knowledge_of_support +
+            (6 - $checkin->low_pleasure) +
             (6 - $checkin->feeling_down) +
-            $checkin->openness_to_mentor
-        ) / 6, 2);
+            (6 - $checkin->emotionally_drained) +
+            (6 - $checkin->just_through_motions)
+        ) / 11, 2);
 
         return [
             'motivationScore' => $motivationScore,
@@ -131,48 +144,44 @@ class DashboardController extends Controller
         ];
     }
 
-    private function calculateKPIsFromOnboarding($user)
-    {
-        // Your existing onboarding KPI calculation logic
-        $goalClarity = $user->goal_clarity ?? 3;
-        $transitionConfidence = $user->transition_confidence ?? 3;
+    // private function calculateKPIsFromOnboarding($user)
+    // {
+    //     $goalClarity = $user->goal_clarity ?? 3;
+    //     $transitionConfidence = $user->transition_confidence ?? 3;
+    //
+    //     $motivatorScores = [
+    //         'Academic growth' => 5,
+    //         'Career opportunities' => 4,
+    //         'Experiences and exposure' => 3,
+    //         'Friends and connections' => 2,
+    //     ];
+    //    $primaryMotivatorScore = $motivatorScores[$user->primary_motivator] ?? 3;
 
-        $motivatorScores = [
-            'Academic growth' => 5,
-            'Career opportunities' => 4,
-            'Experiences and exposure' => 3,
-            'Friends and connections' => 2,
-        ];
-        $primaryMotivatorScore = $motivatorScores[$user->primary_motivator] ?? 3;
+    //    $alResults = is_array($user->al_results) ? $user->al_results : json_decode($user->al_results ?? '[]', true);
+    //    $gradeScores = ['A'=>5,'B'=>4,'C'=>3,'S'=>2,'F'=>1];
+    //        $grades = array_map(fn($row) => $gradeScores[$row['grade']] ?? 3, array_values($alResults ?? []));
+    //        rsort($grades);
+    //        $academicPerformance = count($grades) >= 3 ? array_sum(array_slice($grades, 0, 3)) / 3 : (count($grades) ? array_sum($grades)/count($grades) : 3);
 
-        $alResults = is_array($user->al_results) ? $user->al_results : json_decode($user->al_results ?? '[]', true);
-        $gradeScores = ['A' => 5, 'B' => 4, 'C' => 3, 'S' => 2, 'F' => 1];
-        $grades = array_map(fn($row) => $gradeScores[$row['grade']] ?? 0, array_values($alResults ?? []));
-        rsort($grades);
-        $academicPerformance = count($grades) >= 3 ? array_sum(array_slice($grades, 0, 3)) / 3 : (count($grades) > 0 ? array_sum($grades) / count($grades) : 3);
+    //    $employmentAdjustment = $user->is_employed ? -0.5 : 0;
 
-        $employmentAdjustment = $user->is_employed ? -0.5 : 0;
-        $motivationScore = round(($goalClarity + $transitionConfidence + $academicPerformance + $primaryMotivatorScore + $employmentAdjustment) / 4, 2);
+    /*    $motivationScore = round(($goalClarity + $transitionConfidence + $academicPerformance + $primaryMotivatorScore + $employmentAdjustment) / 4, 2);
 
-        // Social KPI
-        $socialPreferenceScores = ['Large Groups'=>5,'Small Groups'=>4,'1-on-1'=>3,'Online-only'=>1];
-        $socialPreferenceScore = $socialPreferenceScores[$user->social_preference] ?? 3;
-        $introvertScore = ($user->introvert_extrovert_scale ?? 5)/10*5;
+        $socialScores = ['Large Groups'=>5,'Small Groups'=>4,'1-on-1'=>3,'Online-only'=>1];
+        $socialPreferenceScore = $socialScores[$user->social_preference] ?? 3;
+        $introvertScore = (($user->introvert_extrovert_scale ?? 5)/10)*5;
         $groupComfortScore = $user->group_work_comfort ?? 3;
-
-        $livingArrangementScores = ['Hostel'=>5,'Boarding'=>4,'Home'=>3,'Other'=>2];
-        $livingArrangementScore = $livingArrangementScores[$user->living_arrangement] ?? 2;
-
-        $communicationVariety = count($user->preferred_support_types ?? []);
-        $communicationScore = $communicationVariety>=3?5:($communicationVariety==2?4:($communicationVariety==1?3:1));
+        $livingScores = ['Hostel'=>5,'Boarding'=>4,'Home'=>3,'Other'=>2];
+        $livingArrangementScore = $livingScores[$user->living_arrangement] ?? 2;
+        $communicationScore = max(1, min(count($user->preferred_support_types ?? []), 5));
 
         $socialScore = round(($socialPreferenceScore+$groupComfortScore+$communicationScore+$livingArrangementScore+$introvertScore)/5, 2);
 
-        // Emotional KPI
         $stressScore = ['Low'=>5,'Moderate'=>3,'High'=>1][$user->stress_level] ?? 3;
         $overwhelmScore = 6 - ($user->overwhelm_level ?? 3);
         $peerStruggleScore = 6 - ($user->peer_struggle ?? 3);
-        $emotionalScore = round(($stressScore + $overwhelmScore + $peerStruggleScore + $goalClarity)/4, 2);
+
+        $emotionalScore = round(($stressScore + $overwhelmScore + $peerStruggleScore + $goalClarity) / 4, 2);
 
         return [
             'motivationScore' => $motivationScore,
@@ -182,20 +191,20 @@ class DashboardController extends Controller
             'socialInterpretation' => $this->interpretSocial($socialScore),
             'emotionalInterpretation' => $this->interpretEmotional($emotionalScore)
         ];
-    }
+    } */
 
     private function interpretMotivation($score)
     {
-        return $score >= 4.0 ? 'High' : ($score >= 2.5 ? 'Moderate' : 'Low');
+        return $score >= 4 ? 'High' : ($score >= 2.5 ? 'Moderate' : 'Low');
     }
 
     private function interpretSocial($score)
     {
-        return $score >= 4.0 ? 'Integrated' : ($score >= 2.5 ? 'Moderate' : 'Isolated');
+        return $score >= 4 ? 'Integrated' : ($score >= 2.5 ? 'Moderate' : 'Isolated');
     }
 
     private function interpretEmotional($score)
     {
-        return $score >= 4.0 ? 'Stable' : ($score >= 2.5 ? 'Moderate' : 'At-risk');
+        return $score >= 4 ? 'Stable' : ($score >= 2.5 ? 'Moderate' : 'At-risk');
     }
 }

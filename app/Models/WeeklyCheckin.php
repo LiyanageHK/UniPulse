@@ -14,6 +14,13 @@ class WeeklyCheckin extends Model
         'no_energy','low_pleasure','feeling_down','emotionally_drained','hard_to_stay_focused','just_through_motions'
     ];
 
+    /**
+     * Cast the week_start column to a date so comparisons are normalized
+     */
+    protected $casts = [
+        'week_start' => 'date:Y-m-d'
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }

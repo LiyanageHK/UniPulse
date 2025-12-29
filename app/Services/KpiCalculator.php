@@ -4,16 +4,15 @@ namespace App\Services;
 
 class KpiCalculator
 {
-    public function calculateFromExcelData($excelData)
+    public function calculateFromWeeklyData($weeklyData)
     {
         $studentKPIs = [];
         
-        foreach ($excelData as $row) {
+        foreach ($weeklyData as $row) {
             try {
                 $kpis = $this->calculateStudentKPIs($row);
                 $studentKPIs[] = $kpis;
             } catch (\Exception $e) {
-                // Skip rows with calculation errors
                 continue;
             }
         }
@@ -23,203 +22,117 @@ class KpiCalculator
     
     private function calculateStudentKPIs($student)
     {
-        $kpiData = $this->calculateKPIsFromOnboarding($student);
+        // Calculate all three KPIs
+        $motivationScore = $this->calculateMotivationScore($student);
+        $socialScore = $this->calculateSocialScore($student);
+        $emotionalScore = $this->calculateEmotionalScore($student);
         
         return [
-            'student_id' => $student['Name ( First Name & Last Name )'] ?? 'Unknown',
-            'motivation' => $kpiData['motivationScore'],
-            'social' => $kpiData['socialScore'],
-            'emotional' => $kpiData['emotionalScore'],
-            'motivation_interpretation' => $kpiData['motivationInterpretation'],
-            'social_interpretation' => $kpiData['socialInterpretation'],
-            'emotional_interpretation' => $kpiData['emotionalInterpretation']
+            'student_name' => $student['Name ( Use the First Name & Last Name as the onboarding form )'] ?? 'Unknown',
+            'week' => $this->extractWeekFromTimestamp($student['Timestamp'] ?? ''),
+            'motivation' => round($motivationScore, 2),
+            'social' => round($socialScore, 2),
+            'emotional' => round($emotionalScore, 2),
+            'motivation_interpretation' => $this->interpretMotivation($motivationScore),
+            'social_interpretation' => $this->interpretSocial($socialScore),
+            'emotional_interpretation' => $this->interpretEmotional($emotionalScore)
         ];
     }
 
-    private function calculateKPIsFromOnboarding($student)
+    // Extract week from timestamp (e.g., "Week of Nov 18")
+    private function extractWeekFromTimestamp($timestamp)
     {
-        // Goal Clarity (from "I have a clear goal..." question)
-        $goalClarity = floatval($student['I have a clear goal or purpose for my university journey.”']) ?? 3;
-
-        // Transition Confidence  
-        $transitionConfidence = floatval($student['How confident are you in transitioning to university life?']) ?? 3;
-
-        // Primary Motivator
-        $motivatorText = $student['What motivates you most about university life?'] ?? '';
-        $primaryMotivatorScore = $this->getPrimaryMotivatorScore($motivatorText);
-
-        // A/L Grades - Average of top 3 subjects
-        $academicPerformance = $this->calculateAcademicPerformance($student);
-
-        // Employment
-        $isEmployed = isset($student['Are you currently employed?']) && 
-                     strtolower($student['Are you currently employed?']) === 'yes';
-        $employmentAdjustment = $isEmployed ? -0.5 : 0;
-
-        // Motivation Score (EXACT SAME FORMULA AS YOUR CODE)
-        $motivationScore = round((
-            $goalClarity + 
-            $transitionConfidence + 
-            $academicPerformance + 
-            $primaryMotivatorScore + 
-            $employmentAdjustment
-        ) / 4, 2);
-
-        // Social KPI (EXACT SAME FORMULA AS YOUR CODE)
-        $socialPreference = $student['Which social setting do you prefer most?'] ?? '';
-        $socialPreferenceScore = $this->getSocialPreferenceScore($socialPreference);
+        if (empty($timestamp)) return 'Unknown';
         
-        $introvertScore = (floatval($student['Where would you place yourself on the Introvert–Extrovert scale?']) ?? 5) / 10 * 5;
-        
-        $groupComfortScore = floatval($student['How comfortable are you working in group activities?']) ?? 3;
-
-        $livingArrangement = $student['What is your current living arrangement?'] ?? '';
-        $livingArrangementScore = $this->getLivingArrangementScore($livingArrangement);
-
-        $communicationMethods = $student['Which communication methods do you prefer? (Select all that apply)'] ?? '';
-        $communicationVariety = $this->countCommunicationMethods($communicationMethods);
-        $communicationScore = $communicationVariety >= 3 ? 5 : ($communicationVariety == 2 ? 4 : ($communicationVariety == 1 ? 3 : 1));
-
-        $socialScore = round((
-            $socialPreferenceScore + 
-            $groupComfortScore + 
-            $communicationScore + 
-            $livingArrangementScore + 
-            $introvertScore
-        ) / 5, 2);
-
-        // Emotional KPI (EXACT SAME FORMULA AS YOUR CODE)
-        $stressLevel = $student['In general, how would you describe your usual level of stress or anxiety?'] ?? '';
-        $stressScore = $this->getStressScore($stressLevel);
-        
-        $overwhelmLevel = floatval($student['I often feel overwhelmed or anxious.']) ?? 3;
-        $overwhelmScore = 6 - $overwhelmLevel;
-        
-        $peerStruggle = floatval($student['I struggle to connect with peers.']) ?? 3;
-        $peerStruggleScore = 6 - $peerStruggle;
-        
-        $emotionalScore = round((
-            $stressScore + 
-            $overwhelmScore + 
-            $peerStruggleScore + 
-            $goalClarity
-        ) / 4, 2);
-
-        return [
-            'motivationScore' => $motivationScore,
-            'socialScore' => $socialScore,
-            'emotionalScore' => $emotionalScore,
-            'motivationInterpretation' => $this->interpretMotivation($motivationScore),
-            'socialInterpretation' => $this->interpretSocial($socialScore),
-            'emotionalInterpretation' => $this->interpretEmotional($emotionalScore)
-        ];
-    }
-
-    // Helper methods that match your exact logic
-    private function getPrimaryMotivatorScore($motivatorText)
-    {
-        $motivatorScores = [
-            'Academic growth' => 5,
-            'Career opportunities' => 4,
-            'Experiences and exposure' => 3,
-            'Friends and connections' => 2,
-        ];
-
-        foreach ($motivatorScores as $key => $score) {
-            if (str_contains($motivatorText, $key)) {
-                return $score;
-            }
+        try {
+            $date = new \DateTime($timestamp);
+            return 'Week of ' . $date->format('M d');
+        } catch (\Exception $e) {
+            return 'Unknown';
         }
-        
-        return 3; // Default
     }
 
-    private function calculateAcademicPerformance($student)
+    // --- MOTIVATION FORMULA ---
+    private function calculateMotivationScore($student)
     {
-        $gradeScores = ['A' => 5, 'B' => 4, 'C' => 3, 'S' => 2, 'F' => 1];
+        // Studies Interesting (scale 1-5)
+        $studiesInteresting = floatval($student['I found my studies interesting and engaging this week.'] ?? 3);
         
-        $subjectGrades = [];
+        // Academic Confidence (scale 1-5)
+        $academicConfidence = floatval($student['I felt confident in my ability to succeed academically.'] ?? 3);
         
-        // Get grades from all subject columns
-        $subjectColumns = [
-            'AL Results [Subject 1]',
-            'AL Results [Subject 2]', 
-            'AL Results [Subject 3]',
-            'AL Results [English]',
-            'AL Results [General Knowledge]'
-        ];
+        // Workload Management (scale 1-5)
+        $workloadManagement = floatval($student['I was able to keep up with my academic workload this week.'] ?? 3);
         
-        foreach ($subjectColumns as $column) {
-            if (isset($student[$column]) && !empty($student[$column])) {
-                $grade = trim($student[$column]);
-                if (isset($gradeScores[$grade])) {
-                    $subjectGrades[] = $gradeScores[$grade];
-                }
-            }
-        }
+        // No Energy/Motivation (reverse scale: 6 - value)
+        $noEnergy = floatval($student['I often feel like I have no energy or motivation.'] ?? 3);
+        $reverseNoEnergy = 6 - $noEnergy;
         
-        // If no grades found, return average
-        if (empty($subjectGrades)) {
-            return 3.0;
-        }
+        // Hard to Focus (reverse scale: 6 - value)
+        $hardToFocus = floatval($student['I find it hard to stay focused on academic tasks.'] ?? 3);
+        $reverseHardToFocus = 6 - $hardToFocus;
         
-        // Sort grades descending and take top 3 (EXACT SAME LOGIC AS YOUR CODE)
-        rsort($subjectGrades);
-        $academicPerformance = count($subjectGrades) >= 3 ? 
-            array_sum(array_slice($subjectGrades, 0, 3)) / 3 : 
-            (count($subjectGrades) > 0 ? array_sum($subjectGrades) / count($subjectGrades) : 3);
-            
-        return $academicPerformance;
+        // Calculate final score
+        return ($studiesInteresting + $academicConfidence + $workloadManagement + 
+                $reverseNoEnergy + $reverseHardToFocus) / 5;
     }
 
-    private function getSocialPreferenceScore($preference)
+    // --- SOCIAL INCLUSION FORMULA ---
+    private function calculateSocialScore($student)
     {
-        $socialPreferenceScores = [
-            'Large Groups' => 5,
-            'Small Groups' => 4,
-            '1-on-1 interactions' => 3,
-            '1-on-1' => 3,
-            'Online-only' => 1
-        ];
+        // Peer Connection (scale 1-5)
+        $peerConnection = floatval($student['I feel connected to at least one friend or peer in university.'] ?? 3);
         
-        return $socialPreferenceScores[$preference] ?? 3;
+        // Peer Interaction Frequency (scale 1-5)
+        $peerInteraction = floatval($student['How often did you interact with peers outside class this week?'] ?? 3);
+        
+        // University Belonging (scale 1-5)
+        $universityBelonging = floatval($student['I felt I belonged to the university community.'] ?? 3);
+        
+        // Meaningful Connections (scale 1-5)
+        $meaningfulConnections = floatval($student['I had meaningful connections with peers this week.'] ?? 3);
+        
+        // Feel Left Out (reverse scale: 6 - value)
+        $feelLeftOut = floatval($student['I often feel left out or disconnected from others.'] ?? 3);
+        $reverseFeelLeftOut = 6 - $feelLeftOut;
+        
+        // No One to Talk To (reverse scale: 6 - value)
+        $noOneToTalk = floatval($student['I feel like I don\'t have anyone to talk to when I\'m struggling'] ?? 3);
+        $reverseNoOneToTalk = 6 - $noOneToTalk;
+        
+        // Calculate final score
+        return ($peerConnection + $peerInteraction + $universityBelonging + 
+                $meaningfulConnections + $reverseFeelLeftOut + $reverseNoOneToTalk) / 6;
     }
 
-    private function getLivingArrangementScore($arrangement)
+    // --- EMOTIONAL FORMULA ---
+    private function calculateEmotionalScore($student)
     {
-        $livingArrangementScores = [
-            'Hostel' => 5,
-            'Boarding place' => 4,
-            'Boarding' => 4,
-            'Home' => 3,
-            'Other' => 2
-        ];
+        // Mood (scale 1-5)
+        $mood = floatval($student['This week, my overall mood was'] ?? 3);
         
-        return $livingArrangementScores[$arrangement] ?? 2;
+        // Reverse scores (6 - value)
+        $reverseTensed = 6 - floatval($student['I\'ve been feeling tense or unable to relax.'] ?? 3);
+        $reverseOverwhelmed = 6 - floatval($student['I get overwhelmed easily by academic tasks.'] ?? 3);
+        $reverseWorried = 6 - floatval($student['I\'ve been worrying about many things lately.'] ?? 3);
+        $reverseTroubleSleeping = 6 - floatval($student['I had trouble sleeping because of stress or thoughts'] ?? 3);
+        $reverseLowPleasure = 6 - floatval($student['I find little pleasure or enjoyment in things I used to like.'] ?? 3);
+        $reverseFeelingDown = 6 - floatval($student['I\'ve been feeling down, hopeless, or sad most of the time.'] ?? 3);
+        $reverseEmotionallyDrained = 6 - floatval($student['I feel emotionally drained by my studies.'] ?? 3);
+        $reverseJustThroughMotions = 6 - floatval($student['I feel like I\'m just going through the motions without interest.'] ?? 3);
+        
+        // Positive items (scale 1-5)
+        $opennessToMentor = floatval($student['I would be open to talking to a mentor or counselor if I needed help'] ?? 3);
+        $knowledgeOfSupport = floatval($student['I know how to access mental health support if I needed it'] ?? 3);
+        
+        // Calculate final score 
+        return ($mood + $reverseTensed + $reverseOverwhelmed + $reverseWorried + 
+                $reverseTroubleSleeping + $opennessToMentor + $knowledgeOfSupport + 
+                $reverseLowPleasure + $reverseFeelingDown + $reverseEmotionallyDrained + 
+                $reverseJustThroughMotions) / 11;
     }
 
-    private function countCommunicationMethods($communicationMethods)
-    {
-        $methods = [];
-        if (str_contains($communicationMethods, 'Texts')) $methods[] = 1;
-        if (str_contains($communicationMethods, 'Calls')) $methods[] = 1;
-        if (str_contains($communicationMethods, 'In-person conversations')) $methods[] = 1;
-        
-        return count($methods);
-    }
-
-    private function getStressScore($stressLevel)
-    {
-        $stressScores = [
-            'Low' => 5,
-            'Moderate' => 3,
-            'High' => 1
-        ];
-        
-        return $stressScores[$stressLevel] ?? 3;
-    }
-
-    // Interpretation methods (EXACT SAME AS YOUR CODE)
+    // --- Interpretation Methods ---
     private function interpretMotivation($score)
     {
         return $score >= 4.0 ? 'High' : ($score >= 2.5 ? 'Moderate' : 'Low');

@@ -71,7 +71,8 @@ class ProfileController extends Controller
     if ($request->has('is_employed')) {
         $validated['is_employed'] = (int) $request->is_employed;
     } else {
-        $validated['is_employed'] = null;
+        // If checkbox is not present, explicitly set to false
+        $validated['is_employed'] = 0;
     }
 
     // --- FINAL SAVE ---

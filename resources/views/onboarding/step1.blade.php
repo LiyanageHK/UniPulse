@@ -94,7 +94,7 @@
                         <!-- Full Name -->
                         <div class="relative">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name <span class="text-red-500">*</span></label>
-                            <input type="text" id="name" name="name" placeholder="Enter your full name" value="{{ old('name') }}" required
+                            <input type="text" id="name" name="name" placeholder="Enter your full name" value="{{ old('name', auth()->user()->name ?? '') }}" required
                                    class="mt-1 block w-full border-2 border-gray-200 rounded-xl px-4 py-3 shadow-sm focus:ring-2 focus:ring-[#3182ce] focus:border-[#3182ce] transition duration-200">
                             @error('name')<p class="text-red-600 text-sm mt-1.5 flex items-center gap-1"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</p>@enderror
                         </div>

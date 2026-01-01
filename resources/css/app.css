@@ -1,3 +1,45 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Auth helpers */
+@layer components {
+  .auth-split {
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+  }
+
+  /* Hide native scrollbars when possible 
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }*/
+
+  /* Muted overlay to reduce blue intensity (gentle blue tint) */
+  .auth-image-overlay {
+    /* Soft white + subtle blue tint to keep images visible but avoid overpowering blue */
+    background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(49,130,206,0.03));
+    backdrop-filter: blur(6px);
+  }
+
+  /* Small inline badge used above forms */
+  .form-badge {
+    display: inline-block;
+    padding: .25rem .6rem;
+    border-radius: 9999px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(90deg, #3182ce, #60a5fa);
+  }
+
+  .auth-benefit {
+    color: rgba(255,255,255,0.95);
+    font-weight: 500;
+  }
+}

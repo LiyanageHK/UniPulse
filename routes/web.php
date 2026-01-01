@@ -27,11 +27,21 @@ Route::get('/conversational-support', function () {
     return view('chat-info');
 })->name('chat.info');
 
+// Public chat information page (accessible without login)
+Route::get('/profiling', function () {
+    return view('profiling');
+})->name('profiling');
+
+/*Route::get('/profiling', [ServicePageController::class, 'studentProfiling'])
+    ->name('services.studentProfiling');*/
+
 // Public API for approved feedback (for home page)
 Route::get('/api/feedback/approved', [FeedbackController::class, 'getApproved'])->name('feedback.approved');
 
 // Public guest feedback submission (no login required)
 Route::post('/api/feedback/guest', [FeedbackController::class, 'storeGuest'])->name('feedback.guest');
+
+
 
 Route::middleware(['auth'])->group(function () {
 

@@ -11,20 +11,29 @@ use Illuminate\Support\Facades\Auth;
 class WeeklyCheckinController extends Controller
 {
     public function showForm()
-    {
-        // Use a rolling 7-day rule: if the most recent check-in was within the last 7 days,
-        // don't show the form again.
-        $last = WeeklyCheckin::where('user_id', Auth::id())
-            ->orderBy('week_start', 'desc')
-            ->first();
+{
+    $user = Auth::user();
+    $now = Carbon::now();
 
-        if ($last && Carbon::parse($last->week_start)->gte(Carbon::now()->subDays(7))) {
-            return redirect()->route('dashboard')
-                ->with('info', 'You have already submitted your weekly check-in recently.');
-        }
+    // 1. Skip weekly check-in during the first 7 days after onboarding
+    $onboardingDate = Carbon::parse($user->created_at);
 
-        return view('weekly_checkin.form');
+    if ($onboardingDate->diffInDays($now) < 7) {
+        return redirect()->route('dashboard');
     }
+
+    // 2. Enforce rolling 7-day rule after onboarding week
+    $lastCheckin = WeeklyCheckin::where('user_id', $user->id)
+        ->orderBy('week_start', 'desc')
+        ->first();
+
+    if ($lastCheckin && Carbon::parse($lastCheckin->week_start)->gte($now->subDays(7))) {
+        return redirect()->route('dashboard')
+            ->with('info', 'You have already submitted your weekly check-in recently.');
+    }
+
+    return view('weekly_checkin.form');
+}
 
     public function submitForm(Request $request)
     {
@@ -62,7 +71,33 @@ class WeeklyCheckinController extends Controller
 
         WeeklyCheckin::create($data);
 
-        // ✅ KPI creation handled by Dashboard controller
+        $numericStress = round((
+            ($data['tense'] + $data['worry'] + $data['sleep_trouble']) / 3
+        ));
+
+        $peerStruggle = round(
+            ($data['feel_left_out'] + $data['no_one_to_talk']) / 2
+        );
+
+        // Map numeric stress score to label
+if ($numericStress >= 4.0) {
+    $stressLabel = 'High';
+} elseif ($numericStress >= 2.5) {
+    $stressLabel = 'Moderate';
+} else {
+    $stressLabel = 'Low';
+}
+
+        // 3️ Update USER profile (latest state) — note: transition_confidence is onboarding-owned and should not be modified here
+        Auth::user()->update([
+            'stress_level' => $stressLabel,
+            'overwhelm_level' => $data['overwhelmed'],
+            'peer_struggle' => $peerStruggle,
+            'group_work_comfort' => $data['peer_interaction'],
+            'last_checkin_at' => now(),
+        ]);
+
+        //  KPI creation handled by Dashboard controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Weekly check-in submitted successfully.');

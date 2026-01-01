@@ -49,6 +49,9 @@
                         <div>
                             <h3 class="text-2xl font-semibold text-gray-800">📚 Academic & Demographic</h3>
                             <p class="text-sm text-gray-500 mt-1">Your academic details help us tailor your platform experience.</p>
+                            @if($user->last_checkin_at)
+                                <p class="text-sm text-gray-500 mt-2">Some wellbeing fields are <strong>auto-updated</strong> from your latest Weekly Check-In on {{ $user->last_checkin_at->format('j M Y') }} and cannot be edited here.</p>
+                            @endif
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -168,12 +171,12 @@
                                 <div class="flex gap-3 mt-2">
                                     @for($i=1;$i<=5;$i++)
                                         <label class="flex items-center gap-2">
-                                            <input type="radio" name="transition_confidence" value="{{ $i }}"
-                                                   {{ $user->transition_confidence==$i?'checked':'' }}>
+                                            <input type="radio" name="transition_confidence" value="{{ $i }}" {{ ($user->transition_confidence ?? '') == $i ? 'checked' : '' }}>
                                             <span class="px-3 py-1 rounded border">{{ $i }}</span>
                                         </label>
                                     @endfor
                                 </div>
+                                @error('transition_confidence')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Social setting --}}
@@ -202,31 +205,6 @@
                                     class="w-full accent-blue-600 mt-3">
                             </div>
 
-                            <div>
-    <label class="text-sm font-semibold text-gray-700">Stress Level</label>
-    <div class="flex gap-4 mt-2">
-        @foreach(['Low','Moderate','High'] as $level)
-            <label class="flex items-center gap-2">
-                <input type="radio" name="stress_level" value="{{ $level }}"
-                    {{ $user->stress_level == $level ? 'checked' : '' }}>
-                <span>{{ $level }}</span>
-            </label>
-        @endforeach
-    </div>
-</div>
-
-<div>
-    <label class="text-sm font-semibold text-gray-700">Comfort with Group Work (1–5)</label>
-    <div class="flex gap-3 mt-2">
-        @for($i=1;$i<=5;$i++)
-            <label class="flex items-center gap-2">
-                <input type="radio" name="group_work_comfort" value="{{ $i }}"
-                    {{ $user->group_work_comfort == $i ? 'checked' : '' }}>
-                <span class="px-3 py-1 border rounded">{{ $i }}</span>
-            </label>
-        @endfor
-    </div>
-</div>
 
 <div class="md:col-span-2">
     <label class="text-sm font-semibold text-gray-700">Preferred Communication Methods</label>
@@ -240,7 +218,7 @@
             </label>
         @endforeach
     </div>
-</div>
+</div> 
 
 
                         </div>
@@ -313,113 +291,7 @@
                             </div>
                         </div>
 
-                        <div>
-    <label class="text-sm font-semibold text-gray-700">Living Arrangement</label>
-    <div class="flex gap-4 mt-2">
-        @foreach(['Hostel','Home','Boarding','Other'] as $place)
-            <label class="flex items-center gap-2">
-                <input type="radio" name="living_arrangement" value="{{ $place }}"
-                    {{ $user->living_arrangement == $place ? 'checked' : '' }}>
-                {{ $place }}
-            </label>
-        @endforeach
-    </div>
-</div>
-
-<div>
-    <label class="text-sm font-semibold text-gray-700">Currently Employed?</label>
-    <div class="flex gap-6 mt-2">
-        <label class="flex items-center gap-2">
-            <input type="radio" name="is_employed" value="1"
-                {{ $user->is_employed == 1 ? 'checked' : '' }}>
-            Yes
-        </label>
-
-        <label class="flex items-center gap-2">
-            <input type="radio" name="is_employed" value="0"
-                {{ $user->is_employed == 0 ? 'checked' : '' }}>
-            No
-        </label>
-    </div>
-</div>
-
-
-                    </div>
-
-
-                    <!-- ================= SECTION 4 — Wellbeing & Support ================= -->
-                    <div class="p-6 bg-gray-50 border border-gray-200 rounded-xl space-y-6">
-                        <h3 class="text-2xl font-semibold text-gray-800">💬 Wellbeing & Support</h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                            @php
-                                $wellQuestions=[
-                                    'I often feel overwhelmed or anxious.'=>'overwhelm_level',
-                                    'I struggle to connect with peers.'=>'peer_struggle',
-                                    'I would use an AI platform for wellbeing support.'=>'ai_openness'
-                                ];
-                            @endphp
-
-                            @foreach($wellQuestions as $label=>$name)
-                                <div>
-                                    <label class="text-sm font-semibold text-gray-700">{{ $label }}</label>
-                                    <div class="flex gap-3 mt-2">
-                                        @for($i=1;$i<=5;$i++)
-                                            <label class="flex items-center gap-2">
-                                                <input type="radio" name="{{ $name }}" value="{{ $i }}"
-                                                    {{ $user->{$name}==$i?'checked':'' }}>
-                                                <span class="px-3 py-1 rounded border">{{ $i }}</span>
-                                            </label>
-                                        @endfor
-                                    </div>
-                                </div>
-                            @endforeach
-
-                            </div>
-
-                            {{-- Additional wellbeing fields copied from onboarding --}}
-
-                            <!-- Stress Level -->
-                            <div class="mt-4">
-                                <label class="text-sm font-semibold text-gray-700">Stress Level</label>
-                                <div class="flex gap-3 mt-2">
-                                    @foreach(['Low','Moderate','High'] as $lvl)
-                                        <label class="flex items-center gap-2">
-                                            <input type="radio" name="stress_level" value="{{ $lvl }}" {{ ($user->stress_level ?? '')==$lvl ? 'checked' : '' }}>
-                                            <span class="px-3 py-1 rounded border">{{ $lvl }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- Group Work Comfort (1-5) -->
-                            <div class="mt-4">
-                                <label class="text-sm font-semibold text-gray-700">Comfort with Group Work (1 - Low, 5 - High)</label>
-                                <div class="flex gap-3 mt-2">
-                                    @for($i=1;$i<=5;$i++)
-                                        <label class="flex items-center gap-2">
-                                            <input type="radio" name="group_work_comfort" value="{{ $i }}" {{ ($user->group_work_comfort ?? '')==$i ? 'checked' : '' }}>
-                                            <span class="px-3 py-1 rounded border">{{ $i }}</span>
-                                        </label>
-                                    @endfor
-                                </div>
-                            </div>
-
-                            <!-- Communication Preferences -->
-                            <div class="mt-4">
-                                <label class="text-sm font-semibold text-gray-700">Preferred Communication Methods</label>
-                                <div class="flex flex-wrap gap-3 mt-3">
-                                    @foreach(['Texts','In-person','Calls'] as $method)
-                                        <label class="flex items-center gap-2 px-3 py-1 rounded-lg border cursor-pointer {{ in_array($method,$communication)?'bg-gray-100 border-gray-300':'bg-white' }}">
-                                            <input type="checkbox" name="communication_preferences[]" value="{{ $method }}" {{ in_array($method,$communication)?'checked':'' }}>
-                                            <span class="text-sm">{{ $method }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- Living Arrangement -->
+                        <!-- Living Arrangement -->
                             <div class="mt-4">
                                 <label class="text-sm font-semibold text-gray-700">Living Arrangement</label>
                                 <select name="living_arrangement" class="mt-2 w-full border rounded-lg px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -436,6 +308,46 @@
                                     <span class="text-sm">I am currently employed</span>
                                 </label>
                             </div>
+
+
+                    </div>
+
+
+                    <!-- ================= SECTION 4 — Wellbeing & Support ================= -->
+                    <div class="p-6 bg-gray-50 border border-gray-200 rounded-xl space-y-6">
+                        <h3 class="text-2xl font-semibold text-gray-800">💬 Wellbeing & Support</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            @php
+                                $wellQuestions=[
+                                    'I would use an AI platform for wellbeing support.'=>'ai_openness'
+                                ];
+                            @endphp
+
+                            @foreach($wellQuestions as $label=>$name)
+                                <div>
+                                    <label class="text-sm font-semibold text-gray-700">{{ $label }}</label>
+                                    @if(in_array($name,['overwhelm_level','peer_struggle']))
+                                        <div class="mt-2">
+                                            <input type="hidden" name="{{ $name }}" value="{{ $user->{$name} }}">
+                                            <p class="px-3 py-2 bg-gray-100 rounded">{{ $user->{$name} ? $user->{$name} . '/5' : '—' }} <span class="ml-2 text-sm text-gray-500">(Auto-updated from Weekly Check-In)</span></p>
+                                        </div>
+                                    @else
+                                        <div class="flex gap-3 mt-2">
+                                            @for($i=1;$i<=5;$i++)
+                                                <label class="flex items-center gap-2">
+                                                    <input type="radio" name="{{ $name }}" value="{{ $i }}" {{ $user->{$name}==$i?'checked':'' }}>
+                                                    <span class="px-3 py-1 rounded border">{{ $i }}</span>
+                                                </label>
+                                            @endfor
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+
+                            </div>
+                          
 
                             {{-- Support types --}}
                             <div>
@@ -455,6 +367,55 @@
                     </div>
 
 
+
+                    <!-- ================= SECTION 5 — Dynamic Data ================= -->
+                    <div class="p-6 bg-gray-50 border border-gray-200 rounded-xl space-y-6">
+                        <h3 class="text-2xl font-semibold text-gray-800">📅 Dynamic Data</h3>
+                        <p class="text-sm text-gray-500 mt-1">These fields are auto-updated dynamically from your weekly check-in and cannot be edited here.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            <div>
+                                <label class="text-sm font-semibold text-gray-700">Stress Level</label>
+                                <div class="mt-2">
+                                    <input type="hidden" name="stress_level" value="{{ $user->stress_level }}">
+                                    <p class="px-3 py-2 bg-gray-100 rounded">{{ $user->stress_level ?? '—' }} <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-sm font-semibold text-gray-700">Comfort with Group Work</label>
+                                <div class="mt-2">
+                                    <input type="hidden" name="group_work_comfort" value="{{ $user->group_work_comfort }}">
+                                    <p class="px-3 py-2 bg-gray-100 rounded">{{ $user->group_work_comfort ? $user->group_work_comfort . '/5' : '—' }} <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-sm font-semibold text-gray-700">Overwhelm Level</label>
+                                <div class="mt-2">
+                                    <input type="hidden" name="overwhelm_level" value="{{ $user->overwhelm_level }}">
+                                    <p class="px-3 py-2 bg-gray-100 rounded">{{ $user->overwhelm_level ? $user->overwhelm_level . '/5' : '—' }} <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-sm font-semibold text-gray-700">Peer Struggle</label>
+                                <div class="mt-2">
+                                    <input type="hidden" name="peer_struggle" value="{{ $user->peer_struggle }}">
+                                    <p class="px-3 py-2 bg-gray-100 rounded">{{ $user->peer_struggle ? $user->peer_struggle . '/5' : '—' }} <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        @if($user->last_checkin_at)
+    <p class="text-sm text-gray-500 mt-2">
+        Last Weekly Check-In:
+        {{ $user->last_checkin_at->timezone('Asia/Colombo')->format('j M Y, g:ia') }}
+    </p>
+@endif
+                    </div>
 
                     <!-- ================= SUBMIT AREA ================= -->
                     <div class="flex justify-end gap-4 pt-4 border-t">

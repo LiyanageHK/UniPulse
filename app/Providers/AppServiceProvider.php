@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register model observers
+        \App\Models\WeeklyCheckin::observe(\App\Observers\WeeklyCheckinObserver::class);
     }
 }

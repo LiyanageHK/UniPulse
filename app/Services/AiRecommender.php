@@ -49,7 +49,8 @@ class AiRecommender
         // Map predictions to component links or placeholders
         $recommendationMap = [
             'peer_matching' => Route::has('components.peer_matching') ? route('components.peer_matching') : '#',
-            'conversational_support' => Route::has('components.mentoring') ? route('components.mentoring') : '#',
+            // Route to the Chat Support page when conversational support is recommended
+            'conversational_support' => Route::has('chat.support') ? route('chat.support') : '#',
             'encouragement' => null, // handled as messages
             'risk_detection' => Route::has('components.risk_detection') ? route('components.risk_detection') : '#',
         ];

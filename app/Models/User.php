@@ -51,7 +51,8 @@ class User extends Authenticatable
         'preferred_support_types',
         // Onboarding status
         'onboarding_completed',
-        'onboarding_completed_at'
+        'onboarding_completed_at',
+        'last_checkin_at'
     ];
 
     protected $hidden = [
@@ -70,6 +71,7 @@ class User extends Authenticatable
         'preferred_support_types' => 'array',
         'is_employed' => 'boolean',
         'onboarding_completed' => 'boolean',
+        'last_checkin_at' => 'datetime',
     ];
 
     /**
@@ -79,4 +81,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Memory::class);
     }
+
+    public function weeklyCheckins()
+{
+    return $this->hasMany(WeeklyCheckin::class);
+}
+
+public function latestWeeklyCheckin()
+{
+    return $this->hasOne(WeeklyCheckin::class)->latestOfMany();
+}
+
 }

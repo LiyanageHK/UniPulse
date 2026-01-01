@@ -68,7 +68,7 @@
                         Conversational Support
                     </h1>
                     <p class="text-xl md:text-2xl mb-10 text-blue-100 max-w-3xl mx-auto leading-relaxed">
-                        Get instant, personalized support from our intelligent AI counselor, available anytime you need guidance on your university journey.
+                        Get instant, personalized support from our intelligent AI support, available anytime you need guidance on your university journey.
                     </p>
                 </div>
             </div>

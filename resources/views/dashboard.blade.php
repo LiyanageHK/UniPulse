@@ -297,6 +297,57 @@
         </div>
     @endif
 
+    <!-- CONVERSATIONAL SUPPORT & FEEDBACK -->
+    <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Important Measures</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Active Chats -->
+            <!-- Active Chats -->
+            <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #6366f1;">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">Active Chats</h3>
+                    <span class="text-2xl">💬</span>
+                </div>
+                <div class="text-3xl font-bold text-indigo-600">{{ $activeChatsCount }}</div>
+                <div class="text-sm text-gray-600">Current conversations</div>
+            </div>
+
+            <!-- Archived Chats -->
+            <!-- Archived Chats -->
+            <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #22c55e;">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">Archived Chats</h3>
+                    <span class="text-2xl">📦</span>
+                </div>
+                <div class="text-3xl font-bold text-green-600">{{ $archivedChatsCount }}</div>
+                <div class="text-sm text-gray-600">Stored interactions</div>
+            </div>
+
+            <!-- Support Alerts -->
+            <!-- Support Alerts -->
+             <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #ef4444;">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">Support Alerts</h3>
+                    <span class="text-2xl">🚨</span>
+                </div>
+                <div class="text-3xl font-bold text-red-600">{{ $totalCrisisFlags }}</div>
+                <div class="text-sm text-gray-600">System Alerts Triggered</div>
+            </div>
+
+            <!-- Last Interaction -->
+            <!-- Last Interaction -->
+            <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #eab308;">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">Last Chat</h3>
+                    <span class="text-2xl">🕒</span>
+                </div>
+                <div class="text-xl font-bold text-yellow-600 truncate" title="{{ $lastChatTime }}">{{ $lastChatTime }}</div>
+                <div class="text-sm text-gray-600">Since last message</div>
+            </div>
+        </div>
+    </div>
+
     <!-- PROFILE SUMMARY -->
     <div class="bg-white rounded-lg shadow-lg p-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Your Profile</h2>
@@ -346,4 +397,6 @@
     </div>
 
 </div>
+
+
 </x-app-layout>

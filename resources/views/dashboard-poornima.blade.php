@@ -68,12 +68,12 @@
                                     ', ',
                                     array_map(fn($s) => number_format($s, 1), $item['weekly_scores']),
                                 );
-                                $risk_level =
-                                    $item['weighted_score'] < 2
-                                        ? 'Low'
-                                        : ($item['weighted_score'] < 3.5
-                                            ? 'Moderate'
-                                            : 'High');
+                                $risk_level = $item['risk_level'];
+                                    // $item['weighted_score'] < 2
+                                    //     ? 'Low'
+                                    //     : ($item['weighted_score'] < 3.5
+                                    //         ? 'Moderate'
+                                    //         : 'High');
                             @endphp
 
                             <div onclick="openChartModal('{{ $item['area'] }}')"
@@ -81,7 +81,7 @@
                                 @switch($item['area'])
                                     @case('depression')
                                         <div class="text-4xl mb-3">🌧️</div>
-                                        <h3 class="font-semibold text-lg mb-2">Mood</h3>
+                                        <h3 class="font-semibold text-lg mb-2">Depression</h3>
                                     @break
 
                                     @case('stress')
@@ -91,7 +91,7 @@
 
                                     @case('social_isolation')
                                         <div class="text-4xl mb-3">🔥</div>
-                                        <h3 class="font-semibold text-lg mb-2">Burnout & Fatigue</h3>
+                                        <h3 class="font-semibold text-lg mb-2">Social Isolation</h3>
                                     @break
 
                                     @case('disengagement')
@@ -135,7 +135,7 @@
                                             @switch($item['area'])
                                                 @case('depression')
                                                     <div class="text-5xl mb-3">🌧️</div>
-                                                    <h2 class="text-3xl font-bold mb-2">Mood Analysis</h2>
+                                                    <h2 class="text-3xl font-bold mb-2">Depression Analysis</h2>
                                                     <p>This measures feelings of sadness or low motivation. Trend: Stable</p>
                                                 @break
 

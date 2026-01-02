@@ -116,6 +116,6 @@ class OnboardingController extends Controller
         $user->onboarding_completed_at = now();
         $user->save();
 
-        return redirect()->route('dashboard')->with('success', 'Welcome to UniPulse!');
+        return redirect()->route('on-boarding')->with('success', 'Welcome to UniPulse!');
     }
 }

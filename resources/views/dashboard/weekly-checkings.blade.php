@@ -131,9 +131,11 @@
                                                 Very positive
                                             @break
 
+
                                             @default
                                         @endswitch
                                     </td>
+                                    
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {{ $check->created_at->format('d M Y') }}</td>
                                     <td class="px-6 py-4 text-right whitespace-nowrap text-sm text-gray-700">

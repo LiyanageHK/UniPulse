@@ -109,8 +109,7 @@
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Student Profiling</a>
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Risk Detection</a>
                         <a href="{{ route('chat.info') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Conversational Support</a>
-
-                        <a href="{{url('chat-support')}}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>
 
                     </div>
                 </div>

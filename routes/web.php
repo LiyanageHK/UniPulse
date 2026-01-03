@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('home');
-});
+})->name('home');
 
 // Public pages
 Route::get('/terms-of-service', function () {

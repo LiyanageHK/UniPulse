@@ -318,6 +318,7 @@ class DashboardPoornimaController extends Controller
 
         return view('dashboard.suggestions', compact(
             'report',
+            'report',
             'checkins_count',
             'current_mood',
             'mood_change',
@@ -437,6 +438,7 @@ class DashboardPoornimaController extends Controller
 
     public function peerMatchings(Request $request)
     {
+
 
         $user = Auth::user();
         $myProfile = $user->profile;

@@ -69,7 +69,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/weekly-checkin', [WeeklyCheckinController::class,'submitForm'])->name('weekly.checkin.submit');
 
 
-    // profile routes 
+    // profile routes
     // Show profile (public route for viewing user's profile)
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     // Edit profile (separate path so /profile resolves to the show view)
@@ -83,7 +83,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('chat')->name('chat.')->group(function () {
         // Chat interface page
         Route::get('/support', [ChatSupportController::class, 'index'])->name('support');
-        
+
         // API endpoints
         Route::post('/conversation/start', [ChatSupportController::class, 'startConversation'])->name('start');
         Route::post('/message', [ChatSupportController::class, 'sendMessage'])->name('send');
@@ -93,7 +93,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/conversation/{id}/archive', [ChatSupportController::class, 'archiveConversation'])->name('archive');
         Route::post('/conversation/{id}/unarchive', [ChatSupportController::class, 'unarchiveConversation'])->name('unarchive');
         Route::delete('/conversation/{id}', [ChatSupportController::class, 'deleteConversation'])->name('delete');
-        
+
         // Memory management endpoints
         Route::get('/memories', [ChatSupportController::class, 'getMemories'])->name('memories');
         Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');
@@ -110,7 +110,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');
         Route::get('/counselors/{category}', [ChatSupportController::class, 'getCounselorsByCategory'])->name('counselors.category');
     });
-    
+
     // Crisis Management Routes (Admin/Counselor Only)
     // TODO: Add admin middleware when role system is implemented
     Route::prefix('crisis')->name('crisis.')->group(function () {

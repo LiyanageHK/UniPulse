@@ -85,11 +85,9 @@
                 </div>
             </div>
 
-            <p><strong>Transition Confidence:</strong> {{ $user->transition_confidence }}/5</p>
+            <p><strong>Transition Confidence:</strong> {{ $user->transition_confidence ?? '—' }}/5</p>
             <p><strong>Social Preference:</strong> {{ $user->social_preference }}</p>
             <p><strong>Introvert/Extrovert Scale:</strong> {{ $user->introvert_extrovert_scale }}/10</p>
-            <p><strong>Stress Level:</strong> {{ $user->stress_level }}</p>
-            <p><strong>Group Work Comfort:</strong> {{ $user->group_work_comfort }}/5</p>
         </div>
     </div>
 
@@ -130,8 +128,6 @@
 
             <p><strong>Living Arrangement:</strong> {{ $user->living_arrangement }}</p>
             <p><strong>Employment:</strong> {{ $user->is_employed ? 'Yes' : 'No' }}</p>
-            <p><strong>Overwhelm Level:</strong> {{ $user->overwhelm_level }}/5</p>
-            <p><strong>Peer Struggle:</strong> {{ $user->peer_struggle }}/5</p>
             <p><strong>Openness to AI Support:</strong> {{ $user->ai_openness }}/5</p>
 
             <div>
@@ -146,18 +142,39 @@
         </div>
     </div>
 
+    <!-- -------------- WEEKLY CHECK-IN DATA -------------- -->
+    <div class="bg-white shadow-md rounded-xl p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span class="material-icons text-blue-500">Dynamic</span> Data
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p><strong>Stress Level:</strong> {{ $user->stress_level ?? '—' }} <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+            <p><strong>Group Work Comfort:</strong> {{ $user->group_work_comfort ?? '—' }}/5 <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+            <p><strong>Overwhelm Level:</strong> {{ $user->overwhelm_level ?? '—' }}/5 <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+            <p><strong>Peer Struggle:</strong> {{ $user->peer_struggle ?? '—' }}/5 <span class="ml-2 text-sm text-gray-500">(Auto-updated)</span></p>
+        </div>
+
+        @if($user->last_checkin_at)
+    <p class="text-sm text-gray-500 mt-2">
+        Last Weekly Check-In:
+        {{ $user->last_checkin_at->timezone('Asia/Colombo')->format('j M Y, g:ia') }}
+    </p>
+@endif
+    </div>
+
     <!-- -------------- ACTION BUTTONS -------------- -->
     <div class="flex gap-3">
 
     <!-- Edit Profile -->
     <a href="{{ route('profile.edit') }}"
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-black font-medium rounded-lg shadow transition-colors duration-200">
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition-colors duration-200">
         Edit Profile
     </a>
 
     <!-- Update Password (separate page) -->
     <a href="{{ route('profile.password') }}"
-        class="px-4 py-2 bg-gray-600 hover:bg-gray-400 text-black font-medium rounded-lg shadow transition-colors duration-200">
+        class="px-4 py-2 bg-gray-600 hover:bg-gray-400 text-white font-medium rounded-lg shadow transition-colors duration-200">
         Update Password
     </a>
 

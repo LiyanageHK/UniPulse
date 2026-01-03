@@ -91,7 +91,6 @@ class CrisisDetectionService
                 $detectedFlags[] = [
                     'severity' => $severity,
                     'keyword' => $keyword,
-                    'category' => $this->categorizeFlag($keyword, $severity),
                     'context_snippet' => $this->extractContext($content, $keyword),
                     'confidence_score' => $this->calculateConfidence($content, $keyword, $severity),
                 ];
@@ -142,43 +141,6 @@ class CrisisDetectionService
     }
 
     /**
-     * Categorize flag based on keyword for counselor matching.
-     */
-    protected function categorizeFlag(string $keyword, string $severity): string
-    {
-        // Map keywords to categories
-        if (str_contains($keyword, 'suic')) {
-            return CrisisFlag::CATEGORY_SUICIDE_RISK;
-        }
-        if (str_contains($keyword, 'harm') || str_contains($keyword, 'cut') || str_contains($keyword, 'hurt')) {
-            return CrisisFlag::CATEGORY_SELF_HARM;
-        }
-        if (str_contains($keyword, 'hopeless') || str_contains($keyword, 'worthless') || str_contains($keyword, 'no way out')) {
-            return CrisisFlag::CATEGORY_HOPELESSNESS;
-        }
-        if (str_contains($keyword, 'depress')) {
-            return CrisisFlag::CATEGORY_DEPRESSION;
-        }
-        if (str_contains($keyword, 'anxi')) {
-            return CrisisFlag::CATEGORY_ANXIETY;
-        }
-        if (str_contains($keyword, 'stress') || str_contains($keyword, 'overwhelm')) {
-            return CrisisFlag::CATEGORY_STRESS;
-        }
-        if (str_contains($keyword, 'lonely') || str_contains($keyword, 'alone')) {
-            return CrisisFlag::CATEGORY_LONELINESS;
-        }
-
-        // Default based on severity
-        return match($severity) {
-            CrisisFlag::SEVERITY_RED => CrisisFlag::CATEGORY_SUICIDE_RISK,
-            CrisisFlag::SEVERITY_YELLOW => CrisisFlag::CATEGORY_DEPRESSION,
-            CrisisFlag::SEVERITY_BLUE => CrisisFlag::CATEGORY_STRESS,
-            default => CrisisFlag::CATEGORY_STRESS,
-        };
-    }
-
-    /**
      * Extract context around the keyword.
      */
     protected function extractContext(string $content, string $keyword, int $contextLength = 100): string
@@ -226,7 +188,6 @@ class CrisisDetectionService
                 'conversation_id' => $message->conversation_id,
                 'user_id' => $message->user_id,
                 'severity' => $flag['severity'],
-                'category' => $flag['category'],
                 'detected_keywords' => [$flag['keyword']],
                 'context_snippet' => $flag['context_snippet'],
                 'confidence_score' => $flag['confidence_score'],
@@ -251,7 +212,7 @@ class CrisisDetectionService
         ]);
 
         // The actual alert creation and notification will be handled by CrisisAlertService
-        Log::critical('RED FLAG DETECTED - User: ' . $crisisFlag->user_id . ' - Category: ' . $crisisFlag->category);
+        Log::critical('RED FLAG DETECTED - User: ' . $crisisFlag->user_id);
     }
 
     /**
@@ -266,8 +227,6 @@ class CrisisDetectionService
             'red_flags' => $flags->where('severity', CrisisFlag::SEVERITY_RED)->count(),
             'yellow_flags' => $flags->where('severity', CrisisFlag::SEVERITY_YELLOW)->count(),
             'blue_flags' => $flags->where('severity', CrisisFlag::SEVERITY_BLUE)->count(),
-            'escalated' => $flags->where('escalated', true)->count(),
-            'categories' => $flags->pluck('category')->unique()->values()->toArray(),
         ];
     }
 }

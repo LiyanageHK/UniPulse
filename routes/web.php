@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('home');
-});
+})->name('home');
 
 // Public pages
 Route::get('/terms-of-service', function () {
@@ -27,11 +27,21 @@ Route::get('/conversational-support', function () {
     return view('chat-info');
 })->name('chat.info');
 
+// Public chat information page (accessible without login)
+Route::get('/profiling', function () {
+    return view('profiling');
+})->name('profiling');
+
+/*Route::get('/profiling', [ServicePageController::class, 'studentProfiling'])
+    ->name('services.studentProfiling');*/
+
 // Public API for approved feedback (for home page)
 Route::get('/api/feedback/approved', [FeedbackController::class, 'getApproved'])->name('feedback.approved');
 
 // Public guest feedback submission (no login required)
 Route::post('/api/feedback/guest', [FeedbackController::class, 'storeGuest'])->name('feedback.guest');
+
+
 
 Route::middleware(['auth'])->group(function () {
 
@@ -89,13 +99,13 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');
         Route::delete('/memory/{id}', [ChatSupportController::class, 'deleteMemory'])->name('memory.delete');
         Route::delete('/memories/clear', [ChatSupportController::class, 'clearAllMemories'])->name('memories.clear');
-
+        
         // Bulk conversation operations
         Route::post('/conversations/archive-all', [ChatSupportController::class, 'archiveAllConversations'])->name('conversations.archive-all');
         Route::post('/conversations/unarchive-all', [ChatSupportController::class, 'unarchiveAllConversations'])->name('conversations.unarchive-all');
         Route::delete('/conversations/delete-active', [ChatSupportController::class, 'deleteAllActiveConversations'])->name('conversations.delete-active');
         Route::delete('/conversations/delete-archived', [ChatSupportController::class, 'deleteAllArchivedConversations'])->name('conversations.delete-archived');
-
+        
         // Counselors endpoint
         Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');
         Route::get('/counselors/{category}', [ChatSupportController::class, 'getCounselorsByCategory'])->name('counselors.category');

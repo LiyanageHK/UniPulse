@@ -13,7 +13,6 @@ class Feedback extends Model
     protected $table = 'feedbacks';
 
     protected $fillable = [
-        'user_id',
         'guest_name',
         'guest_email',
         'content',
@@ -32,14 +31,6 @@ class Feedback extends Model
         'show_name' => 'boolean',
         'approved_at' => 'datetime',
     ];
-
-    /**
-     * Get the user who submitted this feedback.
-     */
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
 
     /**
      * Scope for approved feedback only.
@@ -74,12 +65,7 @@ class Feedback extends Model
             return 'Anonymous User';
         }
         
-        // Check if it's a registered user
-        if ($this->user) {
-            return $this->user->name;
-        }
-        
-        // Guest user
+        // Use guest name as primary source
         if ($this->guest_name) {
             return $this->guest_name;
         }
@@ -96,25 +82,12 @@ class Feedback extends Model
             return 'A';
         }
         
-        // Check if it's a registered user
-        if ($this->user) {
-            return strtoupper(substr($this->user->name, 0, 1));
-        }
-        
-        // Guest user
+        // Use guest name as primary source
         if ($this->guest_name) {
             return strtoupper(substr($this->guest_name, 0, 1));
         }
         
         return 'G';
-    }
-
-    /**
-     * Check if this is a guest feedback.
-     */
-    public function isGuest(): bool
-    {
-        return is_null($this->user_id);
     }
 
     /**

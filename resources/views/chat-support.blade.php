@@ -1274,7 +1274,9 @@
         }
 
         .settings-modal .modal-header {
-            background: linear-gradient(135deg, #1a3554 0%, #0d1f33 100%);
+            background: linear-gradient(135deg, rgba(26, 53, 84, 0.9) 0%, rgba(13, 31, 51, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(59, 130, 246, 0.2);
             padding: 16px 20px;
         }
@@ -1683,6 +1685,209 @@
                 transform: translateX(100px);
             }
         }
+
+        /* Data Control Tabs */
+        .data-control-tab.active {
+            color: #2563eb !important;
+            border-bottom-color: #2563eb !important;
+        }
+
+        .data-control-tab:hover {
+            color: #2563eb;
+        }
+
+        .data-control-panel {
+            display: none;
+        }
+
+        /* Zen Zone Styles */
+        .zen-zone-container {
+            display: flex;
+            min-height: 400px;
+        }
+
+        .zen-tabs {
+            width: 180px;
+            background: linear-gradient(180deg, #1e3a5f 0%, #0f2744 100%);
+            border-right: 1px solid #1a3554;
+            padding: 16px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .zen-tab {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .zen-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .zen-tab.active {
+            background: rgba(59, 130, 246, 0.3);
+            color: #fff;
+            border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+
+        .zen-content {
+            flex: 1;
+            background: #fff;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .zen-panel {
+            display: none;
+            height: 100%;
+        }
+
+        .zen-panel.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Bubble Pop Game */
+        .bubble-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 12px;
+            border: 1px solid #bae6fd;
+        }
+
+        .bubble {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+            position: relative;
+        }
+
+        .bubble:active {
+            transform: scale(0.9);
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 12px;
+            height: 6px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            transform: rotate(-45deg);
+        }
+
+        .bubble.popped {
+            background: radial-gradient(circle at 30% 30%, #bfdbfe, #93c5fd);
+            transform: scale(0.9);
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+            animation: popCheck 0.3s ease-out;
+        }
+
+        .bubble.popped::after {
+            display: none;
+        }
+        
+        @keyframes popCheck {
+            0% { transform: scale(0.9); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(0.9); }
+        }
+
+        /* Breathing Exercise */
+        .breathing-circle {
+            width: 150px;
+            height: 150px;
+            background: #60a5fa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.5);
+            animation: breathe 8s infinite ease-in-out;
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .breathing-instruction {
+            font-size: 20px;
+            color: #1e3a5f;
+            font-weight: 600;
+            margin-top: 20px;
+            min-height: 30px;
+        }
+
+        .breathing-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border: 2px solid #93c5fd;
+            border-radius: 50%;
+            animation: breatheRing 8s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); background: #60a5fa; }
+            40% { transform: scale(1.5); background: #3b82f6; }
+            60% { transform: scale(1.5); background: #3b82f6; } /* Hold */
+        }
+        
+        @keyframes breatheRing {
+             0%, 100% { width: 150px; height: 150px; opacity: 0.5; }
+             40% { width: 250px; height: 250px; opacity: 0.2; }
+             60% { width: 250px; height: 250px; opacity: 0.2; }
+        }
+
+        .data-control-panel.active {
+            display: block;
+        }
+
+        .relax-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            margin-left: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .relax-btn:hover {
+            background-color: #059669;
+        }
     </style>
 </head>
 <body>
@@ -1716,6 +1921,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                         </svg>
                         <span>Counselors</span>
+                    </button>
+                    <button class="sidebar-settings-btn" onclick="openZenZoneModal()">
+                        <svg class="settings-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+                        </svg>
+                        <span>Relax Your Mind</span>
                     </button>
                     <button class="sidebar-settings-btn" onclick="openSettings()">
                         <svg class="settings-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -1905,21 +2116,55 @@
                     <div class="settings-panel" id="panel-data">
                         <h3 class="settings-panel-title">Data Controls</h3>
                         
-                        <div class="settings-group">
-                            <div class="settings-group-title">Chat History</div>
-                            <div class="settings-row">
-                                <div class="settings-row-info">
-                                    <div class="settings-row-label">Archive All Chats</div>
-                                    <div class="settings-row-desc">Move all active conversations to archive</div>
+                        <!-- Sub-tabs for Active/Archived Chats -->
+                        <div class="data-control-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 0;">
+                            <button class="data-control-tab active" onclick="switchDataControlTab('active')" data-tab="active" style="background: none; border: none; padding: 12px 24px; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;">
+                                Active Chats
+                            </button>
+                            <button class="data-control-tab" onclick="switchDataControlTab('archived')" data-tab="archived" style="background: none; border: none; padding: 12px 24px; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;">
+                                Archived Chats
+                            </button>
+                        </div>
+
+                        <!-- Active Chats Panel -->
+                        <div class="data-control-panel active" id="data-panel-active">
+                            <div class="settings-group">
+                                <div class="settings-group-title">CHAT HISTORY</div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Archive All Chats</div>
+                                        <div class="settings-row-desc">Move all active conversations to archive</div>
+                                    </div>
+                                    <button class="settings-btn" onclick="showArchiveAllModal()">Archive All</button>
                                 </div>
-                                <button class="settings-btn" onclick="showArchiveAllModal()">Archive All</button>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Delete All Active Chats</div>
+                                        <div class="settings-row-desc">Permanently delete all active conversations</div>
+                                    </div>
+                                    <button class="settings-btn danger" onclick="showDeleteActiveModal()">Delete</button>
+                                </div>
                             </div>
-                            <div class="settings-row">
-                                <div class="settings-row-info">
-                                    <div class="settings-row-label">Delete All Archived</div>
-                                    <div class="settings-row-desc">Permanently delete all archived conversations</div>
+                        </div>
+
+                        <!-- Archived Chats Panel -->
+                        <div class="data-control-panel" id="data-panel-archived">
+                            <div class="settings-group">
+                                <div class="settings-group-title">CHAT HISTORY</div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Unarchive All Chats</div>
+                                        <div class="settings-row-desc">Move all archived conversations back to active</div>
+                                    </div>
+                                    <button class="settings-btn" onclick="showUnarchiveAllModal()">Unarchive All</button>
                                 </div>
-                                <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete</button>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Delete All Archived</div>
+                                        <div class="settings-row-desc">Permanently delete all archived conversations</div>
+                                    </div>
+                                    <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete</button>
+                                </div>
                             </div>
                         </div>
 
@@ -1936,7 +2181,7 @@
 
     <!-- Counselors Modal -->
     <div class="modal-overlay" id="counselorsModal" onclick="closeCounselorsModal(event)">
-        <div class="modal" onclick="event.stopPropagation()" style="max-width: 600px; max-height: 80vh;">
+        <div class="modal settings-modal" onclick="event.stopPropagation()" style="max-width: 600px; max-height: 80vh; background: white; border: none;">
             <div class="modal-header">
                 <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
@@ -1946,7 +2191,7 @@
                 </div>
                 <button class="modal-close" onclick="closeCounselorsModal(event)">&times;</button>
             </div>
-            <div class="modal-body" style="overflow-y: auto; max-height: 60vh;">
+            <div class="modal-body" style="overflow-y: auto; max-height: 60vh; padding: 20px;">
                 <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">
                     Browse our directory of qualified counselors and mental health professionals by category.
                 </p>
@@ -1957,6 +2202,64 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                         </svg>
                         Loading counselors...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zen Zone Modal -->
+    <div class="modal-overlay" id="zenZoneModal" onclick="closeZenZoneModal(event)">
+        <div class="modal settings-modal" onclick="event.stopPropagation()" style="max-width: 700px; max-height: 85vh;">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+                    </svg>
+                    Relax Your Mind
+                </div>
+                <button class="modal-close" onclick="closeZenZoneModal(event)">&times;</button>
+            </div>
+            <div class="zen-zone-container">
+                <!-- Zen Tabs (Left Side) -->
+                <div class="zen-tabs">
+                    <button class="zen-tab active" onclick="switchZenTab('bubble')" data-zen-tab="bubble">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59" />
+
+                        </svg>
+                        Stress Poppers
+                    </button>
+                    <button class="zen-tab" onclick="switchZenTab('breathe')" data-zen-tab="breathe">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                        Breathe
+                    </button>
+                </div>
+
+                <!-- Zen Content (Right Side) -->
+                <div class="zen-content">
+                    <!-- Bubble Pop Tab -->
+                    <div class="zen-panel active" id="zen-panel-bubble">
+                        <h3 style="margin-bottom: 20px; color: #1f2937;">Pop the stress away!</h3>
+                        <div class="bubble-grid" id="bubbleGrid">
+                            <!-- Bubbles generated by JS -->
+                        </div>
+                         <button class="settings-btn" onclick="resetBubbles()" style="margin-top: 20px;">
+                            Reset Bubbles
+                        </button>
+                    </div>
+
+                    <!-- Breathe Tab -->
+                    <div class="zen-panel" id="zen-panel-breathe">
+                        <div class="breathing-circle">
+                             <div class="breathing-ring"></div>
+                             <span id="breathingText">Inhale</span>
+                        </div>
+                        <div class="breathing-instruction" id="breathingInstruction">
+                            Breathe in deeply...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2027,6 +2330,70 @@
         </div>
     </div>
 
+    <!-- Unarchive All Confirmation Modal -->
+    <div class="modal-overlay" id="unarchiveAllModal" onclick="closeUnarchiveAllModal(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px; color: #10b981;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0 3-3m-3 3-3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                    </svg>
+                    Unarchive All Chats
+                </div>
+                <button class="modal-close" onclick="closeUnarchiveAllModal(event)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 15px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+                    Are you sure you want to restore <strong>all archived conversations</strong>?
+                </p>
+                <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin-bottom: 16px;">
+                    All archived chats will be moved back to your active conversations.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeUnarchiveAllModal(event)">Cancel</button>
+                    <button class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border: 1px solid rgba(16, 185, 129, 0.5);" onclick="confirmUnarchiveAll()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; flex-shrink: 0;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0 3-3m-3 3-3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                        </svg>
+                        Yes, Unarchive All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Active Confirmation Modal -->
+    <div class="modal-overlay" id="deleteActiveModal" onclick="closeDeleteActiveModal(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px; color: #dc2626;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    Delete All Active Chats
+                </div>
+                <button class="modal-close" onclick="closeDeleteActiveModal(event)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 15px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+                    Are you sure you want to <strong>permanently delete ALL active conversations</strong>?
+                </p>
+                <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin-bottom: 16px;">
+                    This action <strong>cannot be undone</strong>. All your current active chats will be permanently removed.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeDeleteActiveModal(event)">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmDeleteActive()" style="display: flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Yes, Delete All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Clear Memory Confirmation Modal -->
     <div class="modal-overlay" id="clearMemoryModal" onclick="closeClearMemoryModal(event)">
         <div class="modal" onclick="event.stopPropagation()" style="max-width: 450px;">
@@ -2053,6 +2420,39 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                         </svg>
                         Yes, Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Single Memory Confirmation Modal -->
+    <div class="modal-overlay" id="deleteMemoryModal" onclick="closeDeleteMemoryModal(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px; color: #dc2626;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    Delete Memory
+                </div>
+                <button class="modal-close" onclick="closeDeleteMemoryModal(event)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 15px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+                    Are you sure you want to delete this memory?
+                </p>
+                <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin-bottom: 16px;">
+                    The AI will no longer use this information to personalize your conversations.
+                </p>
+                <input type="hidden" id="deleteMemoryId">
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeDeleteMemoryModal(event)">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmDeleteMemory()" style="display: flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Yes, Delete
                     </button>
                 </div>
             </div>
@@ -2727,7 +3127,7 @@
                         <div class="counselor-contact">
                             ${c.email ? `<span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg> ${c.email}</span>` : ''}
                             ${c.phone ? `<br><span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg> ${c.phone}</span>` : ''}
-                            ${c.office_location ? `<br><span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg> ${c.office_location}</span>` : ''}
+                            ${c.hospital ? `<br><span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg> ${c.hospital}</span>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -2818,8 +3218,10 @@
             const offerDiv = document.createElement('div');
             offerDiv.className = 'crisis-support-offer';
             
-            let content = `<div class="support-offer-message">${crisisResponse.support_message}</div>`;
-            content += '<button class="support-offer-btn" onclick="showAllCategoryButtons()">View support options</button>';
+            let content = `<div class="support-offer-message">If you are feeling overwhelmed, you can try some relaxation exercises to help you feel better.</div>`;
+            content += '<div class="support-offer-actions" style="margin-top: 10px;">';
+            content += '<button class="relax-btn" onclick="openZenZoneModal()" style="margin-left: 0;">Relax Your Mind</button>';
+            content += '</div>';
             
             offerDiv.innerHTML = content;
             messagesContent.appendChild(offerDiv);
@@ -2830,7 +3232,7 @@
         async function showCounselorsForCategory(categoryKey, categoryLabel, categoryColor) {
             const color = categoryColor || '#3b82f6';
             try {
-                const response = await fetch(`/chat/counselors/${categoryKey}`, {
+                const response = await fetch(`/chat/counselors/${encodeURIComponent(categoryKey)}`, {
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json'
@@ -2870,7 +3272,7 @@
                     <div class="counselor-card-chat" style="border-left: 4px solid ${color}; background: ${lightBg}; margin-bottom: 10px; padding: 12px; border-radius: 8px;">
                         <div class="counselor-name" style="color: ${color}; font-weight: 600; font-size: 14px;">${c.name}</div>
                         <div class="counselor-title" style="color: #4b5563; font-size: 12px; margin-top: 4px;">${c.title}</div>
-                        <div class="counselor-location" style="color: #6b7280; font-size: 12px; margin-top: 4px;">${c.office_location}</div>
+                        <div class="counselor-location" style="color: #6b7280; font-size: 12px; margin-top: 4px;">${c.hospital || ''}</div>
                     </div>
                 `;
             });
@@ -2883,16 +3285,16 @@
         // Show all category buttons (when user clicks "Yes" on YELLOW/BLUE)
         async function showAllCategoryButtons() {
             const categories = [
-                {key: 'academic', label: 'Academic & Study Support', color: '#3b82f6'},
-                {key: 'mental_health', label: 'Mental Health & Wellness', color: '#8b5cf6'},
-                {key: 'social', label: 'Social & Peer Relationships', color: '#06b6d4'},
-                {key: 'crisis', label: 'Crisis & Emergency', color: '#ef4444'},
-                {key: 'career', label: 'Career Guidance', color: '#f59e0b'},
-                {key: 'relationship', label: 'Relationship Support', color: '#ec4899'},
-                {key: 'family', label: 'Family & Home Issues', color: '#10b981'},
-                {key: 'physical', label: 'Physical Health', color: '#14b8a6'},
-                {key: 'financial', label: 'Financial Wellness', color: '#84cc16'},
-                {key: 'personal_development', label: 'Personal Development', color: '#6366f1'},
+                {key: 'Academic & Study Support', label: 'Academic & Study Support', color: '#3b82f6'},
+                {key: 'Mental Health & Wellness', label: 'Mental Health & Wellness', color: '#8b5cf6'},
+                {key: 'Social Integration & Peer Relationships', label: 'Social & Peer Relationships', color: '#06b6d4'},
+                {key: 'Crisis & Emergency Intervention', label: 'Crisis & Emergency', color: '#ef4444'},
+                {key: 'Career Guidance & Future Planning', label: 'Career Guidance', color: '#f59e0b'},
+                {key: 'Relationship & Love Affairs', label: 'Relationship Support', color: '#ec4899'},
+                {key: 'Family & Home-Related Issues', label: 'Family & Home Issues', color: '#10b981'},
+                {key: 'Physical Health & Lifestyle', label: 'Physical Health', color: '#14b8a6'},
+                {key: 'Financial Wellness', label: 'Financial Wellness', color: '#84cc16'},
+                {key: 'Extracurricular & Personal Development', label: 'Personal Development', color: '#6366f1'},
             ];
             addCategoryButtons(categories);
         }
@@ -2974,27 +3376,19 @@
             closeArchiveAllModal();
             
             try {
-                const response = await fetch('/chat/conversations?status=active', {
+                const response = await fetch('/chat/conversations/archive-all', {
+                    method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrfToken }
                 });
                 const data = await response.json();
                 
-                if (data.success && data.conversations.length > 0) {
-                    let archived = 0;
-                    for (const conv of data.conversations) {
-                        const res = await fetch(`/chat/conversation/${conv.id}/archive`, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrfToken }
-                        });
-                        if ((await res.json()).success) archived++;
-                    }
-                    
+                if (data.success) {
                     startNewConversation();
                     await loadConversations();
                     await loadChatStatistics();
-                    showToast('success', 'All Chats Archived', `${archived} conversation(s) moved to archive.`);
+                    showToast('success', 'All Chats Archived', `${data.archived_count} conversation(s) moved to archive.`);
                 } else {
-                    showToast('error', 'No Active Chats', 'There are no active conversations to archive.');
+                    showToast('error', 'Archive Failed', data.error || 'Something went wrong.');
                 }
             } catch (error) {
                 console.error('Archive all error:', error);
@@ -3005,6 +3399,89 @@
         // Archive all active conversations (legacy - now uses modal)
         async function archiveAllConversations() {
             showArchiveAllModal();
+        }
+
+        // Switch between Active and Archived tabs in Data Controls
+        function switchDataControlTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.data-control-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            
+            // Update panels
+            document.getElementById('data-panel-active').classList.toggle('active', tab === 'active');
+            document.getElementById('data-panel-archived').classList.toggle('active', tab === 'archived');
+        }
+
+        // Show unarchive all confirmation modal
+        function showUnarchiveAllModal() {
+            document.getElementById('unarchiveAllModal').classList.add('active');
+        }
+
+        // Close unarchive all modal
+        function closeUnarchiveAllModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('unarchiveAllModal').classList.remove('active');
+        }
+
+        // Confirm and unarchive all conversations
+        async function confirmUnarchiveAll() {
+            closeUnarchiveAllModal();
+            
+            try {
+                const response = await fetch('/chat/conversations/unarchive-all', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    await loadConversations();
+                    await loadChatStatistics();
+                    showToast('success', 'All Chats Restored', `${data.unarchived_count} conversation(s) restored to active.`);
+                } else {
+                    showToast('error', 'Restore Failed', data.error || 'Something went wrong.');
+                }
+            } catch (error) {
+                console.error('Unarchive all error:', error);
+                showToast('error', 'Restore Failed', 'Something went wrong. Please try again.');
+            }
+        }
+
+        // Show delete active modal
+        function showDeleteActiveModal() {
+            document.getElementById('deleteActiveModal').classList.add('active');
+        }
+
+        // Close delete active modal
+        function closeDeleteActiveModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('deleteActiveModal').classList.remove('active');
+        }
+
+        // Confirm and delete all active conversations
+        async function confirmDeleteActive() {
+            closeDeleteActiveModal();
+            
+            try {
+                const response = await fetch('/chat/conversations/delete-active', {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrfToken }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    startNewConversation();
+                    await loadConversations();
+                    await loadChatStatistics();
+                    showToast('success', 'All Active Chats Deleted', `${data.deleted_count} conversation(s) permanently deleted.`);
+                } else {
+                    showToast('error', 'Delete Failed', data.error || 'Something went wrong.');
+                }
+            } catch (error) {
+                console.error('Delete active error:', error);
+                showToast('error', 'Delete Failed', 'Something went wrong. Please try again.');
+            }
         }
 
         // Show delete archived confirmation modal
@@ -3023,26 +3500,18 @@
             closeDeleteArchivedModal();
             
             try {
-                const response = await fetch('/chat/conversations?status=archived', {
+                const response = await fetch('/chat/conversations/delete-archived', {
+                    method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': csrfToken }
                 });
                 const data = await response.json();
                 
-                if (data.success && data.conversations.length > 0) {
-                    let deleted = 0;
-                    for (const conv of data.conversations) {
-                        const res = await fetch(`/chat/conversation/${conv.id}`, {
-                            method: 'DELETE',
-                            headers: { 'X-CSRF-TOKEN': csrfToken }
-                        });
-                        if ((await res.json()).success) deleted++;
-                    }
-                    
+                if (data.success) {
                     await loadConversations();
                     await loadChatStatistics();
-                    showToast('success', 'Archived Chats Deleted', `${deleted} conversation(s) permanently deleted.`);
+                    showToast('success', 'Archived Chats Deleted', `${data.deleted_count} conversation(s) permanently deleted.`);
                 } else {
-                    showToast('error', 'No Archived Chats', 'There are no archived conversations to delete.');
+                    showToast('error', 'Delete Failed', data.error || 'Something went wrong.');
                 }
             } catch (error) {
                 console.error('Delete all archived error:', error);
@@ -3103,6 +3572,22 @@
             document.getElementById('counselorsModal').classList.remove('active');
         }
 
+        // Get color for category label
+        function getCategoryColor(label) {
+            const lowerLabel = label.toLowerCase();
+            if (lowerLabel.includes('academic')) return '#3b82f6'; // Blue
+            if (lowerLabel.includes('career')) return '#f59e0b'; // Amber
+            if (lowerLabel.includes('crisis') || lowerLabel.includes('emergency')) return '#ef4444'; // Red
+            if (lowerLabel.includes('family') || lowerLabel.includes('home')) return '#10b981'; // Emerald
+            if (lowerLabel.includes('financial')) return '#84cc16'; // Lime
+            if (lowerLabel.includes('mental')) return '#8b5cf6'; // Violet
+            if (lowerLabel.includes('personal')) return '#6366f1'; // Indigo
+            if (lowerLabel.includes('physical')) return '#14b8a6'; // Teal
+            if (lowerLabel.includes('relationship')) return '#ec4899'; // Pink
+            if (lowerLabel.includes('social')) return '#06b6d4'; // Cyan
+            return '#6b7280'; // Gray default
+        }
+
         // Load counselors by category
         async function loadCounselors() {
             const container = document.getElementById('counselorCategoriesModal');
@@ -3117,26 +3602,43 @@
                 const data = await response.json();
                 
                 if (data.success && data.categories.length > 0) {
-                    container.innerHTML = data.categories.map(cat => `
-                        <div class="counselor-category">
-                            <div class="counselor-category-header" onclick="toggleCounselorCategory(this)">
-                                <span class="counselor-category-title">${cat.label}</span>
-                                <span class="counselor-category-count">${cat.counselors.length} counselor(s)</span>
-                                <svg class="counselor-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 16px; height: 16px; transition: transform 0.2s;">
+                    container.innerHTML = data.categories.map(cat => {
+                        const color = getCategoryColor(cat.label);
+                        const bgStyle = `background-color: ${color}10`; // very light opacity
+                        const borderStyle = `border-left: 4px solid ${color}`;
+                        const textStyle = `color: ${color}`;
+                        
+                        return `
+                        <div class="counselor-category" style="margin-bottom: 12px;">
+                            <div class="counselor-category-header" onclick="toggleCounselorCategory(this)" 
+                                 style="${bgStyle}; ${borderStyle}; padding: 12px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="counselor-category-title" style="font-weight: 600; font-size: 15px; color: #1f2937;">${cat.label}</span>
+                                    <span class="counselor-category-count" style="font-size: 12px; padding: 2px 8px; border-radius: 12px; background: white; ${textStyle}; font-weight: 500;">
+                                        ${cat.counselors.length} counselor(s)
+                                    </span>
+                                </div>
+                                <svg class="counselor-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 16px; height: 16px; transition: transform 0.2s; color: #6b7280;">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                                 </svg>
                             </div>
-                            <div class="counselor-list" style="display: none;">
+                            <div class="counselor-list" style="display: none; padding-top: 8px;">
                                 ${cat.counselors.map(c => `
-                                    <div class="counselor-card">
-                                        <div class="counselor-name">${c.name}</div>
-                                        <div class="counselor-title">${c.title}</div>
-                                        <div class="counselor-location">${c.office_location}</div>
+                                    <div class="counselor-card" style="margin-left: 4px; border-left: 3px solid ${color}; background-color: ${color}08; padding: 12px 16px; margin-bottom: 8px; border-radius: 0 6px 6px 0;">
+                                        <div class="counselor-name" style="font-weight: 600; color: #111827;">${c.name}</div>
+                                        <div class="counselor-title" style="font-size: 13px; color: #4b5563; margin-bottom: 2px;">${c.title}</div>
+                                        <div class="counselor-location" style="font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 4px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 12px; height: 12px;">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                            </svg>
+                                            ${c.hospital || ''}
+                                        </div>
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
-                    `).join('');
+                    `}).join('');
                 } else {
                     container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">No counselors available at this time.</div>';
                 }
@@ -3243,8 +3745,23 @@
             showClearMemoryModal();
         }
 
-        // Delete single memory
-        async function deleteMemory(memoryId) {
+        // OPEN delete single memory modal
+        function deleteMemory(memoryId) {
+            document.getElementById('deleteMemoryId').value = memoryId;
+            document.getElementById('deleteMemoryModal').classList.add('active');
+        }
+
+        // CLOSE delete single memory modal
+        function closeDeleteMemoryModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('deleteMemoryModal').classList.remove('active');
+        }
+
+        // CONFIRM and delete single memory
+        async function confirmDeleteMemory() {
+            const memoryId = document.getElementById('deleteMemoryId').value;
+            closeDeleteMemoryModal();
+
             try {
                 const response = await fetch(`/chat/memory/${memoryId}`, {
                     method: 'DELETE',
@@ -3265,12 +3782,14 @@
                     const totalEl = document.getElementById('totalMemories');
                     const currentCount = parseInt(totalEl.textContent) || 0;
                     totalEl.textContent = Math.max(0, currentCount - 1);
+                    
+                    showToast('success', 'Memory Deleted', 'Memory deleted successfully.');
                 } else {
-                    alert('Failed to delete memory: ' + (data.error || 'Unknown error'));
+                    showToast('error', 'Delete Failed', data.error || 'Unknown error');
                 }
             } catch (error) {
                 console.error('Delete memory error:', error);
-                alert('Failed to delete memory. Please try again.');
+                showToast('error', 'Delete Failed', 'Failed to delete memory. Please try again.');
             }
         }
 
@@ -3280,6 +3799,109 @@
                 closeSettings();
             }
         });
+        /* Zen Zone Logic */
+        function openZenZoneModal() {
+            document.getElementById('zenZoneModal').classList.add('active');
+            initBubbles();
+            startBreathingExercise();
+        }
+
+        function closeZenZoneModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('zenZoneModal').classList.remove('active');
+            stopBreathingExercise();
+        }
+
+        function switchZenTab(tabId) {
+            // Update Tab Buttons
+            document.querySelectorAll('.zen-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.zen-tab[data-zen-tab="${tabId}"]`).classList.add('active');
+
+            // Update Panels
+            document.querySelectorAll('.zen-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`zen-panel-${tabId}`).classList.add('active');
+        }
+
+        /* Bubble Pop Game */
+        function initBubbles() {
+            const grid = document.getElementById('bubbleGrid');
+            if (grid.children.length === 0) {
+                // Generate 30 bubbles
+                for (let i = 0; i < 30; i++) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    bubble.onclick = function() { popBubble(this); };
+                    grid.appendChild(bubble);
+                }
+            }
+        }
+
+        function popBubble(element) {
+            if (!element.classList.contains('popped')) {
+                element.classList.add('popped');
+            }
+        }
+
+        function resetBubbles() {
+            const bubbles = document.querySelectorAll('.bubble');
+            bubbles.forEach(b => {
+                b.classList.remove('popped');
+            });
+        }
+
+        /* Breathing Exercise */
+        let breathingInterval;
+        
+        function startBreathingExercise() {
+            const textElement = document.getElementById('breathingText');
+            const instructElement = document.getElementById('breathingInstruction');
+            
+            if (!textElement || !instructElement) return;
+
+            // Clear any existing interval
+            if (breathingInterval) clearInterval(breathingInterval);
+            
+            // Reset animation sync
+             const circle = document.querySelector('.breathing-circle');
+             const ring = document.querySelector('.breathing-ring');
+             
+             // Restart CSS animations
+             circle.style.animation = 'none';
+             ring.style.animation = 'none';
+             circle.offsetHeight; /* trigger reflow */
+             circle.style.animation = 'breathe 8s infinite ease-in-out';
+             ring.style.animation = 'breatheRing 8s infinite ease-in-out';
+
+            // Initial State
+            updateBreathingText(0);
+
+            let time = 0;
+            breathingInterval = setInterval(() => {
+                time = (time + 1) % 8; // 8 second cycle
+                updateBreathingText(time);
+            }, 1000);
+        }
+
+        function updateBreathingText(second) {
+            const textElement = document.getElementById('breathingText');
+            const instructElement = document.getElementById('breathingInstruction');
+
+            // Cycle: Inhale (3s) -> Hold (2s) -> Exhale (3s)
+            if (second < 3) {
+                textElement.innerText = "Inhale";
+                instructElement.innerText = "Breathe in deeply...";
+            } else if (second < 5) {
+                textElement.innerText = "Hold";
+                instructElement.innerText = "Hold your breath...";
+            } else {
+                textElement.innerText = "Exhale";
+                instructElement.innerText = "Breadth out slowly...";
+            }
+        }
+
+        function stopBreathingExercise() {
+            if (breathingInterval) clearInterval(breathingInterval);
+        }
     </script>
 </body>
 </html>

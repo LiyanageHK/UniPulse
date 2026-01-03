@@ -459,78 +459,11 @@ CONCERNING;
             return [];
         }
 
-        // Get unique crisis categories from red flags
-        $categories = array_unique(array_column($redFlags, 'category'));
-        
-        // Get city from user profile
-        $city = $user->university ?? null;
-
-        // Get all available counselors
-        $counselors = \App\Models\Counselor::available();
-        
-        // Prefer counselors in user's city or online
-        if ($city) {
-            $counselors = $counselors->where(function ($q) use ($city) {
-                $q->where('city', 'like', "%{$city}%")
-                  ->orWhere('offers_online', true);
-            });
-        }
-        
-        $counselors = $counselors->get();
-
-        // Score counselors based on category match
-        $scoredCounselors = $counselors->map(function ($counselor) use ($categories) {
-            $score = 0;
-            $matchedCategories = [];
-
-            foreach ($categories as $category) {
-                if ($counselor->matchesCrisisCategory($category)) {
-                    $score += 15; // High score for category match
-                    $matchedCategories[] = $this->getCategoryLabel($category);
-                }
-            }
-
-            // Mental health counselors are always relevant for crisis
-            if ($counselor->category === \App\Models\Counselor::CATEGORY_MENTAL_HEALTH) {
-                $score += 5;
-            }
-
-            // Online availability is helpful
-            if ($counselor->offers_online) {
-                $score += 3;
-            }
-
-            return [
-                'counselor' => $counselor,
-                'score' => $score,
-                'matched_categories' => $matchedCategories,
-            ];
-        });
-
-        // Get top 3 counselors with highest scores
-        $topCounselors = $scoredCounselors
-            ->filter(fn($item) => $item['score'] > 0) // Only counselors with some match
-            ->sortByDesc('score')
-            ->take(3);
-
-        // If no category-matched counselors, get any mental health counselors
-        if ($topCounselors->isEmpty()) {
-            $topCounselors = $scoredCounselors
-                ->sortByDesc('score')
-                ->take(3);
-        }
-
         return $topCounselors->map(fn($item) => [
             'id' => $item['counselor']->id,
             'name' => $item['counselor']->name,
             'title' => $item['counselor']->title,
-            'specializations' => $item['counselor']->specializations,
-            'city' => $item['counselor']->city,
-            'email' => $item['counselor']->email,
-            'phone' => $item['counselor']->phone,
-            'office_location' => $item['counselor']->office_location,
-            'offers_online' => $item['counselor']->offers_online,
-            'online_booking_url' => $item['counselor']->online_booking_url,
+            'hospital' => $item['counselor']->hospital,
             'match_reason' => !empty($item['matched_categories']) 
                 ? 'Specializes in: ' . implode(', ', $item['matched_categories'])
                 : 'General mental health support',
@@ -585,16 +518,16 @@ CONCERNING;
     protected function getCounselorCategories(): array
     {
         return [
-            ['key' => 'academic', 'label' => 'Academic & Study Support', 'color' => '#3b82f6'],
-            ['key' => 'mental_health', 'label' => 'Mental Health & Wellness', 'color' => '#8b5cf6'],
-            ['key' => 'social', 'label' => 'Social & Peer Relationships', 'color' => '#06b6d4'],
-            ['key' => 'crisis', 'label' => 'Crisis & Emergency', 'color' => '#ef4444'],
-            ['key' => 'career', 'label' => 'Career Guidance', 'color' => '#f59e0b'],
-            ['key' => 'relationship', 'label' => 'Relationship Support', 'color' => '#ec4899'],
-            ['key' => 'family', 'label' => 'Family & Home Issues', 'color' => '#10b981'],
-            ['key' => 'physical', 'label' => 'Physical Health', 'color' => '#14b8a6'],
-            ['key' => 'financial', 'label' => 'Financial Wellness', 'color' => '#84cc16'],
-            ['key' => 'personal_development', 'label' => 'Personal Development', 'color' => '#6366f1'],
+            ['key' => 'Academic & Study Support', 'label' => 'Academic & Study Support', 'color' => '#3b82f6'],
+            ['key' => 'Mental Health & Wellness', 'label' => 'Mental Health & Wellness', 'color' => '#8b5cf6'],
+            ['key' => 'Social Integration & Peer Relationships', 'label' => 'Social & Peer Relationships', 'color' => '#06b6d4'],
+            ['key' => 'Crisis & Emergency Intervention', 'label' => 'Crisis & Emergency', 'color' => '#ef4444'],
+            ['key' => 'Career Guidance & Future Planning', 'label' => 'Career Guidance', 'color' => '#f59e0b'],
+            ['key' => 'Relationship & Love Affairs', 'label' => 'Relationship Support', 'color' => '#ec4899'],
+            ['key' => 'Family & Home-Related Issues', 'label' => 'Family & Home Issues', 'color' => '#10b981'],
+            ['key' => 'Physical Health & Lifestyle', 'label' => 'Physical Health', 'color' => '#14b8a6'],
+            ['key' => 'Financial Wellness', 'label' => 'Financial Wellness', 'color' => '#84cc16'],
+            ['key' => 'Extracurricular & Personal Development', 'label' => 'Personal Development', 'color' => '#6366f1'],
         ];
     }
 

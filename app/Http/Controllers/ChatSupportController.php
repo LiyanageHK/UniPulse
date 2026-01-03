@@ -647,8 +647,7 @@ class ChatSupportController extends Controller
      */
     public function getCounselors(Request $request)
     {
-        $counselors = \App\Models\Counselor::available()
-            ->orderBy('category')
+        $counselors = \App\Models\Counselor::orderBy('category')
             ->orderBy('name')
             ->get();
 
@@ -662,10 +661,7 @@ class ChatSupportController extends Controller
                         'id' => $counselor->id,
                         'name' => $counselor->name,
                         'title' => $counselor->title,
-                        'office_location' => $counselor->office_location,
-                        'phone' => $counselor->phone,
-                        'email' => $counselor->email,
-                        'offers_online' => $counselor->offers_online,
+                        'hospital' => $counselor->hospital,
                     ];
                 })->values(),
             ];
@@ -680,22 +676,12 @@ class ChatSupportController extends Controller
 
     /**
      * Get display label for counselor category.
+     * Now returns the category directly since full names are stored.
      */
     private function getCounselorCategoryLabel(string $category): string
     {
-        return match($category) {
-            'academic' => 'Academic & Study Support',
-            'mental_health' => 'Mental Health & Wellness',
-            'social' => 'Social Integration & Peer Relationships',
-            'crisis' => 'Crisis & Emergency Intervention',
-            'career' => 'Career Guidance & Future Planning',
-            'relationship' => 'Relationship & Love Affairs',
-            'family' => 'Family & Home-Related Issues',
-            'physical' => 'Physical Health & Lifestyle',
-            'financial' => 'Financial Wellness',
-            'personal_development' => 'Extracurricular & Personal Development',
-            default => ucfirst(str_replace('_', ' ', $category)),
-        };
+        // Categories are now stored as full names, return as-is
+        return $category;
     }
 
     /**
@@ -703,8 +689,7 @@ class ChatSupportController extends Controller
      */
     public function getCounselorsByCategory(Request $request, string $category)
     {
-        $counselors = \App\Models\Counselor::available()
-            ->where('category', $category)
+        $counselors = \App\Models\Counselor::where('category', $category)
             ->orderBy('name')
             ->get();
 
@@ -713,7 +698,7 @@ class ChatSupportController extends Controller
                 'id' => $counselor->id,
                 'name' => $counselor->name,
                 'title' => $counselor->title,
-                'office_location' => $counselor->office_location,
+                'hospital' => $counselor->hospital,
             ];
         });
 

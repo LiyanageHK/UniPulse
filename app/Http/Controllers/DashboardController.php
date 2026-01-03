@@ -44,6 +44,14 @@ class DashboardController extends Controller
             }
         }
 
+        // ✅ STEP 4 — Conversational Support Stats
+        $activeChatsCount = Conversation::where('user_id', $user->id)->active()->count();
+        $archivedChatsCount = Conversation::where('user_id', $user->id)->archived()->count();
+        $totalCrisisFlags = Conversation::where('user_id', $user->id)->sum('crisis_flags_count');
+        
+        $lastMessage = Message::where('user_id', $user->id)->where('role', 'user')->latest()->first();
+        $lastChatTime = $lastMessage ? $lastMessage->created_at->diffForHumans() : 'No activity';
+
         /**
          * =====================================================
          * FIRST WEEK AFTER ONBOARDING — NO KPI CALCULATION
@@ -66,6 +74,11 @@ class DashboardController extends Controller
                 'aiRecommendation' => null,
                 'isFirstWeek' => true,
                 'kpiAvailableDate' => $availableDate,
+                // Chat Stats
+                'activeChatsCount' => $activeChatsCount,
+                'archivedChatsCount' => $archivedChatsCount,
+                'lastChatTime' => $lastChatTime,
+                'totalCrisisFlags' => $totalCrisisFlags,
             ]);
         }
 
@@ -75,10 +88,10 @@ class DashboardController extends Controller
          * =====================================================
          */
 
-        // ✅ STEP 4 — Calculate KPIs from weekly check-in
+        // ✅ STEP 5 — Calculate KPIs from weekly check-in
         $kpiData = $this->calculateKPIsFromCheckin($lastCheckin);
 
-        // ✅ STEP 5 — Save / update current week snapshot
+        // ✅ STEP 6 — Save / update current week snapshot
         KpiSnapshot::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -91,12 +104,12 @@ class DashboardController extends Controller
             ]
         );
 
-        // ✅ STEP 6 — Load KPI history
+        // ✅ STEP 7 — Load KPI history
         $kpiHistory = KpiSnapshot::where('user_id', $user->id)
             ->orderBy('week_start', 'asc')
             ->get();
 
-        // ✅ STEP 7 — AI Recommendation
+        // ✅ STEP 8 — AI Recommendation
         $aiRecommender = new AiRecommender();
 
         if ($kpiData['emotionalScore'] <= 2.0) {
@@ -112,14 +125,6 @@ class DashboardController extends Controller
                 $kpiData['emotionalScore']
             );
         }
-
-        // ✅ STEP 8 — Conversational Support Stats
-        $activeChatsCount = Conversation::where('user_id', $user->id)->active()->count();
-        $archivedChatsCount = Conversation::where('user_id', $user->id)->archived()->count();
-        $totalCrisisFlags = Conversation::where('user_id', $user->id)->sum('crisis_flags_count');
-        
-        $lastMessage = Message::where('user_id', $user->id)->where('role', 'user')->latest()->first();
-        $lastChatTime = $lastMessage ? $lastMessage->created_at->diffForHumans() : 'No activity';
 
         return view('dashboard', [
             'user' => $user,
@@ -137,6 +142,7 @@ class DashboardController extends Controller
             'lastChatTime' => $lastChatTime,
             'totalCrisisFlags' => $totalCrisisFlags,
         ]);
+
     }
 
     // =============================================================

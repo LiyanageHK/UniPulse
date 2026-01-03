@@ -3127,7 +3127,7 @@
                         <div class="counselor-contact">
                             ${c.email ? `<span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg> ${c.email}</span>` : ''}
                             ${c.phone ? `<br><span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg> ${c.phone}</span>` : ''}
-                            ${c.office_location ? `<br><span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg> ${c.office_location}</span>` : ''}
+                            ${c.hospital ? `<br><span style="display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg> ${c.hospital}</span>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -3272,7 +3272,7 @@
                     <div class="counselor-card-chat" style="border-left: 4px solid ${color}; background: ${lightBg}; margin-bottom: 10px; padding: 12px; border-radius: 8px;">
                         <div class="counselor-name" style="color: ${color}; font-weight: 600; font-size: 14px;">${c.name}</div>
                         <div class="counselor-title" style="color: #4b5563; font-size: 12px; margin-top: 4px;">${c.title}</div>
-                        <div class="counselor-location" style="color: #6b7280; font-size: 12px; margin-top: 4px;">${c.office_location}</div>
+                        <div class="counselor-location" style="color: #6b7280; font-size: 12px; margin-top: 4px;">${c.hospital || ''}</div>
                     </div>
                 `;
             });
@@ -3285,16 +3285,16 @@
         // Show all category buttons (when user clicks "Yes" on YELLOW/BLUE)
         async function showAllCategoryButtons() {
             const categories = [
-                {key: 'academic', label: 'Academic & Study Support', color: '#3b82f6'},
-                {key: 'mental_health', label: 'Mental Health & Wellness', color: '#8b5cf6'},
-                {key: 'social', label: 'Social & Peer Relationships', color: '#06b6d4'},
-                {key: 'crisis', label: 'Crisis & Emergency', color: '#ef4444'},
-                {key: 'career', label: 'Career Guidance', color: '#f59e0b'},
-                {key: 'relationship', label: 'Relationship Support', color: '#ec4899'},
-                {key: 'family', label: 'Family & Home Issues', color: '#10b981'},
-                {key: 'physical', label: 'Physical Health', color: '#14b8a6'},
-                {key: 'financial', label: 'Financial Wellness', color: '#84cc16'},
-                {key: 'personal_development', label: 'Personal Development', color: '#6366f1'},
+                {key: 'Academic & Study Support', label: 'Academic & Study Support', color: '#3b82f6'},
+                {key: 'Mental Health & Wellness', label: 'Mental Health & Wellness', color: '#8b5cf6'},
+                {key: 'Social Integration & Peer Relationships', label: 'Social & Peer Relationships', color: '#06b6d4'},
+                {key: 'Crisis & Emergency Intervention', label: 'Crisis & Emergency', color: '#ef4444'},
+                {key: 'Career Guidance & Future Planning', label: 'Career Guidance', color: '#f59e0b'},
+                {key: 'Relationship & Love Affairs', label: 'Relationship Support', color: '#ec4899'},
+                {key: 'Family & Home-Related Issues', label: 'Family & Home Issues', color: '#10b981'},
+                {key: 'Physical Health & Lifestyle', label: 'Physical Health', color: '#14b8a6'},
+                {key: 'Financial Wellness', label: 'Financial Wellness', color: '#84cc16'},
+                {key: 'Extracurricular & Personal Development', label: 'Personal Development', color: '#6366f1'},
             ];
             addCategoryButtons(categories);
         }
@@ -3632,7 +3632,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                                             </svg>
-                                            ${c.office_location}
+                                            ${c.hospital || ''}
                                         </div>
                                     </div>
                                 `).join('')}

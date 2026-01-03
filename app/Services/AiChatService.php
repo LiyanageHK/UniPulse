@@ -518,16 +518,16 @@ CONCERNING;
     protected function getCounselorCategories(): array
     {
         return [
-            ['key' => 'academic', 'label' => 'Academic & Study Support', 'color' => '#3b82f6'],
-            ['key' => 'mental_health', 'label' => 'Mental Health & Wellness', 'color' => '#8b5cf6'],
-            ['key' => 'social', 'label' => 'Social & Peer Relationships', 'color' => '#06b6d4'],
-            ['key' => 'crisis', 'label' => 'Crisis & Emergency', 'color' => '#ef4444'],
-            ['key' => 'career', 'label' => 'Career Guidance', 'color' => '#f59e0b'],
-            ['key' => 'relationship', 'label' => 'Relationship Support', 'color' => '#ec4899'],
-            ['key' => 'family', 'label' => 'Family & Home Issues', 'color' => '#10b981'],
-            ['key' => 'physical', 'label' => 'Physical Health', 'color' => '#14b8a6'],
-            ['key' => 'financial', 'label' => 'Financial Wellness', 'color' => '#84cc16'],
-            ['key' => 'personal_development', 'label' => 'Personal Development', 'color' => '#6366f1'],
+            ['key' => 'Academic & Study Support', 'label' => 'Academic & Study Support', 'color' => '#3b82f6'],
+            ['key' => 'Mental Health & Wellness', 'label' => 'Mental Health & Wellness', 'color' => '#8b5cf6'],
+            ['key' => 'Social Integration & Peer Relationships', 'label' => 'Social & Peer Relationships', 'color' => '#06b6d4'],
+            ['key' => 'Crisis & Emergency Intervention', 'label' => 'Crisis & Emergency', 'color' => '#ef4444'],
+            ['key' => 'Career Guidance & Future Planning', 'label' => 'Career Guidance', 'color' => '#f59e0b'],
+            ['key' => 'Relationship & Love Affairs', 'label' => 'Relationship Support', 'color' => '#ec4899'],
+            ['key' => 'Family & Home-Related Issues', 'label' => 'Family & Home Issues', 'color' => '#10b981'],
+            ['key' => 'Physical Health & Lifestyle', 'label' => 'Physical Health', 'color' => '#14b8a6'],
+            ['key' => 'Financial Wellness', 'label' => 'Financial Wellness', 'color' => '#84cc16'],
+            ['key' => 'Extracurricular & Personal Development', 'label' => 'Personal Development', 'color' => '#6366f1'],
         ];
     }
 

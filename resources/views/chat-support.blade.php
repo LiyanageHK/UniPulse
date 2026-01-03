@@ -3232,7 +3232,7 @@
         async function showCounselorsForCategory(categoryKey, categoryLabel, categoryColor) {
             const color = categoryColor || '#3b82f6';
             try {
-                const response = await fetch(`/chat/counselors/${categoryKey}`, {
+                const response = await fetch(`/chat/counselors/${encodeURIComponent(categoryKey)}`, {
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json'

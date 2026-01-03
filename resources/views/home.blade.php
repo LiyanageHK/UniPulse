@@ -417,116 +417,170 @@
 					</p>
 				</div>
 
-				<div class="grid md:grid-cols-3 gap-8" id="testimonialsContainer">
-					<!-- Testimonials will be loaded dynamically -->
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
-						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
-						<div class="h-20 bg-gray-200 rounded mb-6"></div>
-						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+				<div class="carousel-container">
+					<div class="carousel-track" id="testimonialsContainer">
+						<!-- Testimonials will be loaded dynamically -->
+						<div class="carousel-slide">
+							<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
+								<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
+								<div class="h-20 bg-gray-200 rounded mb-6"></div>
+								<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
+								<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
+								<div class="h-20 bg-gray-200 rounded mb-6"></div>
+								<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
+								<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
+								<div class="h-20 bg-gray-200 rounded mb-6"></div>
+								<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+							</div>
+						</div>
 					</div>
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
-						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
-						<div class="h-20 bg-gray-200 rounded mb-6"></div>
-						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
-					</div>
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
-						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
-						<div class="h-20 bg-gray-200 rounded mb-6"></div>
-						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+
+					<!-- Carousel Navigation -->
+					<div class="carousel-nav">
+						<button id="prevBtn" class="carousel-btn disabled">
+							<i class="fas fa-arrow-left"></i>
+						</button>
+						<button id="nextBtn" class="carousel-btn">
+							<i class="fas fa-arrow-right"></i>
+						</button>
 					</div>
 				</div>
 				</div>
 			</section>
 
 			<script>
-				// Load testimonials from API
+				// Carousel logic and testimonial loading
 				document.addEventListener('DOMContentLoaded', async function() {
 					const container = document.getElementById('testimonialsContainer');
+					const prevBtn = document.getElementById('prevBtn');
+					const nextBtn = document.getElementById('nextBtn');
 					const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
 					
-					// Default testimonials as fallback
+					let currentIndex = 0;
+					let testimonials = [];
+
 					const defaultTestimonials = [
 						{
 							content: "UniPulse has been a lifesaver during my studies. The AI chatbot is always there when I need someone to talk to, and the counselors are incredibly supportive.",
 							rating: 5,
 							display_name: "Sarah J.",
-							display_initial: "S"
+							display_initial: "S",
+							approved_at: "2 days ago"
 						},
 						{
 							content: "The peer matching feature helped me find friends who understood what I was going through. I no longer feel alone in my struggles.",
 							rating: 5,
 							display_name: "Michael C.",
-							display_initial: "M"
+							display_initial: "M",
+							approved_at: "1 week ago"
 						},
 						{
 							content: "The progress tracking tools helped me understand my mental health patterns and celebrate small victories. It's incredibly empowering!",
 							rating: 5,
 							display_name: "Emily R.",
-							display_initial: "E"
+							display_initial: "E",
+							approved_at: "3 days ago"
+						},
+						{
+							content: "I love how easy it is to track my academic and mental health goals in one place. Truly a holistic approach.",
+							rating: 5,
+							display_name: "David K.",
+							display_initial: "D",
+							approved_at: "5 days ago"
 						}
 					];
 
-					try {
-						const response = await fetch('/api/feedback/approved?limit=6');
-						const data = await response.json();
+					function updateCarousel() {
+						const slideWidth = container.querySelector('.carousel-slide').offsetWidth;
+						const gap = parseInt(window.getComputedStyle(container).gap) || 0;
+						container.style.transform = `translateX(-${currentIndex * (slideWidth + gap)}px)`;
 						
-						let testimonials = defaultTestimonials;
-						if (data.success && data.feedbacks && data.feedbacks.length > 0) {
-							testimonials = data.feedbacks;
+						// Update buttons
+						const visibleSlides = getVisibleSlides();
+						prevBtn.classList.toggle('disabled', currentIndex === 0);
+						nextBtn.classList.toggle('disabled', currentIndex >= testimonials.length - visibleSlides);
+					}
+
+					function getVisibleSlides() {
+						if (window.innerWidth >= 1024) return 3;
+						if (window.innerWidth >= 768) return 2;
+						return 1;
+					}
+
+					nextBtn.addEventListener('click', () => {
+						const visibleSlides = getVisibleSlides();
+						if (currentIndex < testimonials.length - visibleSlides) {
+							currentIndex++;
+							updateCarousel();
 						}
-						
-						// Render testimonials
-						container.innerHTML = testimonials.slice(0, 6).map((feedback, index) => {
+					});
+
+					prevBtn.addEventListener('click', () => {
+						if (currentIndex > 0) {
+							currentIndex--;
+							updateCarousel();
+						}
+					});
+
+					window.addEventListener('resize', updateCarousel);
+
+					async function loadTestimonials() {
+						try {
+							const response = await fetch('/api/feedback/approved?limit=10');
+							const data = await response.json();
+							
+							if (data.success && data.feedbacks && data.feedbacks.length > 0) {
+								testimonials = data.feedbacks;
+							} else {
+								testimonials = defaultTestimonials;
+							}
+						} catch (error) {
+							console.error('Failed to load testimonials:', error);
+							testimonials = defaultTestimonials;
+						}
+
+						renderTestimonials();
+						updateCarousel();
+					}
+
+					function renderTestimonials() {
+						container.innerHTML = testimonials.map((feedback, index) => {
 							const colorClass = avatarColors[index % avatarColors.length];
 							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
 							
 							return `
-								<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-									<div class="flex items-center mb-6">
-										<div class="flex text-yellow-400">${stars}</div>
-									</div>
-									<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-										"${feedback.content}"
-									</p>
-									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white font-bold text-xl">
-											${feedback.display_initial}
+								<div class="carousel-slide">
+									<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg h-full flex flex-col">
+										<div class="flex items-center mb-6">
+											<div class="flex text-yellow-400">${stars}</div>
 										</div>
-										<div>
-											<p class="font-bold text-gray-900">${feedback.display_name}</p>
-										</div>
-									</div>
-								</div>
-							`;
-						}).join('');
-						
-					} catch (error) {
-						console.error('Failed to load testimonials:', error);
-						// Keep the loading skeleton or show defaults
-						container.innerHTML = defaultTestimonials.map((feedback, index) => {
-							const colorClass = avatarColors[index % avatarColors.length];
-							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
-							
-							return `
-								<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-									<div class="flex items-center mb-6">
-										<div class="flex text-yellow-400">${stars}</div>
-									</div>
-									<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-										"${feedback.content}"
-									</p>
-									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white font-bold text-xl">
-											${feedback.display_initial}
-										</div>
-										<div>
-											<p class="font-bold text-gray-900">${feedback.display_name}</p>
+										<p class="text-gray-700 text-lg leading-relaxed mb-6 italic flex-grow">
+											"${feedback.content}"
+										</p>
+										<div class="flex items-center gap-4 mt-auto">
+											<div class="w-12 h-12 ${colorClass} flex-shrink-0 rounded-full flex items-center justify-center text-white font-bold text-xl">
+												${feedback.display_initial}
+											</div>
+											<div class="flex-grow">
+												<p class="font-bold text-gray-900">${feedback.display_name}</p>
+												<p class="text-xs text-gray-500">${feedback.approved_at}</p>
+											</div>
 										</div>
 									</div>
 								</div>
 							`;
 						}).join('');
 					}
+
+					loadTestimonials();
 				});
 			</script>
 

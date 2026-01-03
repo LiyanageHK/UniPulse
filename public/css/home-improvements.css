@@ -20,9 +20,17 @@ body {
 }
 
 @keyframes gradientShift {
-	0% { background-position: 0% 50%; }
-	50% { background-position: 100% 50%; }
-	100% { background-position: 0% 50%; }
+	0% {
+		background-position: 0% 50%;
+	}
+
+	50% {
+		background-position: 100% 50%;
+	}
+
+	100% {
+		background-position: 0% 50%;
+	}
 }
 
 .hero-gradient::before {
@@ -85,10 +93,13 @@ body {
 }
 
 @keyframes pulse {
-	0%, 100% {
+
+	0%,
+	100% {
 		opacity: 1;
 		transform: scale(1);
 	}
+
 	50% {
 		opacity: 0.6;
 		transform: scale(1.05);
@@ -113,9 +124,12 @@ body {
 }
 
 @keyframes glow {
-	0%, 100% {
+
+	0%,
+	100% {
 		box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 0 80px rgba(99, 102, 241, 0.3);
 	}
+
 	50% {
 		box-shadow: 0 0 60px rgba(139, 92, 246, 0.7), 0 0 120px rgba(99, 102, 241, 0.5);
 	}
@@ -132,15 +146,25 @@ body {
 }
 
 @keyframes gradientText {
-	0%, 100% { background-position: 0% 50%; }
-	50% { background-position: 100% 50%; }
+
+	0%,
+	100% {
+		background-position: 0% 50%;
+	}
+
+	50% {
+		background-position: 100% 50%;
+	}
 }
 
 /* Floating Animation with Rotation */
 @keyframes float {
-	0%, 100% {
+
+	0%,
+	100% {
 		transform: translateY(0px) rotate(0deg);
 	}
+
 	50% {
 		transform: translateY(-25px) rotate(3deg);
 	}
@@ -150,6 +174,7 @@ body {
 	animation: float 6s ease-in-out infinite;
 }
 
+/* Enhanced Testimonial Cards */
 /* Enhanced Testimonial Cards */
 .testimonial-card {
 	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -161,6 +186,77 @@ body {
 	transform: translateY(-8px) scale(1.03);
 	box-shadow: 0 25px 50px rgba(139, 92, 246, 0.2);
 	border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Carousel Styles */
+.carousel-container {
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+	padding: 20px 0;
+}
+
+.carousel-track {
+	display: flex;
+	transition: transform 0.5s ease-in-out;
+	gap: 2rem;
+}
+
+.carousel-slide {
+	min-width: calc(33.333% - 1.35rem);
+	flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+	.carousel-slide {
+		min-width: calc(50% - 1rem);
+	}
+}
+
+@media (max-width: 768px) {
+	.carousel-slide {
+		min-width: 100%;
+	}
+}
+
+.carousel-nav {
+	display: flex;
+	justify-content: center;
+	gap: 1.5rem;
+	margin-top: 3rem;
+}
+
+.carousel-btn {
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 50%;
+	background: white;
+	color: #6366f1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+	cursor: pointer;
+	transition: all 0.3s ease;
+	border: 2px solid rgba(99, 102, 241, 0.1);
+	font-size: 1.25rem;
+}
+
+.carousel-btn:hover {
+	background: #6366f1;
+	color: white;
+	transform: scale(1.1);
+	box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+}
+
+.carousel-btn:active {
+	transform: scale(0.95);
+}
+
+.carousel-btn.disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
 }
 
 /* Button Hover Effects */

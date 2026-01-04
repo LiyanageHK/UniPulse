@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Survey Complete - UniPulse">
 <div class="m-20 bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
     <div class="max-w-xl w-full bg-white p-8 rounded-xl shadow-md text-center">
         <!-- Success Icon -->

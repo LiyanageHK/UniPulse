@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Peer Requests - UniPulse">
 
 <div class="px-6 py-6">
 

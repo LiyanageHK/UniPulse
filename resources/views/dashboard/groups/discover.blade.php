@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Discover Groups - UniPulse">
     <div class="min-h-screen container mx-auto px-4 py-10">
         <div class="max-w-7xl mx-auto">
             <div class="container mx-auto px-4 py-6">

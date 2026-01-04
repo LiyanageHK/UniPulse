@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Weekly Check-Ins - UniPulse">
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
         <div class="container mx-auto">

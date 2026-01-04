@@ -4,6 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Home - UniPulse</title>
+		<link rel="icon" type="image/jpeg" href="{{ asset('images/UP.jpg') }}">
 
 		<!-- Fonts -->
 		<link rel="preconnect" href="https://fonts.bunny.net">
@@ -216,7 +217,7 @@
 							<p class="text-gray-600 leading-relaxed mb-6">
 								Personalized profiles that understand your unique needs, preferences, and academic journey to deliver tailored support.
 							</p>
-							<a href="#" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
+							<a href="{{ route('profiling') }}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
 								Learn More <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>
@@ -230,7 +231,7 @@
 							<p class="text-gray-600 leading-relaxed mb-6">
 								Advanced AI algorithms monitor wellbeing indicators to provide early intervention and ensure your safety and mental health.
 							</p>
-							<a href="#" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
+							<a href="{{ route('socialriskservice') }}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
 								Learn More <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>
@@ -258,7 +259,7 @@
 							<p class="text-gray-600 leading-relaxed mb-6">
 								Connect with fellow students who share similar experiences, interests, and challenges for mutual support and friendship.
 							</p>
-							<a href="{{url('chat-support')}}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
+							<a href="{{ route('services.peer-matching') }}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
 								Learn More <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>

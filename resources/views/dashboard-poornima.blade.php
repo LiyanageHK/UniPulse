@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Risk Detection - UniPulse">
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-6xl mx-auto">
             <h1 class="text-3xl font-bold mb-2">Your Wellbeing Report</h1>

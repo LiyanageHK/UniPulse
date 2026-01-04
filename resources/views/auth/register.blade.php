@@ -1,4 +1,4 @@
-<x-guest-layout full>
+<x-guest-layout full title="Register - UniPulse">
     <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
 
         <!-- LEFT SIDE: Form Section -->

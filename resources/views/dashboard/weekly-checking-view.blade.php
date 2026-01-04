@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Check-In Details - UniPulse">
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-7xl mx-auto">
             <div class="bg-white shadow-xl rounded-2xl overflow-hidden px-8 py-6">

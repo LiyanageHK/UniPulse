@@ -1,4 +1,4 @@
-<x-guest-layout>
+<x-guest-layout title="Forgot Password - UniPulse">
     <div class="min-h-screen flex flex-col justify-center items-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <!-- Header / Title -->
         <div class="text-center mb-8">

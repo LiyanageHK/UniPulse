@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Dashboard - UniPulse">
 
 <div class="max-w-7xl mx-auto py-8 px-4">
 

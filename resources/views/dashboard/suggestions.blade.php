@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Suggestions - UniPulse">
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-4xl mx-auto">
         @if ($survey_count >= 5)

@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Peer Matching - UniPulse">
     <x-peer-macthing-nav/>
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-6xl mx-auto">

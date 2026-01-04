@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>About Us — UniPulse</title>
+    <title>About Us - UniPulse</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/UP.jpg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>

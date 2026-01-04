@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Change Password - UniPulse">
 
 <div class="max-w-3xl mx-auto py-8">
 

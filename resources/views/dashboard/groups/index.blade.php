@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Groups - UniPulse">
     <x-peer-macthing-nav />
     <div class="min-h-screen container mx-auto px-4 py-10">
         <div class="max-w-6xl mx-auto">

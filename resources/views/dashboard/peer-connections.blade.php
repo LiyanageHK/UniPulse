@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Peer Connections - UniPulse">
     <x-peer-macthing-nav />
     <div class="min-h-screen container mx-auto px-4 py-8">
         <div class="max-w-7xl mx-auto">

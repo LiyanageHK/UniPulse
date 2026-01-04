@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Group Chat - UniPulse">
  {{-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> --}}
     <div class="flex bg-gray-100" style="height: calc(100vh - 64px)">
 

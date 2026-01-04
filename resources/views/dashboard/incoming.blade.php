@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Incoming Requests - UniPulse">
     <div class="min-h-screen container mx-auto px-4">
         <div class="max-w-6xl mx-auto">
             <x-peer-macthing-nav/>

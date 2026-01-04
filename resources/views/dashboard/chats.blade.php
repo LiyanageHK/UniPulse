@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Chats - UniPulse">
     {{-- <x-peer-macthing-nav /> --}}
     <div class="flex bg-gray-100" style="height: calc(100vh - 64px)">
 

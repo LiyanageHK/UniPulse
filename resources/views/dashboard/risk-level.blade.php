@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Risk Level - UniPulse">
     @if ($survey_count >= 4)
 
         <a href="{{ route('suggestions') }}" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition">See Suggestions</a>

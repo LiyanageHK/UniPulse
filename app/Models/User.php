@@ -53,8 +53,8 @@ class User extends Authenticatable
         // Onboarding status
         'onboarding_completed',
         'onboarding_completed_at',
-        'on_boarding_required'
-        'last_checkin_at'
+        'on_boarding_required',
+        'last_checkin_at',
     ];
 
     protected $hidden = [
@@ -146,7 +146,7 @@ class User extends Authenticatable
     }
 
 
-}
+
     public function weeklyCheckins()
 {
     return $this->hasMany(WeeklyCheckin::class);

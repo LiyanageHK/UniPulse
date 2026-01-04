@@ -6,16 +6,16 @@
             <h2 class="text-2xl font-semibold text-gray-800 mb-6">My Weekly Check-Ins</h2>
             @if (!$hasSubmittedWeeklyCheck)
                 <div class="my-5 text-right">
-                    <a href="{{ route('survey') }}"
+                    {{-- <a href="{{ route('survey') }}"
                         class="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition">
                         Take Survey
-                    </a>
+                    </a> --}}
             @endif
         </div>
         @if ($checkings->isEmpty())
-            <div class="bg-blue-100 text-blue-700 p-4 rounded-lg">
+            {{-- <div class="bg-blue-100 text-blue-700 p-4 rounded-lg">
                 You have not submitted any weekly check-ins yet.
-            </div>
+            </div> --}}
         @else
             <!-- Card wrapper -->
             <div class="bg-white shadow-md rounded-lg overflow-hidden">
@@ -135,7 +135,7 @@
                                             @default
                                         @endswitch
                                     </td>
-                                    
+
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {{ $check->created_at->format('d M Y') }}</td>
                                     <td class="px-6 py-4 text-right whitespace-nowrap text-sm text-gray-700">

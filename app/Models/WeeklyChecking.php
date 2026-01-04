@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WeeklyChecking extends Model
 {
-
+    
     protected $fillable = [
         'user_id',
         'overall_mood',

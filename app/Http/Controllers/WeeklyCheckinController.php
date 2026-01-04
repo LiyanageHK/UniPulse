@@ -7,6 +7,8 @@ use App\Models\KpiSnapshot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\WeeklyChecking;
+//use Auth;
 
 class WeeklyCheckinController extends Controller
 {
@@ -41,28 +43,28 @@ class WeeklyCheckinController extends Controller
         $weekStart = Carbon::now()->startOfWeek()->toDateString();
 
         $data = $request->validate([
-            'mood' => 'required|integer|min:1|max:5', 
-            'tense' => 'required|integer|min:1|max:5', 
-            'overwhelmed' => 'required|integer|min:1|max:5', 
-            'worry' => 'required|integer|min:1|max:5', 
-            'sleep_trouble' => 'required|integer|min:1|max:5', 
-            'openness_to_mentor' => 'required|integer|min:1|max:5', 
-            'knowledge_of_support' => 'required|integer|min:1|max:5', 
-            'peer_connection' => 'required|integer|min:1|max:5', 
-            'peer_interaction' => 'required|integer|min:1|max:5', 
+            'mood' => 'required|integer|min:1|max:5',
+            'tense' => 'required|integer|min:1|max:5',
+            'overwhelmed' => 'required|integer|min:1|max:5',
+            'worry' => 'required|integer|min:1|max:5',
+            'sleep_trouble' => 'required|integer|min:1|max:5',
+            'openness_to_mentor' => 'required|integer|min:1|max:5',
+            'knowledge_of_support' => 'required|integer|min:1|max:5',
+            'peer_connection' => 'required|integer|min:1|max:5',
+            'peer_interaction' => 'required|integer|min:1|max:5',
             'group_participation' => 'nullable|string',
-            'feel_left_out' => 'required|integer|min:1|max:5', 
-            'no_one_to_talk' => 'required|integer|min:1|max:5', 
-            'university_belonging' => 'required|integer|min:1|max:5', 
-            'meaningful_connections' => 'required|integer|min:1|max:5', 
-            'studies_interesting' => 'required|integer|min:1|max:5', 
-            'academic_confidence' => 'required|integer|min:1|max:5', 
-            'workload_management' => 'required|integer|min:1|max:5', 
-            'no_energy' => 'required|integer|min:1|max:5', 
-            'low_pleasure' => 'required|integer|min:1|max:5', 
-            'feeling_down' => 'required|integer|min:1|max:5', 
-            'emotionally_drained' => 'required|integer|min:1|max:5', 
-            'hard_to_stay_focused' => 'required|integer|min:1|max:5', 
+            'feel_left_out' => 'required|integer|min:1|max:5',
+            'no_one_to_talk' => 'required|integer|min:1|max:5',
+            'university_belonging' => 'required|integer|min:1|max:5',
+            'meaningful_connections' => 'required|integer|min:1|max:5',
+            'studies_interesting' => 'required|integer|min:1|max:5',
+            'academic_confidence' => 'required|integer|min:1|max:5',
+            'workload_management' => 'required|integer|min:1|max:5',
+            'no_energy' => 'required|integer|min:1|max:5',
+            'low_pleasure' => 'required|integer|min:1|max:5',
+            'feeling_down' => 'required|integer|min:1|max:5',
+            'emotionally_drained' => 'required|integer|min:1|max:5',
+            'hard_to_stay_focused' => 'required|integer|min:1|max:5',
             'just_through_motions' => 'required|integer|min:1|max:5'
         ]);
 
@@ -70,6 +72,30 @@ class WeeklyCheckinController extends Controller
         $data['week_start'] = $weekStart;
 
         WeeklyCheckin::create($data);
+
+         WeeklyChecking::create([
+                'user_id'               => Auth::id(),
+                'overall_mood'          => $request->mood,
+                'felt_supported'        => $request->university_belonging,
+                'emotion_description'   => "",
+                'trouble_sleeping'      => $request->sleep_trouble,
+                'hard_to_focus'         => $request->hard_to_stay_focused,
+                'open_to_counselor'     => $request->openness_to_mentor,
+                'know_access_support'   => $request->knowledge_of_support,
+                'feeling_tense'         => $request->tense,
+                'worrying'              => $request->worry,
+                'interact_peers'        => $request->peer_connection,
+                'keep_up_workload'      => $request->workload_management,
+                'group_activities'      => $request->group_participation ? json_encode($request->group_participation) : null,
+                'academic_challenges'   => $request->academic_confidence ? json_encode($request->academic_confidence) : null,
+                'feel_left_out'         => $request->feel_left_out,
+                'no_one_to_talk'        => $request->no_one_to_talk,
+                'no_energy'             => $request->no_energy,
+                'little_pleasure'       => $request->low_pleasure,
+                'feeling_down'          => $request->feeling_down,
+                'emotionally_drained'   => $request->emotionally_drained,
+                'going_through_motions' => $request->just_through_motions,
+            ]);
 
         $numericStress = round((
             ($data['tense'] + $data['worry'] + $data['sleep_trouble']) / 3
@@ -96,6 +122,7 @@ if ($numericStress >= 4.0) {
             'group_work_comfort' => $data['peer_interaction'],
             'last_checkin_at' => now(),
         ]);
+
 
         //  KPI creation handled by Dashboard controller
 

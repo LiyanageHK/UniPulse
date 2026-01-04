@@ -40,7 +40,7 @@
                             <div class="w-10 h-10 bg-[#3182ce] rounded-lg flex items-center justify-center text-white text-xl">🧠</div>
                             <h3 class="text-xl font-bold text-gray-800">Emotional & Mental Wellbeing</h3>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 gap-6">
                             @php
                             $emotional = [
@@ -60,7 +60,7 @@
                                 <div class="flex gap-3 justify-center flex-wrap">
                                     @for($i=1;$i<=5;$i++)
                                         <label class="inline-flex items-center justify-center cursor-pointer transition-all duration-200 hover:shadow-md">
-                                            <input type="radio" name="{{ $name }}" value="{{ $i }}" 
+                                            <input type="radio" name="{{ $name }}" value="{{ $i }}"
                                                    class="sr-only" required>
                                             <span class="px-6 py-3 rounded-xl border-2 border-gray-200 bg-white font-semibold text-gray-700 min-w-[3rem] text-center transition-all duration-200">{{ $i }}</span>
                                         </label>
@@ -78,7 +78,7 @@
                             <div class="w-10 h-10 bg-[#3182ce] rounded-lg flex items-center justify-center text-white text-xl">👥</div>
                             <h3 class="text-xl font-bold text-gray-800">Social Inclusion</h3>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 gap-6">
                             @php
                             $social = [
@@ -87,7 +87,7 @@
                                 'I often feel left out or disconnected from others (1-Never; 5-Always)' => 'feel_left_out',
                                 'I feel like I do not have anyone to talk to when I am struggling (1-Strongly disagree; 5-Strongly agree)' => 'no_one_to_talk',
                                 'I felt I belonged to the university community (1-Strongly disagree; 5-Strongly agree)' => 'university_belonging',
-                                'I had meaningful connections with peers this week (1-Strongly disagree; 5-Strongly agree)' => 'meaningful_connections'
+                                'I had meaningful connections with peers this week (1-Strongly disagree; 5-Strongly agree)'=> 'meaningful_connections'
                             ];
                             @endphp
 
@@ -125,7 +125,7 @@
                             <div class="w-10 h-10 bg-[#3182ce] rounded-lg flex items-center justify-center text-white text-xl">🔥</div>
                             <h3 class="text-xl font-bold text-gray-800">Motivation</h3>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 gap-6">
                             @php
                             $motivation = [
@@ -159,7 +159,7 @@
                             <div class="w-10 h-10 bg-[#3182ce] rounded-lg flex items-center justify-center text-white text-xl">😞</div>
                             <h3 class="text-xl font-bold text-gray-800">Burnout & Depression</h3>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 gap-6">
                             @php
                             $burnout = [
@@ -168,9 +168,9 @@
                                 'I have been feeling down, hopeless, or sad most of the time (1- Strongly disagree; 5-Strongly agree)' => 'feeling_down',
                                 'I feel emotionally drained by my studies (1- Not at all; 5-Completely)' => 'emotionally_drained',
                                 'I find it hard to stay focused on academic tasks (1- Strongly disagree; 5-Strongly agree)' => 'hard_to_stay_focused',
-                                'I feel like I am just going through the motions without interest (1- Strongly disagree; 5-Strongly agree)' => 'just_through_motions' 
+                                'I feel like I am just going through the motions without interest (1- Strongly disagree; 5-Strongly agree)' => 'just_through_motions'
                             ];
-                            @endphp  
+                            @endphp
 
                             @foreach($burnout as $label => $name)
                             <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">

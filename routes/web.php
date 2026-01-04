@@ -83,6 +83,10 @@ Route::get('/privacy-policy', function () {
     return view('privacy-policy');
 })->name('privacy');
 
+// Public About page
+Route::view('/about', 'AboutUs')->name('about');
+
+
 // Public chat information page (accessible without login)
 Route::get('/conversational-support', function () {
     return view('chat-info');
@@ -92,6 +96,9 @@ Route::get('/conversational-support', function () {
 Route::get('/profiling', function () {
     return view('profiling');
 })->name('profiling');
+
+// Public Peer Matching service page 
+Route::view('/services/peer-matching', 'ServicesPeerMatching')->name('services.peer-matching');
 
 /*Route::get('/profiling', [ServicePageController::class, 'studentProfiling'])
     ->name('services.studentProfiling');*/

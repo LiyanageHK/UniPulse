@@ -491,7 +491,8 @@
 					border: 1px solid #e5e7eb;
 					border-radius: 1rem;
 					padding: 1.5rem;
-					height: 280px;
+					height: 175px;
+					width: 320px;
 					display: flex;
 					flex-direction: column;
 					transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -501,42 +502,41 @@
 				}
 
 				.feedback-card:hover {
-					transform: translateY(-12px);
+					transform: translateY(-8px);
 					border-color: #93c5fd;
-					box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.25);
+					box-shadow: 0 20px 40px -12px rgba(37, 99, 235, 0.25);
 				}
 
 				.feedback-stars {
 					display: flex;
 					gap: 0.25rem;
-					margin-bottom: 0.75rem;
+					margin-bottom: 0.5rem;
 					flex-shrink: 0;
 				}
 
 				.feedback-stars i {
 					color: #fbbf24;
-					font-size: 0.875rem;
+					font-size: 0.75rem;
 				}
 
 				.feedback-content {
 					color: #4b5563;
-					font-size: 0.9375rem;
-					line-height: 1.6;
+					font-size: 0.875rem;
+					line-height: 1.5;
 					flex-grow: 1;
-					margin-bottom: 1rem;
+					margin-bottom: 0.75rem;
 					position: relative;
 					padding-left: 0;
 					overflow: hidden;
 					display: -webkit-box;
-					-webkit-line-clamp: 4;
+					-webkit-line-clamp: 2;
 					-webkit-box-orient: vertical;
 					text-overflow: ellipsis;
 				}
 
-				/* Quote icon styling - modern look */
 				.feedback-quote-icon {
-					width: 2.25rem;
-					height: 2.25rem;
+					width: 2.5rem;
+					height: 2.5rem;
 					background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 					border-radius: 50%;
 					display: flex;
@@ -808,9 +808,7 @@
 					];
 
 					function getItemsPerSlide() {
-						if (window.innerWidth >= 1024) return 6; // 3 cols x 2 rows
-						if (window.innerWidth >= 768) return 4;  // 2 cols x 2 rows
-						return 2; // 1 col x 2 rows
+						return 6; // Always 3 cols x 2 rows = 6 cards per slide
 					}
 
 					function updateCarousel() {
@@ -883,28 +881,36 @@
 					});
 
 					async function loadTestimonials() {
+						console.log('Loading testimonials...');
 						try {
 							const response = await fetch('/api/feedback/approved?limit=24');
 							const data = await response.json();
+							console.log('API Response:', data);
 							
 							if (data.success && data.feedbacks && data.feedbacks.length > 0) {
 								testimonials = data.feedbacks;
+								console.log('Loaded testimonials from API:', testimonials.length);
 							} else {
 								testimonials = defaultTestimonials;
+								console.log('Using default testimonials:', defaultTestimonials.length);
 							}
 						} catch (error) {
 							console.error('Failed to load testimonials:', error);
 							testimonials = defaultTestimonials;
+							console.log('Using default testimonials after error:', defaultTestimonials.length);
 						}
 
 						renderTestimonials();
 						createPagination();
 						updateCarousel();
+						console.log('Carousel initialized with', totalSlides, 'slides');
 					}
 
 					function renderTestimonials() {
+						console.log('Rendering testimonials...');
 						const itemsPerSlide = getItemsPerSlide();
 						totalSlides = Math.ceil(testimonials.length / itemsPerSlide);
+						console.log('Items per slide:', itemsPerSlide, 'Total slides:', totalSlides);
 						
 						// Ensure currentSlide is valid
 						if (currentSlide >= totalSlides) {
@@ -923,17 +929,18 @@
 							const cardsHTML = slideItems.map((feedback, index) => {
 								const globalIndex = startIndex + index;
 								const gradientClass = avatarGradients[globalIndex % avatarGradients.length];
-								const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
+								const stars = Array(feedback.rating || 5).fill('<i class="fas fa-star"></i>').join('');
+								const cardId = `feedback-${slideIndex}-${index}`;
+								const approvedDate = feedback.approved_at || 'Recent';
 								
 								return `
 									<div class="feedback-card">
 										<div class="feedback-stars">${stars}</div>
 										<p class="feedback-content">${feedback.content}</p>
 										<div class="feedback-author">
-											<div class="feedback-avatar ${gradientClass}">${feedback.display_initial}</div>
+											<div class="feedback-avatar ${gradientClass}">${feedback.display_initial || feedback.display_name.charAt(0)}</div>
 											<div class="feedback-author-info">
 												<h4>${feedback.display_name}</h4>
-												<span>${feedback.approved_at}</span>
 											</div>
 										</div>
 									</div>
@@ -950,15 +957,18 @@
 						}
 						
 						container.innerHTML = slidesHTML;
+						console.log('Rendered', totalSlides, 'slides with HTML');
 					}
 
-					loadTestimonials();
+					await loadTestimonials();
 				});
+
+
 			</script>
 
-			<!-- Share Your Feedback Section (Guest) -->
-			<section class="py-20 bg-white">
-				<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+			<!-- Guest Feedback Section -->
+			<section class="py-24 bg-white">
+				<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div class="text-center mb-12">
 						<h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
 							Share Your <span class="gradient-text">Experience</span>
@@ -1044,107 +1054,6 @@
 				</div>
 			</section>
 
-			<script>
-				// Guest feedback star rating
-				let guestRating = 0;
-				document.querySelectorAll('#guestStarRating .star-btn').forEach(star => {
-					star.addEventListener('click', function() {
-						guestRating = parseInt(this.dataset.rating);
-						document.getElementById('guestRating').value = guestRating;
-						updateGuestStars();
-					});
-				});
-
-				function updateGuestStars() {
-					document.querySelectorAll('#guestStarRating .star-btn').forEach((star, index) => {
-						if (index < guestRating) {
-							star.classList.remove('text-gray-300');
-							star.classList.add('text-yellow-400');
-						} else {
-							star.classList.add('text-gray-300');
-							star.classList.remove('text-yellow-400');
-						}
-					});
-				}
-
-				async function submitGuestFeedback(event) {
-					event.preventDefault();
-					
-					const content = document.getElementById('guestContent').value.trim();
-					const name = document.getElementById('guestName').value.trim();
-					const email = document.getElementById('guestEmail').value.trim();
-					const showName = document.getElementById('guestShowName').checked;
-					
-					// Validation
-					if (guestRating === 0) {
-						alert('Please select a star rating.');
-						return false;
-					}
-					if (content.length < 1) {
-						alert('Please write something about your experience.');
-						return false;
-					}
-
-					const submitBtn = document.getElementById('guestSubmitBtn');
-					submitBtn.disabled = true;
-					submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-					try {
-						const response = await fetch('/api/feedback/guest', {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-								'X-CSRF-TOKEN': '{{ csrf_token() }}'
-							},
-							body: JSON.stringify({
-								content: content,
-								rating: guestRating,
-								guest_name: name,
-								guest_email: email,
-								show_name: showName
-							})
-						});
-
-						const data = await response.json();
-
-						if (data.success) {
-							document.getElementById('guestFeedbackForm').classList.add('hidden');
-							document.getElementById('guestFeedbackSuccess').classList.remove('hidden');
-						} else {
-							alert(data.error || 'Failed to submit feedback. Please try again.');
-							submitBtn.disabled = false;
-							submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
-						}
-					} catch (error) {
-						console.error('Feedback error:', error);
-						alert('Something went wrong. Please try again.');
-						submitBtn.disabled = false;
-						submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
-					}
-
-					return false;
-				}
-
-				function resetGuestFeedback() {
-					// Hide success message and show form
-					document.getElementById('guestFeedbackSuccess').classList.add('hidden');
-					document.getElementById('guestFeedbackForm').classList.remove('hidden');
-					
-					// Reset form fields
-					document.getElementById('guestFeedbackForm').reset();
-					document.getElementById('guestRating').value = 0;
-					guestRating = 0;
-					
-					// Reset stars
-					updateGuestStars();
-					
-					// Reset button state just in case
-					const submitBtn = document.getElementById('guestSubmitBtn');
-					submitBtn.disabled = false;
-					submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
-				}
-			</script>
-
 			<!-- FAQ Section -->
 			<section class="py-24 bg-gradient-to-b from-gray-50 to-white">
 				<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1199,6 +1108,7 @@
 							</h3>
 							<p class="text-gray-600 leading-relaxed pl-8">
 								Your AI chat conversations remain completely private unless you choose to share them. Professional counselors are there to help you.
+							</p>
 						</div>
 					</div>
 				</div>

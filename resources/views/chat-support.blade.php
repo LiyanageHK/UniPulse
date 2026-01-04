@@ -2142,7 +2142,7 @@
                                         <div class="settings-row-label">Delete All Active Chats</div>
                                         <div class="settings-row-desc">Permanently delete all active conversations</div>
                                     </div>
-                                    <button class="settings-btn danger" onclick="showDeleteActiveModal()">Delete</button>
+                                    <button class="settings-btn danger" onclick="showDeleteActiveModal()">Delete All</button>
                                 </div>
                             </div>
                         </div>
@@ -2163,7 +2163,7 @@
                                         <div class="settings-row-label">Delete All Archived</div>
                                         <div class="settings-row-desc">Permanently delete all archived conversations</div>
                                     </div>
-                                    <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete</button>
+                                    <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete All</button>
                                 </div>
                             </div>
                         </div>

@@ -1156,6 +1156,110 @@
 					</div>
 				</div>
 			</section>
+			
+			<script>
+				// Guest Feedback Star Rating Logic
+				document.addEventListener('DOMContentLoaded', function() {
+					const starBtns = document.querySelectorAll('.star-btn');
+					const ratingInput = document.getElementById('guestRating');
+
+					if (starBtns.length > 0) {
+						starBtns.forEach(btn => {
+							btn.addEventListener('mouseover', function() {
+								const rating = parseInt(this.getAttribute('data-rating'));
+								highlightStars(rating);
+							});
+
+							btn.addEventListener('mouseout', function() {
+								const currentRating = parseInt(ratingInput.value);
+								highlightStars(currentRating);
+							});
+
+							btn.addEventListener('click', function() {
+								const rating = parseInt(this.getAttribute('data-rating'));
+								ratingInput.value = rating;
+								highlightStars(rating);
+							});
+						});
+					}
+
+					function highlightStars(rating) {
+						document.querySelectorAll('.star-btn').forEach(btn => {
+							const btnRating = parseInt(btn.getAttribute('data-rating'));
+							if (btnRating <= rating) {
+								btn.classList.remove('text-gray-300');
+								btn.classList.add('text-yellow-400');
+							} else {
+								btn.classList.add('text-yellow-400');
+								btn.classList.add('text-gray-300');
+								btn.classList.remove('text-yellow-400');
+							}
+						});
+					}
+
+					window.submitGuestFeedback = async function(event) {
+						event.preventDefault();
+						const form = event.target;
+						const submitBtn = document.getElementById('guestSubmitBtn');
+						const originalBtnText = submitBtn.innerHTML;
+						
+						// Validate rating
+						const rating = document.getElementById('guestRating').value;
+						if (parseInt(rating) === 0) {
+							alert('Please select a star rating.');
+							return false;
+						}
+
+						const formData = new FormData(form);
+						
+						// Ensure show_name is sent as 1 or 0 for Laravel boolean validation
+						const showNameCheckbox = document.getElementById('guestShowName');
+						if (showNameCheckbox) {
+							formData.set('show_name', showNameCheckbox.checked ? '1' : '0');
+						}
+						
+						try {
+							submitBtn.disabled = true;
+							submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+							const response = await fetch('/api/feedback/guest', {
+								method: 'POST',
+								body: formData,
+								headers: {
+									'X-Requested-With': 'XMLHttpRequest',
+									'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+								}
+							});
+
+							const data = await response.json();
+
+							if (data.success) {
+								document.getElementById('guestFeedbackForm').classList.add('hidden');
+								document.getElementById('guestFeedbackSuccess').classList.remove('hidden');
+							} else {
+								alert(data.error || 'Something went wrong. Please try again.');
+							}
+						} catch (error) {
+							console.error('Submission error:', error);
+							alert('Failed to submit feedback. Please check your connection and try again.');
+						} finally {
+							submitBtn.disabled = false;
+							submitBtn.innerHTML = originalBtnText;
+						}
+
+						return false;
+					};
+
+					window.resetGuestFeedback = function() {
+						document.getElementById('guestFeedbackForm').reset();
+						document.getElementById('guestRating').value = 0;
+						highlightStars(0);
+						document.getElementById('guestFeedbackForm').classList.remove('hidden');
+						document.getElementById('guestFeedbackSuccess').classList.add('hidden');
+					};
+				});
+			</script>
+
 
 			@include('layouts.footer')
 		</div>

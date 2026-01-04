@@ -182,7 +182,7 @@ class MemoryManagementService
     }
 
     /**
-     * Delete a memory (soft delete).
+     * Delete a memory (hard delete).
      */
     public function deleteMemory(Memory $memory): bool
     {
@@ -191,7 +191,7 @@ class MemoryManagementService
             'user_id' => $memory->user_id
         ]);
 
-        return $memory->delete();
+        return $memory->forceDelete();
     }
 
     /**

@@ -155,6 +155,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/conversation/{id}/unarchive', [ChatSupportController::class, 'unarchiveConversation'])->name('unarchive');
         Route::delete('/conversation/{id}', [ChatSupportController::class, 'deleteConversation'])->name('delete');
 
+        // Bulk conversation operations
+        Route::post('/conversations/archive-all', [ChatSupportController::class, 'archiveAllConversations'])->name('archive.all');
+        Route::post('/conversations/unarchive-all', [ChatSupportController::class, 'unarchiveAllConversations'])->name('unarchive.all');
+        Route::delete('/conversations/delete-active', [ChatSupportController::class, 'deleteAllActiveConversations'])->name('delete.active');
+        Route::delete('/conversations/delete-archived', [ChatSupportController::class, 'deleteAllArchivedConversations'])->name('delete.archived');
+
         // Memory management endpoints
         Route::get('/memories', [ChatSupportController::class, 'getMemories'])->name('memories');
         Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');

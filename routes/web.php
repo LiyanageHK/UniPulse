@@ -86,6 +86,10 @@ Route::get('/privacy-policy', function () {
 // Public About page
 Route::view('/about', 'AboutUs')->name('about');
 
+Route::get('/contact', function () {
+    return view('contact');
+})->name('contact');
+
 
 // Public chat information page (accessible without login)
 Route::get('/conversational-support', function () {

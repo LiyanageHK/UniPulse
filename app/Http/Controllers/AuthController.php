@@ -27,7 +27,7 @@ class AuthController extends Controller
                 return redirect()->route('on-boarding');
             }
 
-            return redirect()->route('welcome');
+            return redirect()->route('dashboard');
         }
 
         return back()->withErrors(['email' => 'Invalid login details']);
@@ -36,7 +36,7 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
-        return redirect()->route('welcome');
+        return redirect()->route('home');
     }
 
     public function showRegister()

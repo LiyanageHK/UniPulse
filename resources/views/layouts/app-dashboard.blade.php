@@ -71,7 +71,7 @@
                                 </path>
                             </svg>
                         </div>
-                        <a href="{{ route('welcome') }}">
+                        <a href="{{ route('home') }}">
                             <h1 class="text-xl font-bold text-gray-900">UniPluse</h1>
                         </a>
                     </div>

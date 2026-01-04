@@ -490,8 +490,8 @@
 					background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 					border: 1px solid #e5e7eb;
 					border-radius: 1rem;
-					padding: 2rem;
-					height: 100%;
+					padding: 1.5rem;
+					height: 280px;
 					display: flex;
 					flex-direction: column;
 					transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -509,59 +509,68 @@
 				.feedback-stars {
 					display: flex;
 					gap: 0.25rem;
-					margin-bottom: 1rem;
+					margin-bottom: 0.75rem;
+					flex-shrink: 0;
 				}
 
 				.feedback-stars i {
 					color: #fbbf24;
-					font-size: 1rem;
+					font-size: 0.875rem;
 				}
 
 				.feedback-content {
 					color: #4b5563;
-					font-size: 1rem;
-					line-height: 1.75;
+					font-size: 0.9375rem;
+					line-height: 1.6;
 					flex-grow: 1;
-					margin-bottom: 1.5rem;
+					margin-bottom: 1rem;
 					position: relative;
 					padding-left: 0;
+					overflow: hidden;
+					display: -webkit-box;
+					-webkit-line-clamp: 4;
+					-webkit-box-orient: vertical;
+					text-overflow: ellipsis;
 				}
 
 				/* Quote icon styling - modern look */
 				.feedback-quote-icon {
-					width: 2.5rem;
-					height: 2.5rem;
+					width: 2.25rem;
+					height: 2.25rem;
 					background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 					border-radius: 50%;
 					display: flex;
 					align-items: center;
 					justify-content: center;
-					margin-bottom: 1rem;
+					margin-bottom: 0.75rem;
 					box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+					flex-shrink: 0;
 				}
 
 				.feedback-quote-icon i {
 					color: white;
-					font-size: 1rem;
+					font-size: 0.875rem;
 				}
 
 				.feedback-author {
 					display: flex;
 					align-items: center;
-					gap: 1rem;
-					padding-top: 1rem;
+					gap: 0.75rem;
+					padding-top: 0.75rem;
 					border-top: 1px solid #e5e7eb;
+					margin-top: auto;
+					flex-shrink: 0;
 				}
 
 				.feedback-avatar {
-					width: 3rem;
-					height: 3rem;
+					width: 2.5rem;
+					height: 2.5rem;
 					border-radius: 50%;
 					display: flex;
 					align-items: center;
 					justify-content: center;
 					font-weight: 700;
-					font-size: 1.25rem;
+					font-size: 1rem;
 					color: white;
 					flex-shrink: 0;
 				}
@@ -686,7 +695,12 @@
 					.feedback-nav-next { right: 5px; }
 
 					.feedback-card {
-						padding: 1.5rem;
+						padding: 1.25rem;
+						height: 260px;
+					}
+
+					.feedback-content {
+						-webkit-line-clamp: 3;
 					}
 				}
 			</style>

@@ -175,7 +175,7 @@ body {
 }
 
 /* Enhanced Testimonial Cards */
-/* Enhanced Testimonial Cards */
+/* These styles are now handled inline in home.blade.php for the new carousel */
 .testimonial-card {
 	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 	background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
@@ -188,7 +188,7 @@ body {
 	border-color: rgba(139, 92, 246, 0.3);
 }
 
-/* Carousel Styles */
+/* Legacy Carousel Styles - kept for backwards compatibility */
 .carousel-container {
 	position: relative;
 	width: 100%;

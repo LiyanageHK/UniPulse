@@ -10,111 +10,46 @@ use Illuminate\Support\Facades\Log;
 class CounselorMatchingService
 {
     /**
-     * Find matching counselor based on crisis category.
-     * Uses direct category mapping (no specialization matching).
+     * Find a crisis counselor for immediate support.
      */
-    public function findMatchingCounselor(string $crisisCategory, ?string $city = null): ?Counselor
+    public function findCrisisCounselor(): ?Counselor
     {
-        // Get counselors matching the crisis category
-        $query = Counselor::available();
-
-        // Get counselors that match the crisis category
-        $matchingCounselors = $query->get()->filter(function ($counselor) use ($crisisCategory) {
-            return $counselor->matchesCrisisCategory($crisisCategory);
-        });
-
-        if ($matchingCounselors->isNotEmpty()) {
-            // Prefer city match if provided
-            if ($city) {
-                $cityMatch = $matchingCounselors->filter(function ($counselor) use ($city) {
-                    return stripos($counselor->city, $city) !== false || $counselor->city === 'All Cities';
-                })->first();
-                
-                if ($cityMatch) {
-                    return $cityMatch;
-                }
-            }
-
-            // Prefer online counselors
-            $onlineMatch = $matchingCounselors->where('offers_online', true)->first();
-            if ($onlineMatch) {
-                return $onlineMatch;
-            }
-
-            // Return any matching counselor
-            return $matchingCounselors->first();
-        }
-
-        // Fallback: Return any available counselor (preferably crisis category)
-        $crisisCounselor = Counselor::available()
-            ->where('category', Counselor::CATEGORY_CRISIS)
-            ->first();
-        
-        return $crisisCounselor ?? Counselor::available()->first();
+        return Counselor::where('category', Counselor::CATEGORY_CRISIS)->first()
+            ?? Counselor::first();
     }
 
     /**
-     * Get counselors by crisis flag category.
+     * Get counselors by their category.
      */
-    public function getCounselorsByCrisisCategory(string $crisisCategory): Collection
+    public function getCounselorsByCategory(string $category): Collection
     {
-        return Counselor::available()
-            ->get()
-            ->filter(function ($counselor) use ($crisisCategory) {
-                return $counselor->matchesCrisisCategory($crisisCategory);
-            });
+        return Counselor::byCategory($category)->get();
     }
 
     /**
-     * Get recommended counselors for a user based on crisis flags.
+     * Get recommended counselors for a user.
      */
-    public function getRecommendedCounselors(int $userId, ?string $city = null, int $limit = 3): Collection
+    public function getRecommendedCounselors(int $userId, int $limit = 3): Collection
     {
-        // Get user's recent crisis flags to understand their needs
-        $recentFlags = CrisisFlag::where('user_id', $userId)
-            ->latest()
-            ->take(5)
-            ->get();
+        // Get all counselors, prioritizing crisis counselors
+        $counselors = Counselor::all();
 
-        $categories = $recentFlags->pluck('category')->unique();
-
-        // Get all available counselors
-        $counselors = Counselor::available()->get();
-
-        // Filter by city if provided
-        if ($city) {
-            $counselors = $counselors->filter(function ($counselor) use ($city) {
-                return stripos($counselor->city, $city) !== false 
-                    || $counselor->city === 'All Cities' 
-                    || $counselor->offers_online;
-            });
-        }
-
-        // Score and filter based on category match
-        $scoredCounselors = $counselors->map(function ($counselor) use ($categories) {
+        $scoredCounselors = $counselors->map(function ($counselor) {
             $score = 0;
 
-            // Check matches for each crisis category
-            foreach ($categories as $category) {
-                if ($counselor->matchesCrisisCategory($category)) {
-                    $score += 10;
-                }
-            }
-
-            // Crisis category counselors are preferred for emergencies
+            // Crisis category counselors are preferred
             if ($counselor->category === Counselor::CATEGORY_CRISIS) {
-                $score += 5;
+                $score += 10;
             }
 
-            // Online availability bonus
-            if ($counselor->offers_online) {
-                $score += 3;
+            // Mental health counselors next
+            if ($counselor->category === Counselor::CATEGORY_MENTAL_HEALTH) {
+                $score += 5;
             }
 
             return [
                 'counselor' => $counselor,
                 'score' => $score,
-                'match_reason' => $this->getMatchReason($counselor, $categories),
             ];
         });
 
@@ -126,29 +61,9 @@ class CounselorMatchingService
                 'name' => $item['counselor']->name,
                 'title' => $item['counselor']->title,
                 'category' => $this->getCategoryLabel($item['counselor']->category),
-                'city' => $item['counselor']->city,
-                'email' => $item['counselor']->email,
-                'phone' => $item['counselor']->phone,
-                'office_location' => $item['counselor']->office_location,
-                'offers_online' => $item['counselor']->offers_online,
-                'online_booking_url' => $item['counselor']->online_booking_url,
-                'match_reason' => $item['match_reason'],
+                'hospital' => $item['counselor']->hospital,
                 'score' => $item['score'],
             ]);
-    }
-
-    /**
-     * Get match reason for display to user.
-     */
-    protected function getMatchReason(Counselor $counselor, Collection $categories): string
-    {
-        foreach ($categories as $category) {
-            if ($counselor->matchesCrisisCategory($category)) {
-                return $this->getCategoryLabel($counselor->category) . ' specialist';
-            }
-        }
-
-        return $this->getCategoryLabel($counselor->category) . ' support';
     }
 
     /**
@@ -169,25 +84,5 @@ class CounselorMatchingService
             Counselor::CATEGORY_PERSONAL_DEVELOPMENT => 'Extracurricular & Personal Development',
             default => ucfirst(str_replace('_', ' ', $category)),
         };
-    }
-
-    /**
-     * Get counselors by category.
-     */
-    public function getCounselorsByCategory(string $category): Collection
-    {
-        return Counselor::byCategory($category)
-            ->available()
-            ->get();
-    }
-
-    /**
-     * Get counselors by city.
-     */
-    public function getCounselorsByCity(string $city): Collection
-    {
-        return Counselor::inCity($city)
-            ->available()
-            ->get();
     }
 }

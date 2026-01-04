@@ -45,5 +45,7 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('hasSubmittedWeeklyCheck', $hasSubmittedWeeklyCheck)->with('hasChats',$hasChats);
         });
+        // Register model observers
+        \App\Models\WeeklyCheckin::observe(\App\Observers\WeeklyCheckinObserver::class);
     }
 }

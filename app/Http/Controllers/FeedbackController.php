@@ -30,18 +30,6 @@ class FeedbackController extends Controller
 
         $user = Auth::user();
 
-        // Check if user already submitted feedback recently (24h limit)
-        $recentFeedback = Feedback::where('user_id', $user->id)
-            ->where('created_at', '>', now()->subHours(24))
-            ->exists();
-
-        if ($recentFeedback) {
-            return response()->json([
-                'success' => false,
-                'error' => 'You can only submit feedback once every 24 hours.',
-            ], 429);
-        }
-
         try {
             // Validate content with LLM
             $validation = $this->validationService->validateFeedback(
@@ -51,8 +39,9 @@ class FeedbackController extends Controller
 
             // Create feedback
             $feedback = Feedback::create([
-                'user_id' => $user->id,
                 'content' => $request->content,
+                'guest_name' => $user->name,
+                'guest_email' => $user->email,
                 'rating' => $request->rating,
                 'show_name' => $request->show_name ?? true,
                 'llm_validation_score' => $validation['score'],
@@ -70,7 +59,6 @@ class FeedbackController extends Controller
 
             Log::info('Feedback submitted', [
                 'feedback_id' => $feedback->id,
-                'user_id' => $user->id,
                 'rating' => $feedback->rating,
                 'llm_score' => $validation['score'],
                 'status' => $feedback->status,
@@ -89,7 +77,6 @@ class FeedbackController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Feedback submission failed', [
-                'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
 
@@ -116,7 +103,6 @@ class FeedbackController extends Controller
         // Rate limiting by IP (max 3 submissions per day)
         $ip = $request->ip();
         $recentFeedbackCount = Feedback::where('created_at', '>', now()->subHours(24))
-            ->whereNull('user_id')
             ->count();
 
         // Simple rate limit - allow max 10 guest submissions per day total
@@ -136,7 +122,6 @@ class FeedbackController extends Controller
 
             // Create guest feedback
             $feedback = Feedback::create([
-                'user_id' => null,
                 'guest_name' => $request->guest_name,
                 'guest_email' => $request->guest_email,
                 'content' => $request->content,
@@ -192,7 +177,6 @@ class FeedbackController extends Controller
 
         $feedbacks = Feedback::approved()
             ->highRated()
-            ->with('user:id,name')
             ->orderBy('approved_at', 'desc')
             ->limit(min($limit, 12))
             ->get()
@@ -218,22 +202,10 @@ class FeedbackController extends Controller
      */
     public function checkStatus()
     {
-        $user = Auth::user();
-
-        $recentFeedback = Feedback::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        $canSubmit = !$recentFeedback || $recentFeedback->created_at < now()->subHours(24);
-
         return response()->json([
             'success' => true,
-            'can_submit' => $canSubmit,
-            'last_feedback' => $recentFeedback ? [
-                'status' => $recentFeedback->status,
-                'submitted_at' => $recentFeedback->created_at->diffForHumans(),
-                'rating' => $recentFeedback->rating,
-            ] : null,
+            'can_submit' => true,
+            'last_feedback' => null,
         ]);
     }
 }

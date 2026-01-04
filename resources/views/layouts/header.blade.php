@@ -106,7 +106,7 @@
                     </button>
 
                     <div id="services-menu" class="services-menu absolute right-0 mt-2 w-56 bg-white border rounded-md shadow-lg z-50" role="menu" aria-hidden="true">
-                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Student Profiling</a>
+                        <a href="{{ route('profiling') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Student Profiling</a>
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Risk Detection</a>
                         <a href="{{ route('chat.info') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Conversational Support</a>
                         <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>

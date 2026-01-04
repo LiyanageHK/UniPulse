@@ -16,40 +16,20 @@ class CrisisFlag extends Model
         'conversation_id',
         'user_id',
         'severity',
-        'category',
         'detected_keywords',
         'context_snippet',
         'confidence_score',
-        'escalated',
-        'escalated_at',
-        'reviewed',
-        'reviewed_by',
-        'reviewed_at',
-        'reviewer_notes',
     ];
 
     protected $casts = [
         'detected_keywords' => 'array',
         'confidence_score' => 'float',
-        'escalated' => 'boolean',
-        'escalated_at' => 'datetime',
-        'reviewed' => 'boolean',
-        'reviewed_at' => 'datetime',
     ];
 
     // Severity levels from uploaded document
     const SEVERITY_RED = 'red';      // Critical
     const SEVERITY_YELLOW = 'yellow'; // Concerning
     const SEVERITY_BLUE = 'blue';     // Warning
-
-    // Categories for counselor matching
-    const CATEGORY_SUICIDE_RISK = 'suicide_risk';
-    const CATEGORY_SELF_HARM = 'self_harm';
-    const CATEGORY_DEPRESSION = 'depression';
-    const CATEGORY_ANXIETY = 'anxiety';
-    const CATEGORY_HOPELESSNESS = 'hopelessness';
-    const CATEGORY_STRESS = 'stress';
-    const CATEGORY_LONELINESS = 'loneliness';
 
     /**
      * Get the message that owns the crisis flag.
@@ -73,14 +53,6 @@ class CrisisFlag extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the reviewer of the flag.
-     */
-    public function reviewer(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     /**
@@ -113,22 +85,6 @@ class CrisisFlag extends Model
     public function scopeBlue($query)
     {
         return $query->where('severity', self::SEVERITY_BLUE);
-    }
-
-    /**
-     * Scope a query to only include escalated flags.
-     */
-    public function scopeEscalated($query)
-    {
-        return $query->where('escalated', true);
-    }
-
-    /**
-     * Scope a query to only include unreviewed flags.
-     */
-    public function scopeUnreviewed($query)
-    {
-        return $query->where('reviewed', false);
     }
 
     /**
@@ -166,13 +122,5 @@ class CrisisFlag extends Model
             self::SEVERITY_BLUE => 'Warning',
             default => 'Unknown',
         };
-    }
-
-    /**
-     * Get category label.
-     */
-    public function getCategoryLabel(): string
-    {
-        return ucwords(str_replace('_', ' ', $this->category));
     }
 }

@@ -97,8 +97,12 @@ Route::get('/profiling', function () {
     return view('profiling');
 })->name('profiling');
 
-// Public Peer Matching service page 
+// Public Peer Matching service page
 Route::view('/services/peer-matching', 'ServicesPeerMatching')->name('services.peer-matching');
+
+Route::get('/socialriskservice', function () {
+    return view('socialriskservice');
+})->name('socialriskservice');
 
 /*Route::get('/profiling', [ServicePageController::class, 'studentProfiling'])
     ->name('services.studentProfiling');*/

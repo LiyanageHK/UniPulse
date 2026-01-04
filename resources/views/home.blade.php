@@ -1029,11 +1029,18 @@
 							</div>
 
 							<!-- Submit Button -->
-							<button type="submit" id="guestSubmitBtn"
-								class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
-								<i class="fas fa-paper-plane"></i>
-								Submit Feedback
-							</button>
+							<div class="flex gap-3">
+								<button type="button" onclick="fillDemoFeedback()"
+									class="py-4 px-6 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
+									<i class="fas fa-magic"></i>
+									Demo
+								</button>
+								<button type="submit" id="guestSubmitBtn"
+									class="flex-1 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
+									<i class="fas fa-paper-plane"></i>
+									Submit Feedback
+								</button>
+							</div>
 						</form>
 
 						<!-- Success Message (Hidden by default) -->
@@ -1256,6 +1263,15 @@
 						highlightStars(0);
 						document.getElementById('guestFeedbackForm').classList.remove('hidden');
 						document.getElementById('guestFeedbackSuccess').classList.add('hidden');
+					};
+
+					// Demo function to auto-fill the feedback form
+					window.fillDemoFeedback = function() {
+						document.getElementById('guestName').value = 'Nethmini';
+						document.getElementById('guestEmail').value = 'nethmini@gmail.com';
+						document.getElementById('guestContent').value = 'Great service';
+						document.getElementById('guestRating').value = 5;
+						highlightStars(5);
 					};
 				});
 			</script>

@@ -22,12 +22,12 @@
     @auth
         @if (!request()->is('survey') && !auth()->user()->on_boarding_required && !$hasSubmittedWeeklyCheck)
             <div
-                class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white flex justify-center items-center py-3 shadow-lg">
-                <span class="mr-4 font-semibold text-lg">Take your new survey this week!</span>
-                <a href="{{ url('/survey') }}"
+                {{-- class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white flex justify-center items-center py-3 shadow-lg">
+                <span class="mr-4 font-semibold text-lg">Take your new survey this week!</span> --}}
+                {{-- <a href="{{ url('/survey') }}"
                     class="bg-white text-purple-700 px-6 py-2 rounded-full font-bold shadow-lg transform transition hover:scale-105 animate-heartbeat">
                     Take Survey
-                </a>
+                </a> --}}
             </div>
         @endif
     @endauth

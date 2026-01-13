@@ -64,7 +64,7 @@
 
                                 <p><strong>Common Interests:</strong></p>
                                 <div class="flex flex-wrap gap-2 mt-1">
-                                    @foreach ($c['interests'] as $int)
+                                    @foreach ($c['interests'] ?? [] as $int)
                                         <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
                                             {{ $int }}
                                         </span>

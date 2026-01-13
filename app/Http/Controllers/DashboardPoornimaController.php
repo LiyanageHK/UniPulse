@@ -549,12 +549,18 @@ class DashboardPoornimaController extends Controller
                 ? $conn->receiver
                 : $conn->sender;
 
+            $interests = [];
+            if ($otherUser->profile && $otherUser->profile->top_interests) {
+                $decoded = json_decode($otherUser->profile->top_interests, true);
+                $interests = is_array($decoded) ? $decoded : [];
+            }
+
             $formatted[] = [
                 'user' => $otherUser,
                 'profile' => $otherUser->profile,
                 'rating' => $otherUser->myRating(),
                 'stress_level' => $otherUser->profile->stress_level ?? null,
-                'interests' => json_decode($otherUser->profile->top_interests ?? '[]', true),
+                'interests' => $interests,
             ];
         }
 

@@ -35,7 +35,7 @@ Route::middleware(['auth', 'check.onboarding'])->group(function () {
     Route::get('/weekly-checkings-view/{id}',[DashboardPoornimaController::class, 'weeklyCheckingsView'])->name('weekly-checkings.view');
 
 
-    Route::get('/profile/{id}', [DashboardPoornimaController::class, 'profileView'])->name('profile.view');
+    Route::get('/user-profile/{id}', [DashboardPoornimaController::class, 'profileView'])->name('profile.view');
     Route::get('/my-connections', [DashboardPoornimaController::class, 'myConnections'])->name('myConnections');
     Route::get('/peer-matchings', [DashboardPoornimaController::class, 'peerMatchings'])->name('peer-matchings');
     Route::post('/peer/send/{id}', [DashboardPoornimaController::class, 'sendRequest'])->name('peer.send');

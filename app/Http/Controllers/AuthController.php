@@ -23,9 +23,9 @@ class AuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'))) {
 
-            if(Auth::user()->on_boarding_required){
+           /* if(Auth::user()->on_boarding_required){
                 return redirect()->route('on-boarding');
-            }
+            }*/
 
             return redirect()->route('dashboard');
         }

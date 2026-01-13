@@ -48,7 +48,7 @@
         {{-- Communication --}}
         <h2 class="text-lg font-semibold mb-2">Communication Methods</h2>
         <div class="flex flex-wrap gap-2 mb-6">
-            @foreach (json_decode($user->profile->communication_methods, true) as $method)
+            @foreach (json_decode($user->profile->communication_methods ?? '[]', true) ?? [] as $method)
                 <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
                     {{ $method }}
                 </span>
@@ -58,7 +58,7 @@
         {{-- Interests --}}
         <h2 class="text-lg font-semibold mb-2">Top Interests</h2>
         <div class="flex flex-wrap gap-2 mb-6">
-            @foreach (json_decode($user->profile->top_interests, true) as $interest)
+            @foreach (json_decode($user->profile->top_interests ?? '[]', true) ?? [] as $interest)
                 <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
                     {{ $interest }}
                 </span>
@@ -68,7 +68,7 @@
         {{-- Hobbies --}}
         <h2 class="text-lg font-semibold mb-2">Hobbies</h2>
         <div class="flex flex-wrap gap-2 mb-6">
-            @foreach (json_decode($user->profile->hobbies, true) as $hobby)
+            @foreach (json_decode($user->profile->hobbies ?? '[]', true) ?? [] as $hobby)
                 <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
                     {{ $hobby }}
                 </span>
@@ -78,7 +78,7 @@
         {{-- Support Types --}}
         <h2 class="text-lg font-semibold mb-2">Support Types</h2>
         <div class="flex flex-wrap gap-2 mb-6">
-            @foreach (json_decode($user->profile->support_types, true) as $support)
+            @foreach (json_decode($user->profile->support_types ?? '[]', true) ?? [] as $support)
                 <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
                     {{ $support }}
                 </span>

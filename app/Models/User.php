@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -12,11 +13,11 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        'email', 
+        'email',
         'password',
         // Academic & Demographic
         'university',
-        'faculty', 
+        'faculty',
         'al_stream',
         'al_subject_1',
         'al_grade_1',
@@ -33,7 +34,7 @@ class User extends Authenticatable
         'transition_confidence',
         // Social & Personality
         'social_preference',
-        'introvert_extrovert_scale', 
+        'introvert_extrovert_scale',
         'stress_level',
         'group_work_comfort',
         'communication_preferences',
@@ -42,7 +43,7 @@ class User extends Authenticatable
         'goal_clarity',
         'interests',
         'hobbies',
-        'living_arrangement', 
+        'living_arrangement',
         'is_employed',
         // Wellbeing & Support
         'overwhelm_level',
@@ -52,7 +53,8 @@ class User extends Authenticatable
         // Onboarding status
         'onboarding_completed',
         'onboarding_completed_at',
-        'last_checkin_at'
+        'on_boarding_required',
+        'last_checkin_at',
     ];
 
     protected $hidden = [
@@ -66,7 +68,7 @@ class User extends Authenticatable
         'al_results' => 'array',
         'learning_style' => 'array',
         'communication_preferences' => 'array',
-        'interests' => 'array', 
+        'interests' => 'array',
         'hobbies' => 'array',
         'preferred_support_types' => 'array',
         'is_employed' => 'boolean',
@@ -81,6 +83,69 @@ class User extends Authenticatable
     {
         return $this->hasMany(Memory::class);
     }
+
+
+
+    public function weeklyCheckings()
+    {
+        return $this->hasMany(WeeklyChecking::class);
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(StudentProfile::class);
+    }
+
+    public function ratingsGiven()
+    {
+        return $this->hasMany(PeerRating::class, 'from_id');
+    }
+
+    public function ratingsReceived()
+    {
+        return $this->hasMany(PeerRating::class, 'to_id');
+    }
+
+    public function myRating()
+    {
+        $me = Auth::id();
+        return PeerRating::where('from_id', $me)
+                        ->where('to_id', $this->id)
+                        ->value('rating') ?? 0;
+    }
+
+    public function isPeeredWith()
+    {
+        $me = Auth::id();
+        $other = $this->id;
+
+        return PeerRequest::where(function ($query) use ($me, $other) {
+                $query->where(function ($q) use ($me, $other) {
+                    $q->where('sender_id', $me)
+                    ->where('receiver_id', $other);
+                })
+                ->orWhere(function ($q) use ($me, $other) {
+                    $q->where('sender_id', $other)
+                    ->where('receiver_id', $me);
+                });
+            })
+            ->where('status', 'accepted')
+            ->exists();
+    }
+
+    public function groups()
+    {
+        return $this->belongsToMany(Group::class, 'group_members')
+                    ->withTimestamps()
+                    ->withPivot('joined_at');
+    }
+
+    public function adminGroups()
+    {
+        return $this->hasMany(Group::class, 'admin_id');
+    }
+
+
 
     public function weeklyCheckins()
 {

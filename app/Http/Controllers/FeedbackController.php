@@ -100,19 +100,6 @@ class FeedbackController extends Controller
             'show_name' => 'boolean',
         ]);
 
-        // Rate limiting by IP (max 3 submissions per day)
-        $ip = $request->ip();
-        $recentFeedbackCount = Feedback::where('created_at', '>', now()->subHours(24))
-            ->count();
-
-        // Simple rate limit - allow max 10 guest submissions per day total
-        if ($recentFeedbackCount >= 10) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Too many submissions today. Please try again tomorrow.',
-            ], 429);
-        }
-
         try {
             // Validate content with LLM
             $validation = $this->validationService->validateFeedback(

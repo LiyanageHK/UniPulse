@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Conversational Support - UniPulse</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/UP.jpg') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -2142,7 +2143,7 @@
                                         <div class="settings-row-label">Delete All Active Chats</div>
                                         <div class="settings-row-desc">Permanently delete all active conversations</div>
                                     </div>
-                                    <button class="settings-btn danger" onclick="showDeleteActiveModal()">Delete</button>
+                                    <button class="settings-btn danger" onclick="showDeleteActiveModal()">Delete All</button>
                                 </div>
                             </div>
                         </div>
@@ -2163,7 +2164,7 @@
                                         <div class="settings-row-label">Delete All Archived</div>
                                         <div class="settings-row-desc">Permanently delete all archived conversations</div>
                                     </div>
-                                    <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete</button>
+                                    <button class="settings-btn danger" onclick="showDeleteArchivedModal()">Delete All</button>
                                 </div>
                             </div>
                         </div>

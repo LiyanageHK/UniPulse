@@ -8,6 +8,67 @@ use App\Http\Controllers\CrisisManagementController;
 use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\OnBoardingPoornimaController;
+use App\Http\Controllers\DashboardPoornimaController;
+use App\Http\Controllers\AuthController;
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+});
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+
+
+Route::middleware(['auth', 'check.onboarding'])->group(function () {
+   Route::get('/dashboard-poornima',[DashboardPoornimaController::class,'dashboard'])->name('dashboard-poornima');
+    Route::get('/on-boarding',[OnBoardingPoornimaController::class,'onBoarding'])->name('on-boarding');
+    Route::post('/on-boarding-store',[OnBoardingPoornimaController::class,'onBoardingStore'])->name('on-boarding-store');
+    Route::get('/on-boarding-success',[OnBoardingPoornimaController::class,'onBoardingSuccess'])->name('on-boarding-success');
+    Route::get('/survey',[DashboardPoornimaController::class, 'survey'])->name('survey');
+    Route::post('/survey', [DashboardPoornimaController::class, 'surveyStore'])->name('survey-store');
+    Route::get('/survey-success',[DashboardPoornimaController::class, 'surveySuccess'])->name('survey-success');
+
+    Route::get('/weekly-checkings',[DashboardPoornimaController::class, 'weeklyCheckings'])->name('weekly-checkings');
+    Route::get('/weekly-checkings-view/{id}',[DashboardPoornimaController::class, 'weeklyCheckingsView'])->name('weekly-checkings.view');
+
+
+    Route::get('/user-profile/{id}', [DashboardPoornimaController::class, 'profileView'])->name('profile.view');
+    Route::get('/my-connections', [DashboardPoornimaController::class, 'myConnections'])->name('myConnections');
+    Route::get('/peer-matchings', [DashboardPoornimaController::class, 'peerMatchings'])->name('peer-matchings');
+    Route::post('/peer/send/{id}', [DashboardPoornimaController::class, 'sendRequest'])->name('peer.send');
+    Route::post('/peer/accept/{id}', [DashboardPoornimaController::class, 'acceptRequest'])->name('peer.accept');
+    Route::post('/peer/reject/{id}', [DashboardPoornimaController::class, 'rejectRequest'])->name('peer.reject');
+    Route::post('/peer/rating/{to_id}',[DashboardPoornimaController::class, 'peerRating'])->name('peer.rating');
+
+    Route::get('/chat-view', [DashboardPoornimaController::class, 'chat'])->name('chat.view');
+    Route::get('/chat/validate/{chatId}', [DashboardPoornimaController::class, 'validateChatAccess']);
+
+    Route::get('/requests', [DashboardPoornimaController::class, 'viewRequests'])->name('requests.incoming');
+    Route::post('/requests/{id}/accept', [DashboardPoornimaController::class, 'acceptRequest'])->name('requests.accept');
+    Route::post('/requests/{id}/reject', [DashboardPoornimaController::class, 'rejectRequest'])->name('requests.reject');
+
+    Route::get('/requests', [DashboardPoornimaController::class, 'viewRequests'])->name('requests.incoming');
+
+    Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
+    Route::get('/groups/discover', [GroupController::class, 'discover'])->name('groups.discover');
+    Route::get('/groups/create', [GroupController::class, 'create'])->name('groups.create');
+    Route::post('/groups', [GroupController::class, 'store'])->name('groups.store');
+    Route::get('/groups/{id}', [GroupController::class, 'show'])->name('groups.show');
+    Route::post('/groups/{id}/request', [GroupController::class, 'sendRequest'])->name('groups.sendRequest');
+    Route::post('/groups/requests/{id}/accept', [GroupController::class, 'acceptRequest'])->name('groups.acceptRequest');
+    Route::post('/groups/requests/{id}/reject', [GroupController::class, 'rejectRequest'])->name('groups.rejectRequest');
+    Route::post('/groups/{id}/invite', [GroupController::class, 'inviteUser'])->name('groups.inviteUser');
+    Route::post('/groups/{id}/leave', [GroupController::class, 'leave'])->name('groups.leave');
+    Route::delete('/groups/{id}', [GroupController::class, 'destroy'])->name('groups.destroy');
+    Route::delete('/groups/{groupId}/members/{userId}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
+    Route::get('/risk-level',[DashboardPoornimaController::class,'riskLevel'])->name('risk-level');
+    Route::get('/suggestions',[DashboardPoornimaController::class,'suggestions'])->name('suggestions');
+
+
+});
 
 Route::get('/', function () {
     return view('home');
@@ -22,6 +83,14 @@ Route::get('/privacy-policy', function () {
     return view('privacy-policy');
 })->name('privacy');
 
+// Public About page
+Route::view('/about', 'AboutUs')->name('about');
+
+Route::get('/contact', function () {
+    return view('contact');
+})->name('contact');
+
+
 // Public chat information page (accessible without login)
 Route::get('/conversational-support', function () {
     return view('chat-info');
@@ -31,6 +100,13 @@ Route::get('/conversational-support', function () {
 Route::get('/profiling', function () {
     return view('profiling');
 })->name('profiling');
+
+// Public Peer Matching service page
+Route::view('/services/peer-matching', 'ServicesPeerMatching')->name('services.peer-matching');
+
+Route::get('/socialriskservice', function () {
+    return view('socialriskservice');
+})->name('socialriskservice');
 
 /*Route::get('/profiling', [ServicePageController::class, 'studentProfiling'])
     ->name('services.studentProfiling');*/
@@ -94,18 +170,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/conversation/{id}/unarchive', [ChatSupportController::class, 'unarchiveConversation'])->name('unarchive');
         Route::delete('/conversation/{id}', [ChatSupportController::class, 'deleteConversation'])->name('delete');
 
+        // Bulk conversation operations
+        Route::post('/conversations/archive-all', [ChatSupportController::class, 'archiveAllConversations'])->name('archive.all');
+        Route::post('/conversations/unarchive-all', [ChatSupportController::class, 'unarchiveAllConversations'])->name('unarchive.all');
+        Route::delete('/conversations/delete-active', [ChatSupportController::class, 'deleteAllActiveConversations'])->name('delete.active');
+        Route::delete('/conversations/delete-archived', [ChatSupportController::class, 'deleteAllArchivedConversations'])->name('delete.archived');
+
         // Memory management endpoints
         Route::get('/memories', [ChatSupportController::class, 'getMemories'])->name('memories');
         Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');
         Route::delete('/memory/{id}', [ChatSupportController::class, 'deleteMemory'])->name('memory.delete');
         Route::delete('/memories/clear', [ChatSupportController::class, 'clearAllMemories'])->name('memories.clear');
-        
-        // Bulk conversation operations
-        Route::post('/conversations/archive-all', [ChatSupportController::class, 'archiveAllConversations'])->name('conversations.archive-all');
-        Route::post('/conversations/unarchive-all', [ChatSupportController::class, 'unarchiveAllConversations'])->name('conversations.unarchive-all');
-        Route::delete('/conversations/delete-active', [ChatSupportController::class, 'deleteAllActiveConversations'])->name('conversations.delete-active');
-        Route::delete('/conversations/delete-archived', [ChatSupportController::class, 'deleteAllArchivedConversations'])->name('conversations.delete-archived');
-        
+
         // Counselors endpoint
         Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');
         Route::get('/counselors/{category}', [ChatSupportController::class, 'getCounselorsByCategory'])->name('counselors.category');

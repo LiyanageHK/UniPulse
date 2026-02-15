@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Profile - UniPulse">
 
 <div class="max-w-6xl mx-auto py-8" x-data="{ showDeleteModal: false }">
 

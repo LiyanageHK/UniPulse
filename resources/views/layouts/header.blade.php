@@ -107,15 +107,14 @@
 
                     <div id="services-menu" class="services-menu absolute right-0 mt-2 w-56 bg-white border rounded-md shadow-lg z-50" role="menu" aria-hidden="true">
                         <a href="{{ route('profiling') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Student Profiling</a>
-                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Risk Detection</a>
+                        <a href="{{ route('socialriskservice') }}"  class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Risk Detection</a>
                         <a href="{{ route('chat.info') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Conversational Support</a>
-
-                        <a href="{{url('chat-support')}}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>
+                        <a href="{{ route('services.peer-matching') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">Peer Matching</a>
 
                     </div>
                 </div>
 
-                <a href="{{ url('/about') }}" class="nav-link {{ Request::is('about') ? 'active' : '' }}">About Us</a>
+                <a href="{{ route('about') }}" class="nav-link {{ Request::is('about') ? 'active' : '' }}">About Us</a>
                 <a href="{{ url('/contact') }}" class="nav-link {{ Request::is('contact') ? 'active' : '' }}">Contact Us</a>
 
                 <!-- Login button (desktop) -->
@@ -148,15 +147,15 @@
                 </button>
 
                     <div id="mobile-services-menu" class="hidden mt-1 pl-4">
-                    <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Student Profiling</a>
+                    <a href="{{ route('profiling') }}" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Student Profiling</a>
                     <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Risk Detection</a>
                     <a href="{{ route('chat.info') }}" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Conversational Support</a>
-                    <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Peer Matching</a>
+                    <a href="{{ route('services.peer-matching') }}" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Peer Matching</a>
 
                 </div>
             </div>
 
-            <a href="{{ url('/about') }}" class="nav-link mobile {{ Request::is('about') ? 'active' : '' }}">About Us</a>
+            <a href="{{ route('about') }}" class="nav-link mobile {{ Request::is('about') ? 'active' : '' }}">About Us</a>
             <a href="{{ url('/contact') }}" class="nav-link mobile {{ Request::is('contact') ? 'active' : '' }}">Contact Us</a>
 
             <!-- Login link (mobile) -->

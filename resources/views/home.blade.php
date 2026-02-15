@@ -4,6 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Home - UniPulse</title>
+		<link rel="icon" type="image/jpeg" href="{{ asset('images/UP.jpg') }}">
 
 		<!-- Fonts -->
 		<link rel="preconnect" href="https://fonts.bunny.net">
@@ -216,7 +217,7 @@
 							<p class="text-gray-600 leading-relaxed mb-6">
 								Personalized profiles that understand your unique needs, preferences, and academic journey to deliver tailored support.
 							</p>
-							<a href="#" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
+							<a href="{{ route('profiling') }}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
 								Learn More <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>
@@ -230,7 +231,7 @@
 							<p class="text-gray-600 leading-relaxed mb-6">
 								Advanced AI algorithms monitor wellbeing indicators to provide early intervention and ensure your safety and mental health.
 							</p>
-							<a href="#" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
+							<a href="{{ route('socialriskservice') }}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
 								Learn More <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>
@@ -258,7 +259,7 @@
 							<p class="text-gray-600 leading-relaxed mb-6">
 								Connect with fellow students who share similar experiences, interests, and challenges for mutual support and friendship.
 							</p>
-							<a href="{{url('chat-support')}}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
+							<a href="{{ route('services.peer-matching') }}" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all">
 								Learn More <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>
@@ -406,133 +407,569 @@
 			</section>
 
 			<!-- Testimonials Section -->
-			<section class="py-24 bg-gradient-to-br from-blue-600 to-blue-700">
-				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="text-center mb-16">
-					<h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">
-						What Students Say
-					</h2>
-					<p class="text-xl text-blue-100 max-w-3xl mx-auto">
-						Real experiences from students who transformed their university life with UniPulse
-					</p>
+			<section class="py-24 relative overflow-hidden" style="background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);">
+				<!-- Background pattern same as hero -->
+				<div class="absolute inset-0">
+					<div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-40"></div>
 				</div>
+				
+				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+					<div class="text-center mb-16">
+						<span class="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-semibold text-white mb-4 border border-white/20">
+							<i class="fas fa-heart mr-2 text-pink-300"></i>Student Testimonials
+						</span>
+						<h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">
+							What Students Say About Us
+						</h2>
+						<p class="text-xl text-blue-100 max-w-3xl mx-auto">
+							Real experiences from students who transformed their university life with UniPulse
+						</p>
+					</div>
 
-				<div class="grid md:grid-cols-3 gap-8" id="testimonialsContainer">
-					<!-- Testimonials will be loaded dynamically -->
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
-						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
-						<div class="h-20 bg-gray-200 rounded mb-6"></div>
-						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
+					<div class="feedback-carousel-container relative">
+						<!-- Carousel Track -->
+						<div class="feedback-carousel-wrapper overflow-hidden">
+							<div class="feedback-carousel-track" id="testimonialsContainer">
+								<!-- Loading skeleton -->
+								<div class="feedback-carousel-slide">
+									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+										@for ($i = 0; $i < 6; $i++)
+										<div class="feedback-card animate-pulse">
+											<div class="h-4 bg-gray-200 rounded w-24 mb-4"></div>
+											<div class="h-16 bg-gray-100 rounded mb-4"></div>
+											<div class="flex items-center gap-3">
+												<div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+												<div class="h-4 bg-gray-200 rounded w-20"></div>
+											</div>
+										</div>
+										@endfor
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Navigation Arrows -->
+						<button id="prevBtn" class="feedback-nav-btn feedback-nav-prev disabled" aria-label="Previous testimonials">
+							<i class="fas fa-chevron-left"></i>
+						</button>
+						<button id="nextBtn" class="feedback-nav-btn feedback-nav-next" aria-label="Next testimonials">
+							<i class="fas fa-chevron-right"></i>
+						</button>
+
+						<!-- Pagination Dots -->
+						<div class="feedback-pagination" id="paginationDots">
+							<!-- Dots will be generated dynamically -->
+						</div>
 					</div>
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
-						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
-						<div class="h-20 bg-gray-200 rounded mb-6"></div>
-						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
-					</div>
-					<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg animate-pulse">
-						<div class="h-6 bg-gray-200 rounded w-2/3 mb-6"></div>
-						<div class="h-20 bg-gray-200 rounded mb-6"></div>
-						<div class="h-12 bg-gray-200 rounded w-1/2"></div>
-					</div>
-				</div>
 				</div>
 			</section>
 
+			<style>
+				/* Modern Feedback Carousel Styles - Blue Background with White Cards */
+				.feedback-carousel-container {
+					position: relative;
+					padding: 0 60px;
+				}
+
+				.feedback-carousel-wrapper {
+					border-radius: 1.5rem;
+				}
+
+				.feedback-carousel-track {
+					display: flex;
+					transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				}
+
+				.feedback-carousel-slide {
+					min-width: 100%;
+					flex-shrink: 0;
+					padding: 0.5rem;
+				}
+
+				/* Card style matching home page feature-card and service-card */
+				.feedback-card {
+					background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+					border: 1px solid #e5e7eb;
+					border-radius: 1rem;
+					padding: 1.5rem;
+					height: 175px;
+					width: 320px;
+					display: flex;
+					flex-direction: column;
+					transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+					position: relative;
+					overflow: hidden;
+					box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+				}
+
+				.feedback-card:hover {
+					transform: translateY(-8px);
+					border-color: #93c5fd;
+					box-shadow: 0 20px 40px -12px rgba(37, 99, 235, 0.25);
+				}
+
+				.feedback-stars {
+					display: flex;
+					gap: 0.25rem;
+					margin-bottom: 0.5rem;
+					flex-shrink: 0;
+				}
+
+				.feedback-stars i {
+					color: #fbbf24;
+					font-size: 0.75rem;
+				}
+
+				.feedback-content {
+					color: #4b5563;
+					font-size: 0.875rem;
+					line-height: 1.5;
+					flex-grow: 1;
+					margin-bottom: 0.75rem;
+					position: relative;
+					padding-left: 0;
+					overflow: hidden;
+					display: -webkit-box;
+					-webkit-line-clamp: 2;
+					-webkit-box-orient: vertical;
+					text-overflow: ellipsis;
+				}
+
+				.feedback-quote-icon {
+					width: 2.5rem;
+					height: 2.5rem;
+					background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+					border-radius: 50%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					margin-bottom: 0.75rem;
+					box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+					flex-shrink: 0;
+				}
+
+				.feedback-quote-icon i {
+					color: white;
+					font-size: 0.875rem;
+				}
+
+				.feedback-author {
+					display: flex;
+					align-items: center;
+					gap: 0.75rem;
+					padding-top: 0.75rem;
+					border-top: 1px solid #e5e7eb;
+					margin-top: auto;
+					flex-shrink: 0;
+				}
+
+				.feedback-avatar {
+					width: 2.5rem;
+					height: 2.5rem;
+					border-radius: 50%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-weight: 700;
+					font-size: 1rem;
+					color: white;
+					flex-shrink: 0;
+				}
+
+				.feedback-avatar.gradient-1 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+				.feedback-avatar.gradient-2 { background: linear-gradient(135deg, #10b981, #059669); }
+				.feedback-avatar.gradient-3 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+				.feedback-avatar.gradient-4 { background: linear-gradient(135deg, #f472b6, #db2777); }
+				.feedback-avatar.gradient-5 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+				.feedback-avatar.gradient-6 { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+				.feedback-author-info h4 {
+					color: #1f2937;
+					font-weight: 700;
+					font-size: 1rem;
+					margin-bottom: 0.125rem;
+				}
+
+				.feedback-author-info span {
+					color: #6b7280;
+					font-size: 0.875rem;
+				}
+
+				/* Navigation Buttons */
+				.feedback-nav-btn {
+					position: absolute;
+					top: 50%;
+					transform: translateY(-50%);
+					width: 3.5rem;
+					height: 3.5rem;
+					border-radius: 50%;
+					background: white;
+					color: #2563eb;
+					border: none;
+					cursor: pointer;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: 1.25rem;
+					transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+					box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+					z-index: 10;
+				}
+
+				.feedback-nav-prev { left: 0; }
+				.feedback-nav-next { right: 0; }
+
+				.feedback-nav-btn:hover:not(.disabled) {
+					background: #2563eb;
+					color: white;
+					transform: translateY(-50%) scale(1.1);
+					box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4);
+				}
+
+				.feedback-nav-btn:active:not(.disabled) {
+					transform: translateY(-50%) scale(0.95);
+				}
+
+				.feedback-nav-btn.disabled {
+					opacity: 0.5;
+					cursor: not-allowed;
+				}
+
+				/* Pagination Dots */
+				.feedback-pagination {
+					display: flex;
+					justify-content: center;
+					gap: 0.75rem;
+					margin-top: 2.5rem;
+				}
+
+				.feedback-dot {
+					width: 0.75rem;
+					height: 0.75rem;
+					border-radius: 50%;
+					background: rgba(255, 255, 255, 0.4);
+					border: none;
+					cursor: pointer;
+					transition: all 0.3s ease;
+					padding: 0;
+				}
+
+				.feedback-dot:hover {
+					background: rgba(255, 255, 255, 0.7);
+					transform: scale(1.2);
+				}
+
+				.feedback-dot.active {
+					background: white;
+					width: 2.5rem;
+					border-radius: 0.5rem;
+				}
+
+				/* Responsive adjustments */
+				@media (max-width: 1024px) {
+					.feedback-carousel-container {
+						padding: 0 50px;
+					}
+					
+					.feedback-carousel-slide .grid {
+						grid-template-columns: repeat(2, 1fr) !important;
+					}
+				}
+
+				@media (max-width: 768px) {
+					.feedback-carousel-container {
+						padding: 0 15px;
+					}
+					
+					.feedback-carousel-slide .grid {
+						grid-template-columns: 1fr !important;
+						gap: 1rem !important;
+					}
+
+					.feedback-nav-btn {
+						width: 2.75rem;
+						height: 2.75rem;
+						font-size: 0.875rem;
+					}
+
+					.feedback-nav-prev { left: 5px; }
+					.feedback-nav-next { right: 5px; }
+
+					.feedback-card {
+						padding: 1.25rem;
+						height: 260px;
+					}
+
+					.feedback-content {
+						-webkit-line-clamp: 3;
+					}
+				}
+			</style>
+
 			<script>
-				// Load testimonials from API
+				// Modern Carousel logic with 2 rows x 3 cols per slide
 				document.addEventListener('DOMContentLoaded', async function() {
 					const container = document.getElementById('testimonialsContainer');
-					const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
+					const prevBtn = document.getElementById('prevBtn');
+					const nextBtn = document.getElementById('nextBtn');
+					const paginationContainer = document.getElementById('paginationDots');
 					
-					// Default testimonials as fallback
+					const avatarGradients = ['gradient-1', 'gradient-2', 'gradient-3', 'gradient-4', 'gradient-5', 'gradient-6'];
+					const ITEMS_PER_SLIDE = 6; // 2 rows x 3 cols
+					
+					let currentSlide = 0;
+					let totalSlides = 0;
+					let testimonials = [];
+
 					const defaultTestimonials = [
 						{
 							content: "UniPulse has been a lifesaver during my studies. The AI chatbot is always there when I need someone to talk to, and the counselors are incredibly supportive.",
 							rating: 5,
 							display_name: "Sarah J.",
-							display_initial: "S"
+							display_initial: "S",
+							approved_at: "2 days ago"
 						},
 						{
 							content: "The peer matching feature helped me find friends who understood what I was going through. I no longer feel alone in my struggles.",
 							rating: 5,
 							display_name: "Michael C.",
-							display_initial: "M"
+							display_initial: "M",
+							approved_at: "1 week ago"
 						},
 						{
 							content: "The progress tracking tools helped me understand my mental health patterns and celebrate small victories. It's incredibly empowering!",
 							rating: 5,
 							display_name: "Emily R.",
-							display_initial: "E"
+							display_initial: "E",
+							approved_at: "3 days ago"
+						},
+						{
+							content: "I love how easy it is to track my academic and mental health goals in one place. Truly a holistic approach to student wellness.",
+							rating: 5,
+							display_name: "David K.",
+							display_initial: "D",
+							approved_at: "5 days ago"
+						},
+						{
+							content: "The 24/7 availability of support is amazing. Whether it's midnight anxiety or early morning stress, UniPulse is always there.",
+							rating: 5,
+							display_name: "Priya M.",
+							display_initial: "P",
+							approved_at: "1 week ago"
+						},
+						{
+							content: "Connecting with professional counselors through UniPulse helped me navigate a really difficult semester. Highly recommended!",
+							rating: 5,
+							display_name: "James L.",
+							display_initial: "J",
+							approved_at: "4 days ago"
+						},
+						{
+							content: "The AI understands context so well. It remembers our previous conversations and provides personalized advice that actually helps.",
+							rating: 5,
+							display_name: "Aisha N.",
+							display_initial: "A",
+							approved_at: "3 days ago"
+						},
+						{
+							content: "Finally, a mental health app that feels modern and doesn't make me feel awkward using it. Great UI and even better support!",
+							rating: 5,
+							display_name: "Tom R.",
+							display_initial: "T",
+							approved_at: "6 days ago"
+						},
+						{
+							content: "UniPulse helped me build healthy habits and stay consistent with self-care routines. My productivity has improved so much!",
+							rating: 5,
+							display_name: "Nina S.",
+							display_initial: "N",
+							approved_at: "1 week ago"
+						},
+						{
+							content: "The crisis detection feature gave me peace of mind. Knowing there's a safety net makes me feel secure while using the platform.",
+							rating: 5,
+							display_name: "Chris W.",
+							display_initial: "C",
+							approved_at: "2 weeks ago"
+						},
+						{
+							content: "Being able to track my mood over time has helped me identify patterns I never noticed before. Super insightful!",
+							rating: 5,
+							display_name: "Maya P.",
+							display_initial: "M",
+							approved_at: "5 days ago"
+						},
+						{
+							content: "I was skeptical at first, but UniPulse genuinely changed how I approach my mental health. It's now part of my daily routine.",
+							rating: 5,
+							display_name: "Alex G.",
+							display_initial: "A",
+							approved_at: "1 week ago"
 						}
 					];
 
-					try {
-						const response = await fetch('/api/feedback/approved?limit=6');
-						const data = await response.json();
+					function getItemsPerSlide() {
+						return 6; // Always 3 cols x 2 rows = 6 cards per slide
+					}
+
+					function updateCarousel() {
+						container.style.transform = `translateX(-${currentSlide * 100}%)`;
 						
-						let testimonials = defaultTestimonials;
-						if (data.success && data.feedbacks && data.feedbacks.length > 0) {
-							testimonials = data.feedbacks;
+						// Update buttons
+						prevBtn.classList.toggle('disabled', currentSlide === 0);
+						nextBtn.classList.toggle('disabled', currentSlide >= totalSlides - 1);
+						
+						// Update pagination dots
+						document.querySelectorAll('.feedback-dot').forEach((dot, index) => {
+							dot.classList.toggle('active', index === currentSlide);
+						});
+					}
+
+					function createPagination() {
+						paginationContainer.innerHTML = '';
+						for (let i = 0; i < totalSlides; i++) {
+							const dot = document.createElement('button');
+							dot.className = `feedback-dot ${i === 0 ? 'active' : ''}`;
+							dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+							dot.addEventListener('click', () => {
+								currentSlide = i;
+								updateCarousel();
+							});
+							paginationContainer.appendChild(dot);
+						}
+					}
+
+					nextBtn.addEventListener('click', () => {
+						if (currentSlide < totalSlides - 1) {
+							currentSlide++;
+							updateCarousel();
+						}
+					});
+
+					prevBtn.addEventListener('click', () => {
+						if (currentSlide > 0) {
+							currentSlide--;
+							updateCarousel();
+						}
+					});
+
+					// Auto-play carousel
+					let autoPlayInterval = setInterval(() => {
+						if (currentSlide < totalSlides - 1) {
+							currentSlide++;
+						} else {
+							currentSlide = 0;
+						}
+						updateCarousel();
+					}, 6000);
+
+					// Pause on hover
+					container.addEventListener('mouseenter', () => clearInterval(autoPlayInterval));
+					container.addEventListener('mouseleave', () => {
+						autoPlayInterval = setInterval(() => {
+							if (currentSlide < totalSlides - 1) {
+								currentSlide++;
+							} else {
+								currentSlide = 0;
+							}
+							updateCarousel();
+						}, 6000);
+					});
+
+					window.addEventListener('resize', () => {
+						renderTestimonials();
+						updateCarousel();
+					});
+
+					async function loadTestimonials() {
+						console.log('Loading testimonials...');
+						try {
+							const response = await fetch('/api/feedback/approved?limit=24');
+							const data = await response.json();
+							console.log('API Response:', data);
+							
+							if (data.success && data.feedbacks && data.feedbacks.length > 0) {
+								testimonials = data.feedbacks;
+								console.log('Loaded testimonials from API:', testimonials.length);
+							} else {
+								testimonials = defaultTestimonials;
+								console.log('Using default testimonials:', defaultTestimonials.length);
+							}
+						} catch (error) {
+							console.error('Failed to load testimonials:', error);
+							testimonials = defaultTestimonials;
+							console.log('Using default testimonials after error:', defaultTestimonials.length);
+						}
+
+						renderTestimonials();
+						createPagination();
+						updateCarousel();
+						console.log('Carousel initialized with', totalSlides, 'slides');
+					}
+
+					function renderTestimonials() {
+						console.log('Rendering testimonials...');
+						const itemsPerSlide = getItemsPerSlide();
+						totalSlides = Math.ceil(testimonials.length / itemsPerSlide);
+						console.log('Items per slide:', itemsPerSlide, 'Total slides:', totalSlides);
+						
+						// Ensure currentSlide is valid
+						if (currentSlide >= totalSlides) {
+							currentSlide = totalSlides - 1;
 						}
 						
-						// Render testimonials
-						container.innerHTML = testimonials.slice(0, 6).map((feedback, index) => {
-							const colorClass = avatarColors[index % avatarColors.length];
-							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
-							
-							return `
-								<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-									<div class="flex items-center mb-6">
-										<div class="flex text-yellow-400">${stars}</div>
-									</div>
-									<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-										"${feedback.content}"
-									</p>
-									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white font-bold text-xl">
-											${feedback.display_initial}
-										</div>
-										<div>
-											<p class="font-bold text-gray-900">${feedback.display_name}</p>
-										</div>
-									</div>
-								</div>
-							`;
-						}).join('');
+						let slidesHTML = '';
 						
-					} catch (error) {
-						console.error('Failed to load testimonials:', error);
-						// Keep the loading skeleton or show defaults
-						container.innerHTML = defaultTestimonials.map((feedback, index) => {
-							const colorClass = avatarColors[index % avatarColors.length];
-							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
+						for (let slideIndex = 0; slideIndex < totalSlides; slideIndex++) {
+							const startIndex = slideIndex * itemsPerSlide;
+							const slideItems = testimonials.slice(startIndex, startIndex + itemsPerSlide);
 							
-							return `
-								<div class="testimonial-card bg-white rounded-2xl p-8 shadow-lg">
-									<div class="flex items-center mb-6">
-										<div class="flex text-yellow-400">${stars}</div>
+							// Determine grid cols based on screen size
+							let gridCols = 'lg:grid-cols-3 md:grid-cols-2 grid-cols-1';
+							
+							const cardsHTML = slideItems.map((feedback, index) => {
+								const globalIndex = startIndex + index;
+								const gradientClass = avatarGradients[globalIndex % avatarGradients.length];
+								const stars = Array(feedback.rating || 5).fill('<i class="fas fa-star"></i>').join('');
+								const cardId = `feedback-${slideIndex}-${index}`;
+								const approvedDate = feedback.approved_at || 'Recent';
+								
+								return `
+									<div class="feedback-card">
+										<div class="feedback-stars">${stars}</div>
+										<p class="feedback-content">${feedback.content}</p>
+										<div class="feedback-author">
+											<div class="feedback-avatar ${gradientClass}">${feedback.display_initial || feedback.display_name.charAt(0)}</div>
+											<div class="feedback-author-info">
+												<h4>${feedback.display_name}</h4>
+											</div>
+										</div>
 									</div>
-									<p class="text-gray-700 text-lg leading-relaxed mb-6 italic">
-										"${feedback.content}"
-									</p>
-									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white font-bold text-xl">
-											${feedback.display_initial}
-										</div>
-										<div>
-											<p class="font-bold text-gray-900">${feedback.display_name}</p>
-										</div>
+								`;
+							}).join('');
+
+							slidesHTML += `
+								<div class="feedback-carousel-slide">
+									<div class="grid ${gridCols} gap-6">
+										${cardsHTML}
 									</div>
 								</div>
 							`;
-						}).join('');
+						}
+						
+						container.innerHTML = slidesHTML;
+						console.log('Rendered', totalSlides, 'slides with HTML');
 					}
+
+					await loadTestimonials();
 				});
+
+
 			</script>
 
-			<!-- Share Your Feedback Section (Guest) -->
-			<section class="py-20 bg-white">
-				<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+			<!-- Guest Feedback Section -->
+			<section class="py-24 bg-white">
+				<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div class="text-center mb-12">
 						<h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
 							Share Your <span class="gradient-text">Experience</span>
@@ -593,11 +1030,18 @@
 							</div>
 
 							<!-- Submit Button -->
-							<button type="submit" id="guestSubmitBtn"
-								class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
-								<i class="fas fa-paper-plane"></i>
-								Submit Feedback
-							</button>
+							<div class="flex gap-3">
+								<button type="button" onclick="fillDemoFeedback()"
+									class="py-4 px-6 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
+									<i class="fas fa-magic"></i>
+									Demo
+								</button>
+								<button type="submit" id="guestSubmitBtn"
+									class="flex-1 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
+									<i class="fas fa-paper-plane"></i>
+									Submit Feedback
+								</button>
+							</div>
 						</form>
 
 						<!-- Success Message (Hidden by default) -->
@@ -617,107 +1061,6 @@
 					</div>
 				</div>
 			</section>
-
-			<script>
-				// Guest feedback star rating
-				let guestRating = 0;
-				document.querySelectorAll('#guestStarRating .star-btn').forEach(star => {
-					star.addEventListener('click', function() {
-						guestRating = parseInt(this.dataset.rating);
-						document.getElementById('guestRating').value = guestRating;
-						updateGuestStars();
-					});
-				});
-
-				function updateGuestStars() {
-					document.querySelectorAll('#guestStarRating .star-btn').forEach((star, index) => {
-						if (index < guestRating) {
-							star.classList.remove('text-gray-300');
-							star.classList.add('text-yellow-400');
-						} else {
-							star.classList.add('text-gray-300');
-							star.classList.remove('text-yellow-400');
-						}
-					});
-				}
-
-				async function submitGuestFeedback(event) {
-					event.preventDefault();
-					
-					const content = document.getElementById('guestContent').value.trim();
-					const name = document.getElementById('guestName').value.trim();
-					const email = document.getElementById('guestEmail').value.trim();
-					const showName = document.getElementById('guestShowName').checked;
-					
-					// Validation
-					if (guestRating === 0) {
-						alert('Please select a star rating.');
-						return false;
-					}
-					if (content.length < 1) {
-						alert('Please write something about your experience.');
-						return false;
-					}
-
-					const submitBtn = document.getElementById('guestSubmitBtn');
-					submitBtn.disabled = true;
-					submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-					try {
-						const response = await fetch('/api/feedback/guest', {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-								'X-CSRF-TOKEN': '{{ csrf_token() }}'
-							},
-							body: JSON.stringify({
-								content: content,
-								rating: guestRating,
-								guest_name: name,
-								guest_email: email,
-								show_name: showName
-							})
-						});
-
-						const data = await response.json();
-
-						if (data.success) {
-							document.getElementById('guestFeedbackForm').classList.add('hidden');
-							document.getElementById('guestFeedbackSuccess').classList.remove('hidden');
-						} else {
-							alert(data.error || 'Failed to submit feedback. Please try again.');
-							submitBtn.disabled = false;
-							submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
-						}
-					} catch (error) {
-						console.error('Feedback error:', error);
-						alert('Something went wrong. Please try again.');
-						submitBtn.disabled = false;
-						submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
-					}
-
-					return false;
-				}
-
-				function resetGuestFeedback() {
-					// Hide success message and show form
-					document.getElementById('guestFeedbackSuccess').classList.add('hidden');
-					document.getElementById('guestFeedbackForm').classList.remove('hidden');
-					
-					// Reset form fields
-					document.getElementById('guestFeedbackForm').reset();
-					document.getElementById('guestRating').value = 0;
-					guestRating = 0;
-					
-					// Reset stars
-					updateGuestStars();
-					
-					// Reset button state just in case
-					const submitBtn = document.getElementById('guestSubmitBtn');
-					submitBtn.disabled = false;
-					submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
-				}
-			</script>
 
 			<!-- FAQ Section -->
 			<section class="py-24 bg-gradient-to-b from-gray-50 to-white">
@@ -773,6 +1116,7 @@
 							</h3>
 							<p class="text-gray-600 leading-relaxed pl-8">
 								Your AI chat conversations remain completely private unless you choose to share them. Professional counselors are there to help you.
+							</p>
 						</div>
 					</div>
 				</div>
@@ -820,6 +1164,119 @@
 					</div>
 				</div>
 			</section>
+			
+			<script>
+				// Guest Feedback Star Rating Logic
+				document.addEventListener('DOMContentLoaded', function() {
+					const starBtns = document.querySelectorAll('.star-btn');
+					const ratingInput = document.getElementById('guestRating');
+
+					if (starBtns.length > 0) {
+						starBtns.forEach(btn => {
+							btn.addEventListener('mouseover', function() {
+								const rating = parseInt(this.getAttribute('data-rating'));
+								highlightStars(rating);
+							});
+
+							btn.addEventListener('mouseout', function() {
+								const currentRating = parseInt(ratingInput.value);
+								highlightStars(currentRating);
+							});
+
+							btn.addEventListener('click', function() {
+								const rating = parseInt(this.getAttribute('data-rating'));
+								ratingInput.value = rating;
+								highlightStars(rating);
+							});
+						});
+					}
+
+					function highlightStars(rating) {
+						document.querySelectorAll('.star-btn').forEach(btn => {
+							const btnRating = parseInt(btn.getAttribute('data-rating'));
+							if (btnRating <= rating) {
+								btn.classList.remove('text-gray-300');
+								btn.classList.add('text-yellow-400');
+							} else {
+								btn.classList.add('text-yellow-400');
+								btn.classList.add('text-gray-300');
+								btn.classList.remove('text-yellow-400');
+							}
+						});
+					}
+
+					window.submitGuestFeedback = async function(event) {
+						event.preventDefault();
+						const form = event.target;
+						const submitBtn = document.getElementById('guestSubmitBtn');
+						const originalBtnText = submitBtn.innerHTML;
+						
+						// Validate rating
+						const rating = document.getElementById('guestRating').value;
+						if (parseInt(rating) === 0) {
+							alert('Please select a star rating.');
+							return false;
+						}
+
+						const formData = new FormData(form);
+						
+						// Ensure show_name is sent as 1 or 0 for Laravel boolean validation
+						const showNameCheckbox = document.getElementById('guestShowName');
+						if (showNameCheckbox) {
+							formData.set('show_name', showNameCheckbox.checked ? '1' : '0');
+						}
+						
+						try {
+							submitBtn.disabled = true;
+							submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+							const response = await fetch('/api/feedback/guest', {
+								method: 'POST',
+								body: formData,
+								headers: {
+									'X-Requested-With': 'XMLHttpRequest',
+									'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+								}
+							});
+
+							const data = await response.json();
+
+							if (data.success) {
+								document.getElementById('guestFeedbackForm').classList.add('hidden');
+								document.getElementById('guestFeedbackSuccess').classList.remove('hidden');
+							} else {
+								alert(data.error || 'Something went wrong. Please try again.');
+							}
+						} catch (error) {
+							console.error('Submission error:', error);
+							alert('Failed to submit feedback. Please check your connection and try again.');
+						} finally {
+							submitBtn.disabled = false;
+							submitBtn.innerHTML = originalBtnText;
+						}
+
+						return false;
+					};
+
+					window.resetGuestFeedback = function() {
+						document.getElementById('guestFeedbackForm').reset();
+						document.getElementById('guestRating').value = 0;
+						highlightStars(0);
+						document.getElementById('guestFeedbackForm').classList.remove('hidden');
+						document.getElementById('guestFeedbackSuccess').classList.add('hidden');
+					};
+
+					// Demo function to auto-fill the feedback form
+					window.fillDemoFeedback = function() {
+						document.getElementById('guestName').value = 'Nethmini';
+						document.getElementById('guestEmail').value = 'nethmini@gmail.com';
+						document.getElementById('guestContent').value = 'Great service';
+						document.getElementById('guestRating').value = 5;
+						highlightStars(5);
+					};
+				});
+			</script>
+
 
 			@include('layouts.footer')
 		</div>

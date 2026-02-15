@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Onboarding Step 2 - UniPulse">
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             

@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use App\Models\StudentProfile;
+use Auth;
 class OnboardingController extends Controller
 {
     public function step1()
@@ -115,6 +116,40 @@ class OnboardingController extends Controller
         $user->onboarding_completed = true;
         $user->onboarding_completed_at = now();
         $user->save();
+
+        $alResults = json_decode($user['al_results'], true);
+
+        StudentProfile::create([
+                'user_id' => Auth::id(), // assumes user is logged in
+                'university' => $user->university,
+                'university_other' => $user['university_other'],
+                'faculty' => $user['faculty'],
+                'faculty_other' => $user['faculty_other'],
+                'al_stream' => $user['al_stream'],
+                'al_stream_other' => $user['al_stream_other'],
+                'al_result_subject1' => $alResults['subject_1']['grade'],
+                'al_result_subject2' => $alResults['subject_2']['grade'],
+                'al_result_subject3' => $alResults['subject_3']['grade'],
+                'al_result_english' => $alResults['subject_4']['grade'],
+                'al_result_gk' => $alResults['subject_5']['grade'],
+                'learning_style' => "Online",
+                'confidence' => $user['transition_confidence'],
+                'social_setting' => $user['social_preference'],
+                'intro_extro' => $user['introvert_extrovert_scale'],
+                'stress_level' => $user['stress_level'],
+                'group_comfort' => $user['group_work_comfort'],
+                'communication_methods' => json_encode($user['communication_methods']),
+                'motivation' => $user['primary_motivator'],
+                'clear_goal' => $user['goal_clarity'],
+                'top_interests' => json_encode($user['top_interests']),
+                'hobbies' => json_encode($user['hobbies']),
+                'living_arrangement' => $user['living_arrangement'],
+                'employed' => $user['is_employed'] == 1 ? "Yes" : "No",
+                'overwhelmed' => $user['overwhelm_level'],
+                'struggle_connect' => $user['peer_struggle'],
+                'ai_platform_support' => $user['ai_openness'],
+                'support_types' => json_encode($user['preferred_support_types']),
+        ]);
 
         return redirect()->route('dashboard')->with('success', 'Welcome to UniPulse!');
     }

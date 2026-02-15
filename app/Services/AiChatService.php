@@ -33,22 +33,26 @@ class AiChatService
         MemoryManagementService $memoryManagement
     ) {
         $this->provider = config('services.openai.provider', 'azure');
-        $this->model = config('services.openai.model', 'gpt-4.1');
         
-        // Set API key and URL based on provider
+        // Set model, API key and URL based on provider
         switch ($this->provider) {
             case 'azure':
+                $this->model = config('services.openai.model', 'gpt-4.1');
                 $this->apiKey = config('services.openai.azure_api_key');
                 $this->apiUrl = config('services.openai.azure_chat_url');
                 break;
             case 'github':
+                $this->model = config('services.openai.github_chat_model', 'openai/gpt-4.1');
                 $this->apiKey = config('services.openai.github_token');
                 $this->apiUrl = config('services.openai.github_chat_url');
                 break;
             default: // openai
+                $this->model = config('services.openai.model', 'gpt-4.1');
                 $this->apiKey = config('services.openai.api_key');
                 $this->apiUrl = config('services.openai.api_url');
         }
+
+        Log::info('AiChatService initialized', ['provider' => $this->provider, 'model' => $this->model]);
 
         $this->ragRetrieval = $ragRetrieval;
         $this->crisisDetection = $crisisDetection;

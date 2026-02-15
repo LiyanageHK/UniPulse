@@ -48,24 +48,26 @@ return [
         'azure_api_key' => env('AZURE_OPENAI_API_KEY'),
         'azure_embedding_api_key' => env('AZURE_OPENAI_EMBEDDING_API_KEY'),
         
-        // Model names
+        // Default model names (used for openai/azure providers)
         'model' => env('OPENAI_MODEL', 'gpt-4.1'),
         'embedding_model' => env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
         
-        // Azure specific URLs
-        'azure_chat_url' => env('AZURE_OPENAI_CHAT_URL', 'https://frontend-agent-5228-resource.cognitiveservices.azure.com/openai/deployments/gpt-4.1/chat/completions?api-version=2024-05-01-preview'),
-        'azure_embedding_url' => env('AZURE_OPENAI_EMBEDDING_URL', 'https://frontend-agent-5228-resource.cognitiveservices.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2024-05-01-preview'),
+        // GitHub-specific model names (used when provider=github)
+        'github_chat_model' => env('GITHUB_CHAT_MODEL', 'openai/gpt-4.1'),
+        'github_embedding_model' => env('GITHUB_EMBEDDING_MODEL', 'text-embedding-3-large'),
         
-        // Legacy - use_github_models for backward compatibility
-        'use_github_models' => env('USE_GITHUB_MODELS', false),
+        // Azure specific URLs
+        'azure_chat_url' => env('AZURE_OPENAI_CHAT_URL'),
+        'azure_embedding_url' => env('AZURE_OPENAI_EMBEDDING_URL'),
         
         // OpenAI direct URLs
         'api_url' => 'https://api.openai.com/v1/chat/completions',
         'embedding_url' => 'https://api.openai.com/v1/embeddings',
         
-        // GitHub Models URLs
-        'github_chat_url' => 'https://models.inference.ai.azure.com/chat/completions',
-        'github_embedding_url' => 'https://models.inference.ai.azure.com/embeddings',
+        // GitHub Models URLs (built from base URL)
+        'github_base_url' => env('GITHUB_MODELS_BASE_URL', 'https://models.github.ai/inference'),
+        'github_chat_url' => env('GITHUB_MODELS_BASE_URL', 'https://models.github.ai/inference') . '/chat/completions',
+        'github_embedding_url' => env('GITHUB_MODELS_BASE_URL', 'https://models.github.ai/inference') . '/embeddings',
     ],
 
     'crisis' => [

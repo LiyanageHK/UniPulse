@@ -17,22 +17,26 @@ class EmbeddingService
     {
         // Use separate embedding provider (defaults to main provider)
         $this->provider = config('services.openai.embedding_provider', config('services.openai.provider', 'azure'));
-        $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
         
-        // Set API key and URL based on embedding provider
+        // Set model, API key and URL based on embedding provider
         switch ($this->provider) {
             case 'azure':
+                $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
                 $this->apiKey = config('services.openai.azure_embedding_api_key');
                 $this->apiUrl = config('services.openai.azure_embedding_url');
                 break;
             case 'github':
+                $this->model = config('services.openai.github_embedding_model', 'text-embedding-3-large');
                 $this->apiKey = config('services.openai.github_embedding_token');
                 $this->apiUrl = config('services.openai.github_embedding_url');
                 break;
             default: // openai
+                $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
                 $this->apiKey = config('services.openai.api_key');
                 $this->apiUrl = config('services.openai.embedding_url');
         }
+
+        Log::info('EmbeddingService initialized', ['provider' => $this->provider, 'model' => $this->model]);
     }
 
     /**

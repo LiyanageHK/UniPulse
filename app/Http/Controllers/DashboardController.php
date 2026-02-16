@@ -6,7 +6,11 @@ use App\Models\WeeklyCheckin;
 use App\Models\KpiSnapshot;
 use App\Services\AiRecommender;
 use Carbon\Carbon;
+use App\Models\Conversation;
+use App\Models\Feedback;
+use App\Models\Message;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -109,6 +113,14 @@ class DashboardController extends Controller
             );
         }
 
+        // ✅ STEP 8 — Conversational Support Stats
+        $activeChatsCount = Conversation::where('user_id', $user->id)->active()->count();
+        $archivedChatsCount = Conversation::where('user_id', $user->id)->archived()->count();
+        $totalCrisisFlags = Conversation::where('user_id', $user->id)->sum('crisis_flags_count');
+        
+        $lastMessage = Message::where('user_id', $user->id)->where('role', 'user')->latest()->first();
+        $lastChatTime = $lastMessage ? $lastMessage->created_at->diffForHumans() : 'No activity';
+
         return view('dashboard', [
             'user' => $user,
             'motivationScore' => $kpiData['motivationScore'],
@@ -119,6 +131,11 @@ class DashboardController extends Controller
             'emotionalInterpretation' => $kpiData['emotionalInterpretation'],
             'kpiHistory' => $kpiHistory,
             'aiRecommendation' => $recommendation,
+            // Chat Stats
+            'activeChatsCount' => $activeChatsCount,
+            'archivedChatsCount' => $archivedChatsCount,
+            'lastChatTime' => $lastChatTime,
+            'totalCrisisFlags' => $totalCrisisFlags,
         ]);
     }
 

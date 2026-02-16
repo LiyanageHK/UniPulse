@@ -171,12 +171,12 @@
 				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div class="grid grid-cols-2 md:grid-cols-4 gap-8">
 						<div class="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-white">
-							<div class="stat-number text-5xl md:text-6xl font-bold text-blue-600 mb-2">5000+</div>
+							<div class="stat-number text-5xl md:text-6xl font-bold text-blue-600 mb-2">250+</div>
 							<p class="text-gray-700 font-semibold text-lg">Active Students</p>
 							<p class="text-gray-500 text-sm mt-1">Supported Daily</p>
 						</div>
 						<div class="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-white">
-							<div class="stat-number text-5xl md:text-6xl font-bold text-blue-600 mb-2">100+</div>
+							<div class="stat-number text-5xl md:text-6xl font-bold text-blue-600 mb-2">20+</div>
 							<p class="text-gray-700 font-semibold text-lg">Expert Counselors</p>
 							<p class="text-gray-500 text-sm mt-1">Ready to Help</p>
 						</div>
@@ -476,7 +476,7 @@
 						}
 						
 						// Render testimonials
-						container.innerHTML = testimonials.slice(0, 3).map((feedback, index) => {
+						container.innerHTML = testimonials.slice(0, 6).map((feedback, index) => {
 							const colorClass = avatarColors[index % avatarColors.length];
 							const stars = Array(feedback.rating).fill('<i class="fas fa-star"></i>').join('');
 							
@@ -494,7 +494,6 @@
 										</div>
 										<div>
 											<p class="font-bold text-gray-900">${feedback.display_name}</p>
-											<p class="text-gray-600 text-sm">UniPulse User</p>
 										</div>
 									</div>
 								</div>
@@ -522,7 +521,6 @@
 										</div>
 										<div>
 											<p class="font-bold text-gray-900">${feedback.display_name}</p>
-											<p class="text-gray-600 text-sm">UniPulse User</p>
 										</div>
 									</div>
 								</div>
@@ -574,7 +572,7 @@
 								<label class="block text-gray-700 font-semibold mb-2" for="guestEmail">Email (Optional)</label>
 								<input type="email" id="guestEmail" name="guest_email" 
 									class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-									placeholder="your.email@university.edu">
+									placeholder="email@university.com">
 							</div>
 
 							<!-- Feedback Content -->
@@ -582,7 +580,7 @@
 								<label class="block text-gray-700 font-semibold mb-2" for="guestContent">Your Feedback *</label>
 								<textarea id="guestContent" name="content" required rows="4"
 									class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
-									placeholder="Share your experience with UniPulse (even 'Amazing!' works!)"></textarea>
+									placeholder="Share your experience with UniPulse"></textarea>
 							</div>
 
 							<!-- Show Name Option -->
@@ -604,7 +602,17 @@
 
 						<!-- Success Message (Hidden by default) -->
 						<div id="guestFeedbackSuccess" class="hidden text-center py-12">
-							<h3 class="text-2xl font-bold text-gray-900">Thank you for the feedback!</h3>
+							<div class="mb-4">
+								<span class="text-6xl animate-bounce inline-block">🎉</span>
+							</div>
+							<h3 class="text-2xl font-bold text-gray-900 mb-2">Thank you for the feedback!</h3>
+							<p class="text-gray-600 mb-8">We appreciate you taking the time to share your experience.</p>
+							
+							<button onclick="resetGuestFeedback()" 
+								class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-blue-600 font-bold rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-300">
+								<i class="fas fa-plus"></i>
+								Submit Another Response
+							</button>
 						</div>
 					</div>
 				</div>
@@ -690,6 +698,25 @@
 
 					return false;
 				}
+
+				function resetGuestFeedback() {
+					// Hide success message and show form
+					document.getElementById('guestFeedbackSuccess').classList.add('hidden');
+					document.getElementById('guestFeedbackForm').classList.remove('hidden');
+					
+					// Reset form fields
+					document.getElementById('guestFeedbackForm').reset();
+					document.getElementById('guestRating').value = 0;
+					guestRating = 0;
+					
+					// Reset stars
+					updateGuestStars();
+					
+					// Reset button state just in case
+					const submitBtn = document.getElementById('guestSubmitBtn');
+					submitBtn.disabled = false;
+					submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Feedback';
+				}
 			</script>
 
 			<!-- FAQ Section -->
@@ -720,10 +747,10 @@
 						<div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
 							<h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
 								<i class="fas fa-question-circle text-blue-600 mt-1"></i>
-								How much does it cost?
+								How does the AI chatbot work?
 							</h3>
 							<p class="text-gray-600 leading-relaxed pl-8">
-								UniPulse is completely free for all enrolled students. Your university subscription covers all features including AI chat, counselor sessions, and crisis support.
+								Our AI chatbot uses advanced natural language processing to understand your concerns and provide empathetic, personalized responses. It learns from your interactions to offer increasingly relevant support tailored to your unique situation.
 							</p>
 						</div>
 
@@ -742,11 +769,10 @@
 						<div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
 							<h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
 								<i class="fas fa-question-circle text-blue-600 mt-1"></i>
-								Can I use UniPulse on my phone?
+								Can counselors see my conversation history?
 							</h3>
 							<p class="text-gray-600 leading-relaxed pl-8">
-								Yes! UniPulse is fully responsive and works seamlessly on all devices - smartphones, tablets, and computers. Access support wherever you are, whenever you need it.
-							</p>
+								Your AI chat conversations remain completely private unless you choose to share them. Professional counselors are there to help you.
 						</div>
 					</div>
 				</div>

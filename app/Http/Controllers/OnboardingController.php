@@ -19,7 +19,7 @@ class OnboardingController extends Controller
         'faculty' => 'required|string',
         'al_stream' => 'required|string',
 
-        // remove al_results from validation – we generate it manually
+        // remove al_results from validation 
         'learning_style' => 'required|array',
         'transition_confidence' => 'required|integer',
         'social_preference' => 'required|string',

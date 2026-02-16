@@ -16,12 +16,12 @@ class DashboardController extends Controller
         $now = Carbon::now();
         $weekStart = $now->startOfWeek()->toDateString();
 
-        // ✅ STEP 1 — Redirect if onboarding not completed
+        // STEP 1 — Redirect if onboarding not completed
         if (!$user->onboarding_completed) {
             return redirect()->route('onboarding.step1');
         }
 
-        // ✅ STEP 2 — Determine onboarding week
+        // STEP 2 — Determine onboarding week
         $onboardingDate = Carbon::parse($user->created_at);
 
         // Always get last weekly check-in (may be null)
@@ -29,7 +29,7 @@ class DashboardController extends Controller
             ->orderBy('week_start', 'desc')
             ->first();
 
-        // ✅ STEP 3 — Enforce weekly check-in ONLY after onboarding week
+        // STEP 3 — Enforce weekly check-in ONLY after onboarding week
         if ($onboardingDate->diffInDays($now) >= 7) {
             if (
                 !$lastCheckin ||
@@ -71,10 +71,10 @@ class DashboardController extends Controller
          * =====================================================
          */
 
-        // ✅ STEP 4 — Calculate KPIs from weekly check-in
+        // STEP 4 — Calculate KPIs from weekly check-in
         $kpiData = $this->calculateKPIsFromCheckin($lastCheckin);
 
-        // ✅ STEP 5 — Save / update current week snapshot
+        // STEP 5 — Save / update current week snapshot
         KpiSnapshot::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -87,12 +87,12 @@ class DashboardController extends Controller
             ]
         );
 
-        // ✅ STEP 6 — Load KPI history
+        // Load KPI history
         $kpiHistory = KpiSnapshot::where('user_id', $user->id)
             ->orderBy('week_start', 'asc')
             ->get();
 
-        // ✅ STEP 7 — AI Recommendation
+        // AI Recommendation
         $aiRecommender = new AiRecommender();
 
         if ($kpiData['emotionalScore'] <= 2.0) {

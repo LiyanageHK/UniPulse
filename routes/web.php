@@ -6,6 +6,7 @@ use App\Http\Controllers\WeeklyCheckinController;
 use App\Http\Controllers\ChatSupportController;
 use App\Http\Controllers\CrisisManagementController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\AboutController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,6 +23,9 @@ Route::get('/privacy-policy', function () {
     return view('privacy-policy');
 })->name('privacy');
 
+//About Us page
+Route::get('/about', [AboutController::class, 'index'])->name('about');
+
 // Public chat information page (accessible without login)
 Route::get('/conversational-support', function () {
     return view('chat-info');
@@ -31,6 +35,10 @@ Route::get('/conversational-support', function () {
 Route::get('/profiling', function () {
     return view('profiling');
 })->name('profiling');
+
+Route::get('/contact', function () {
+    return view('contact');
+})->name('contact');
 
 /*Route::get('/profiling', [ServicePageController::class, 'studentProfiling'])
     ->name('services.studentProfiling');*/

@@ -478,8 +478,8 @@ class DashboardPoornimaController extends Controller
 
             // Communication preferences (10 points)
             $total += 10;
-            $mine_comms = json_decode($myProfile->communication_methods, true) ?: [];
-            $other_comms = json_decode($profile->communication_methods, true) ?: [];
+            $mine_comms = is_array($myProfile->communication_methods) ? $myProfile->communication_methods : (json_decode($myProfile->communication_methods, true) ?: []);
+            $other_comms = is_array($profile->communication_methods) ? $profile->communication_methods : (json_decode($profile->communication_methods, true) ?: []);
 
             $common_comms = array_intersect($mine_comms, $other_comms);
             if (count($common_comms) > 0) {
@@ -488,8 +488,8 @@ class DashboardPoornimaController extends Controller
 
             // Interests (20 points)
             $total += 20;
-            $mine_interests = json_decode($myProfile->top_interests, true) ?: [];
-            $other_interests = json_decode($profile->top_interests, true) ?: [];
+            $mine_interests = is_array($myProfile->top_interests) ? $myProfile->top_interests : (json_decode($myProfile->top_interests, true) ?: []);
+            $other_interests = is_array($profile->top_interests) ? $profile->top_interests : (json_decode($profile->top_interests, true) ?: []);
 
             $common_interests = array_intersect($mine_interests, $other_interests);
             if (count($common_interests) > 0) {
@@ -551,8 +551,8 @@ class DashboardPoornimaController extends Controller
 
             $interests = [];
             if ($otherUser->profile && $otherUser->profile->top_interests) {
-                $decoded = json_decode($otherUser->profile->top_interests, true);
-                $interests = is_array($decoded) ? $decoded : [];
+                $raw = $otherUser->profile->top_interests;
+                $interests = is_array($raw) ? $raw : (json_decode($raw, true) ?: []);
             }
 
             $formatted[] = [
@@ -607,6 +607,18 @@ class DashboardPoornimaController extends Controller
         $req->update(['status' => 'rejected']);
 
         return back()->with('success', 'Request rejected!');
+    }
+
+    public function cancelRequest($requestId)
+    {
+        $req = PeerRequest::where('id', $requestId)
+                          ->where('sender_id', Auth::id())
+                          ->where('status', 'pending')
+                          ->firstOrFail();
+
+        $req->delete();
+
+        return back()->with('success', 'Request cancelled.');
     }
 
     public function chat()

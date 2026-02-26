@@ -73,5 +73,9 @@ return [
         'sms_enabled' => env('CRISIS_SMS_ENABLED', false),
     ],
 
+    'ml_clustering' => [
+        'url' => env('ML_CLUSTERING_URL', 'http://127.0.0.1:5000'),
+    ],
+
 
 ];

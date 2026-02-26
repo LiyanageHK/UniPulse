@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\PeerMatchingController;
 use App\Http\Controllers\OnBoardingPoornimaController;
 use App\Http\Controllers\DashboardPoornimaController;
 use App\Http\Controllers\AuthController;
@@ -39,6 +40,7 @@ Route::middleware(['auth', 'check.onboarding'])->group(function () {
     Route::get('/my-connections', [DashboardPoornimaController::class, 'myConnections'])->name('myConnections');
     Route::get('/peer-matchings', [DashboardPoornimaController::class, 'peerMatchings'])->name('peer-matchings');
     Route::post('/peer/send/{id}', [DashboardPoornimaController::class, 'sendRequest'])->name('peer.send');
+    Route::post('/peer/cancel/{id}', [DashboardPoornimaController::class, 'cancelRequest'])->name('peer.cancel');
     Route::post('/peer/accept/{id}', [DashboardPoornimaController::class, 'acceptRequest'])->name('peer.accept');
     Route::post('/peer/reject/{id}', [DashboardPoornimaController::class, 'rejectRequest'])->name('peer.reject');
     Route::post('/peer/rating/{to_id}',[DashboardPoornimaController::class, 'peerRating'])->name('peer.rating');
@@ -64,6 +66,12 @@ Route::middleware(['auth', 'check.onboarding'])->group(function () {
     Route::post('/groups/{id}/leave', [GroupController::class, 'leave'])->name('groups.leave');
     Route::delete('/groups/{id}', [GroupController::class, 'destroy'])->name('groups.destroy');
     Route::delete('/groups/{groupId}/members/{userId}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
+
+    // AI Peer Matching (ML clustering)
+    Route::get('/peer-matching/ml', [PeerMatchingController::class, 'index'])->name('peer-matching.index');
+    Route::post('/peer-matching/ml/generate', [PeerMatchingController::class, 'generate'])->name('peer-matching.generate');
+    Route::post('/peer-matching/ml/find-my-group', [PeerMatchingController::class, 'findMyGroup'])->name('peer-matching.find-my-group');
+
     Route::get('/risk-level',[DashboardPoornimaController::class,'riskLevel'])->name('risk-level');
     Route::get('/suggestions',[DashboardPoornimaController::class,'suggestions'])->name('suggestions');
 

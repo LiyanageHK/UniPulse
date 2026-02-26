@@ -145,6 +145,11 @@ class User extends Authenticatable
         return $this->hasMany(Group::class, 'admin_id');
     }
 
+    public function peerGroups()
+    {
+        return $this->hasMany(PeerGroup::class);
+    }
+
 
 
     public function weeklyCheckins()

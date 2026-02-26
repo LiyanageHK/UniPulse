@@ -38,6 +38,13 @@ class StudentProfile extends Model
         'support_types',
     ];
 
+    protected $casts = [
+        'communication_methods' => 'array',
+        'top_interests'         => 'array',
+        'hobbies'               => 'array',
+        'support_types'         => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -113,9 +113,9 @@ class AIService
             $data[$field] = max(0.0, min(1.0, (float) $data[$field]));
         }
 
-        $data['lri_score'] = max(0.0, min(100.0, (float) $data['lri_score']));
+        $data['lri_score'] = max(0.0, min(1.0, (float) $data['lri_score']));
 
-        $validLevels = ['Low', 'Medium', 'High', 'Critical'];
+        $validLevels = ['Low', 'Moderate', 'High'];
         if (!in_array($data['risk_level'], $validLevels)) {
             $data['risk_level'] = 'Low';
         }

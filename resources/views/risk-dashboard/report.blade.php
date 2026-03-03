@@ -11,15 +11,13 @@
         @php
             $riskColor = match ($report->risk_level) {
                 'Low'      => 'green',
-                'Medium'   => 'yellow',
-                'High'     => 'orange',
-                'Critical' => 'red',
+                'Moderate' => 'yellow',
+                'High'     => 'red',
                 default    => 'gray',
             };
             $badgeClass = match ($riskColor) {
                 'green'  => 'bg-green-100 text-green-800 border-green-300',
                 'yellow' => 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                'orange' => 'bg-orange-100 text-orange-800 border-orange-300',
                 'red'    => 'bg-red-100 text-red-800 border-red-300',
                 default  => 'bg-gray-100 text-gray-600 border-gray-300',
             };
@@ -70,11 +68,10 @@
             <div class="space-y-4">
                 @php
                     $factors = [
-                        ['label' => 'Stress Probability', 'value' => $report->stress_score,     'weight' => 0.4, 'color' => 'purple'],
-                        ['label' => 'Sentiment Score',    'value' => $report->sentiment_score,   'weight' => 0.2, 'color' => 'blue'],
-                        ['label' => 'Pronoun Ratio',      'value' => $report->pronoun_ratio,     'weight' => 0.15, 'color' => 'indigo'],
-                        ['label' => 'Absolutist Score',   'value' => $report->absolutist_score,  'weight' => 0.15, 'color' => 'amber'],
-                        ['label' => 'Withdrawal Score',   'value' => $report->withdrawal_score,  'weight' => 0.1, 'color' => 'rose'],
+                        ['label' => 'Stress Probability', 'value' => $report->stress_score,    'weight' => 0.25, 'color' => 'purple'],
+                        ['label' => 'Sentiment Score',    'value' => $report->sentiment_score, 'weight' => 0.25, 'color' => 'blue'],
+                        ['label' => 'Pronoun Ratio',      'value' => $report->pronoun_ratio,   'weight' => 0.25, 'color' => 'indigo'],
+                        ['label' => 'Absolutist Score',   'value' => $report->absolutist_score,'weight' => 0.25, 'color' => 'amber'],
                     ];
                 @endphp
 

@@ -14,7 +14,7 @@ class RiskAssessmentService
     /**
      * Risk level hierarchy (lowest to highest).
      */
-    protected array $riskHierarchy = ['Low', 'Medium', 'High', 'Critical'];
+    protected array $riskHierarchy = ['Low', 'Moderate', 'High'];
 
     /**
      * Number of previous weeks to consider for escalation analysis.
@@ -82,7 +82,7 @@ class RiskAssessmentService
         $index = array_search($currentLevel, $this->riskHierarchy);
 
         if ($index === false) {
-            return 'Medium'; // Default fallback
+            return 'Moderate'; // Default fallback
         }
 
         $newIndex = min($index + 1, count($this->riskHierarchy) - 1);
@@ -171,8 +171,8 @@ class RiskAssessmentService
         $previous = $summaries->last()->lri_score;
         $delta    = round($current - $previous, 2);
 
-        // Use a ±2 point threshold for "stable"
-        if ($delta > 2) {
+        // Use a ±0.02 threshold for "stable" (0–1 scale)
+        if ($delta > 0.02) {
             return [
                 'direction' => 'increasing',
                 'symbol'    => '↑',
@@ -181,7 +181,7 @@ class RiskAssessmentService
             ];
         }
 
-        if ($delta < -2) {
+        if ($delta < -0.02) {
             return [
                 'direction' => 'decreasing',
                 'symbol'    => '↓',
@@ -277,9 +277,8 @@ class RiskAssessmentService
      */
     public static function classifyRisk(float $lriScore): string
     {
-        if ($lriScore >= 80) return 'Critical';
-        if ($lriScore >= 60) return 'High';
-        if ($lriScore >= 30) return 'Medium';
+        if ($lriScore >= 0.6) return 'High';
+        if ($lriScore >= 0.3) return 'Moderate';
         return 'Low';
     }
 
@@ -290,9 +289,8 @@ class RiskAssessmentService
     {
         return match ($riskLevel) {
             'Low'      => 'Emotionally stable.',
-            'Medium'   => 'Mild stress indicators.',
+            'Moderate' => 'Mild stress indicators.',
             'High'     => 'High stress signals detected.',
-            'Critical' => 'Immediate intervention recommended.',
             default    => 'No data available.',
         };
     }
@@ -304,9 +302,8 @@ class RiskAssessmentService
     {
         return match ($riskLevel) {
             'Low'      => 'green',
-            'Medium'   => 'yellow',
-            'High'     => 'orange',
-            'Critical' => 'red',
+            'Moderate' => 'yellow',
+            'High'     => 'red',
             default    => 'gray',
         };
     }

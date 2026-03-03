@@ -43,6 +43,13 @@ def full_analysis(text: str) -> dict:
             "withdrawal_score": 0.0,
             "lri_score": 0.0,
             "risk_level": "Low",
+            "debug": {
+                "model_probability": 0.0,
+                "negative_sentiment": 0.0,
+                "pronoun_score": 0.0,
+                "absolutist_score": 0.0,
+                "lri": 0.0,
+            },
         }
 
     try:
@@ -58,7 +65,6 @@ def full_analysis(text: str) -> dict:
             sentiment_score=features["sentiment_score"],
             pronoun_ratio=features["pronoun_ratio"],
             absolutist_score=features["absolutist_score"],
-            withdrawal_score=features["withdrawal_score"],
         )
 
         # Step 4: Determine risk level
@@ -72,6 +78,13 @@ def full_analysis(text: str) -> dict:
             "withdrawal_score": features["withdrawal_score"],
             "lri_score": lri_score,
             "risk_level": risk_level,
+            "debug": {
+                "model_probability": stress_prob,
+                "negative_sentiment": features["sentiment_score"],
+                "pronoun_score": features["pronoun_ratio"],
+                "absolutist_score": features["absolutist_score"],
+                "lri": lri_score,
+            },
         }
 
         logger.info(f"Analysis complete — LRI: {lri_score}, Risk: {risk_level}")

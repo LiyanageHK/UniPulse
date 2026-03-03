@@ -295,7 +295,7 @@ class WeeklySummaryService
             'pronoun_ratio'      => 0.0,
             'absolutist_score'   => 0.0,
             'withdrawal_score'   => 0.0,
-            'lri_score'          => 10.0,
+            'lri_score'          => 0.1,
             'risk_level'         => 'Low',
         ];
     }

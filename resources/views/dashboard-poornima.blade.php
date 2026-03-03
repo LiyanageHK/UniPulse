@@ -278,14 +278,13 @@
                     {{-- Linguistic Factor Breakdown --}}
                     <div class="mb-6">
                         <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Linguistic Factor Breakdown</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             @php
                                 $jFactors = [
-                                    ['label' => 'Stress Probability',  'key' => 'stress_score',     'weight' => '40%', 'color' => 'purple'],
-                                    ['label' => 'Sentiment Score',     'key' => 'sentiment_score',   'weight' => '20%', 'color' => 'blue'],
-                                    ['label' => 'Pronoun Ratio',       'key' => 'pronoun_ratio',     'weight' => '15%', 'color' => 'indigo'],
-                                    ['label' => 'Absolutist Language', 'key' => 'absolutist_score',  'weight' => '15%', 'color' => 'amber'],
-                                    ['label' => 'Withdrawal Score',    'key' => 'withdrawal_score',  'weight' => '10%', 'color' => 'rose'],
+                                    ['label' => 'Stress Probability',  'key' => 'stress_score',      'weight' => '25%', 'color' => 'purple'],
+                                    ['label' => 'Sentiment Score',     'key' => 'sentiment_score',   'weight' => '25%', 'color' => 'blue'],
+                                    ['label' => 'Pronoun Ratio',       'key' => 'pronoun_ratio',     'weight' => '25%', 'color' => 'indigo'],
+                                    ['label' => 'Absolutist Language', 'key' => 'absolutist_score',  'weight' => '25%', 'color' => 'amber'],
                                 ];
                             @endphp
                             @foreach ($jFactors as $f)
@@ -316,12 +315,11 @@
 
                     {{-- LRI Formula Reference --}}
                     <div class="text-xs text-gray-400 font-mono bg-gray-50 rounded-lg p-3 mt-2">
-                        LRI = (0.4 × Stress + 0.2 × Sentiment + 0.15 × Pronoun + 0.15 × Absolutist + 0.1 × Withdrawal) × 100
+                        LRI = (Stress + Sentiment + Pronoun + Absolutist) ÷ 4
                         &nbsp;&nbsp;
-                        <span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-0.5"></span>Low &lt;30
-                        <span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-0.5 ml-2"></span>Medium 30–59
-                        <span class="inline-block w-2 h-2 rounded-full bg-orange-400 mr-0.5 ml-2"></span>High 60–79
-                        <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-0.5 ml-2"></span>Critical ≥80
+                        <span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-0.5"></span>Low &lt;0.3
+                        <span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-0.5 ml-2"></span>Moderate 0.3–0.6
+                        <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-0.5 ml-2"></span>High &ge;0.6
                     </div>
                 </div>
             @else
@@ -523,9 +521,8 @@
                                     label: ctx => ` LRI: ${ctx.parsed.y}`,
                                     afterLabel: ctx => {
                                         const s = ctx.parsed.y;
-                                        if (s >= 80) return 'Risk: Critical';
-                                        if (s >= 60) return 'Risk: High';
-                                        if (s >= 30) return 'Risk: Medium';
+                                        if (s >= 0.6) return 'Risk: High';
+                                        if (s >= 0.3) return 'Risk: Moderate';
                                         return 'Risk: Low';
                                     }
                                 }
@@ -533,8 +530,8 @@
                         },
                         scales: {
                             y: {
-                                min: 0, max: 100,
-                                ticks: { stepSize: 20 },
+                                min: 0, max: 1.0,
+                                ticks: { stepSize: 0.2 },
                                 grid: { color: 'rgba(0,0,0,0.04)' }
                             },
                             x: { grid: { display: false } }

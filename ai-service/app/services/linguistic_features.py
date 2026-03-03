@@ -4,18 +4,24 @@ Computes sentiment, pronoun ratio, absolutist word score, and social withdrawal 
 """
 
 import re
-from textblob import TextBlob
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+# Initialize VADER once
+_vader = SentimentIntensityAnalyzer()
 
 
-# First-person pronouns (case-insensitive matching)
-FIRST_PERSON_PRONOUNS = {"i", "me", "my", "myself", "mine"}
+# First-person (self-referential) pronouns
+SELF_PRONOUNS = {"i", "me", "my", "myself", "mine"}
+
+# Group / collective pronouns
+GROUP_PRONOUNS = {"we", "us", "our", "ours", "ourselves"}
 
 # Absolutist words indicating black-and-white thinking
 ABSOLUTIST_WORDS = {
     "always", "never", "nothing", "completely", "entirely", "absolutely",
     "everyone", "no one", "nobody", "everything", "all", "none",
-    "totally", "perfectly", "impossible", "forever", "constant",
-    "every", "any", "whole", "must", "certain", "definitely",
+    "totally", "perfectly", "impossible", "forever", "constant", "constantly",
+    "every", "any", "whole", "must", "certain", "definitely", "ever",
 }
 
 # Social withdrawal phrases and keywords
@@ -31,45 +37,65 @@ WITHDRAWAL_WORDS = {"alone", "isolated", "ignored", "excluded", "lonely", "withd
 
 def compute_sentiment_score(text: str) -> float:
     """
-    Compute a negativity-oriented sentiment score (0–1).
-    0 = fully positive, 1 = fully negative.
-    Uses TextBlob polarity which ranges from -1 (negative) to +1 (positive).
+    Compute a negativity-oriented sentiment score (0–1) using VADER.
+    VADER's compound score ranges from -1 (most negative) to +1 (most positive).
+    Convert: S_negative = (1 - compound) / 2
+    So -1 → 1.0, 0 → 0.5, +1 → 0.0
     """
     if not text.strip():
         return 0.0
 
-    blob = TextBlob(text)
-    polarity = blob.sentiment.polarity  # -1.0 to 1.0
+    scores = _vader.polarity_scores(text)
+    compound = scores['compound']  # -1.0 to 1.0
 
-    # Convert to 0–1 negative scale: -1 → 1.0, 0 → 0.5, +1 → 0.0
-    negative_score = (1.0 - polarity) / 2.0
+    # Convert to 0–1 negative scale
+    negative_score = (1.0 - compound) / 2.0
     return round(min(max(negative_score, 0.0), 1.0), 4)
 
 
 def compute_pronoun_ratio(text: str) -> float:
     """
-    Compute the ratio of first-person pronouns to total words.
+    Compute a self-referential pronoun score (0–1).
+    Formula: self_count / (self_count + group_count)
+    If all pronouns are self-referential (no "we/us/our"), returns 1.0.
+    If no pronouns at all, returns 0.0.
     """
     words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
     if not words:
         return 0.0
 
-    pronoun_count = sum(1 for w in words if w in FIRST_PERSON_PRONOUNS)
-    ratio = pronoun_count / len(words)
-    return round(min(ratio, 1.0), 4)
+    self_count = sum(1 for w in words if w in SELF_PRONOUNS)
+    group_count = sum(1 for w in words if w in GROUP_PRONOUNS)
+
+    total_pronouns = self_count + group_count
+    if total_pronouns == 0:
+        return 0.0
+
+    ratio = self_count / total_pronouns
+    return round(min(max(ratio, 0.0), 1.0), 4)
 
 
 def compute_absolutist_score(text: str) -> float:
     """
-    Compute the ratio of absolutist words to total words.
+    Compute the proportion of sentences that contain at least one absolutist word.
+    Sentence-based normalization gives more meaningful scores than word-ratio.
+    E.g. 4 out of 5 sentences containing absolutist words → 0.80.
     """
-    words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
-    if not words:
+    # Split text into sentences
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+
+    if not sentences:
         return 0.0
 
-    absolutist_count = sum(1 for w in words if w in ABSOLUTIST_WORDS)
-    score = absolutist_count / len(words)
-    return round(min(score, 1.0), 4)
+    sentences_with_absolutist = 0
+    for sentence in sentences:
+        words = re.findall(r'\b[a-zA-Z]+\b', sentence.lower())
+        if any(w in ABSOLUTIST_WORDS for w in words):
+            sentences_with_absolutist += 1
+
+    score = sentences_with_absolutist / len(sentences)
+    return round(min(max(score, 0.0), 1.0), 4)
 
 
 def compute_withdrawal_score(text: str) -> float:

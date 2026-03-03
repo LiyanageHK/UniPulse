@@ -49,7 +49,7 @@
                        style="color: {{ $riskProfile['risk_color'] === 'yellow' ? '#ca8a04' : $riskProfile['risk_color'] }}">
                         {{ $riskProfile['lri_score'] }}
                     </p>
-                    <p class="text-gray-400 text-sm mt-1">out of 100</p>
+                    <p class="text-gray-400 text-sm mt-1">out of 1.0</p>
                 </div>
 
                 {{-- Risk Level Badge --}}
@@ -143,18 +143,16 @@
                                         $summaryId = $trendData['ids'][$i] ?? null;
                                         $prevScore = $i > 0 ? $trendData['scores'][$i - 1] : null;
                                         $delta = $prevScore !== null ? $score - $prevScore : null;
-                                        $rowTrend = $delta === null ? '&mdash;' : ($delta > 2 ? '<span class="text-red-600">&#8593;</span>' : ($delta < -2 ? '<span class="text-green-600">&#8595;</span>' : '<span class="text-blue-600">&#8594;</span>'));
+                                        $rowTrend = $delta === null ? '&mdash;' : ($delta > 0.02 ? '<span class="text-red-600">&#8593;</span>' : ($delta < -0.02 ? '<span class="text-green-600">&#8595;</span>' : '<span class="text-blue-600">&#8594;</span>'));
                                         $riskColor = match ($level) {
                                             'Low'      => 'green',
-                                            'Medium'   => 'yellow',
-                                            'High'     => 'orange',
-                                            'Critical' => 'red',
+                                            'Moderate' => 'yellow',
+                                            'High'     => 'red',
                                             default    => 'gray',
                                         };
                                         $pillClass = match ($riskColor) {
                                             'green'  => 'bg-green-100 text-green-800',
                                             'yellow' => 'bg-yellow-100 text-yellow-800',
-                                            'orange' => 'bg-orange-100 text-orange-800',
                                             'red'    => 'bg-red-100 text-red-800',
                                             default  => 'bg-gray-100 text-gray-600',
                                         };
@@ -183,13 +181,12 @@
             <div class="bg-gray-50 rounded-2xl p-6">
                 <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">LRI Formula</h3>
                 <p class="text-sm text-gray-500 font-mono">
-                    LRI = (0.4 &times; Stress + 0.2 &times; Sentiment + 0.15 &times; Pronoun + 0.15 &times; Absolutist + 0.1 &times; Withdrawal) &times; 100
+                    LRI = (Stress + Sentiment + Pronoun + Absolutist) &divide; 4
                 </p>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs text-gray-500">
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-green-400 mr-1"></span> Low (&lt; 30)</div>
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1"></span> Medium (30&ndash;59)</div>
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-orange-400 mr-1"></span> High (60&ndash;79)</div>
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> Critical (&ge; 80)</div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-xs text-gray-500">
+                    <div><span class="inline-block w-3 h-3 rounded-full bg-green-400 mr-1"></span> Low (&lt; 0.3)</div>
+                    <div><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1"></span> Moderate (0.3&ndash;0.6)</div>
+                    <div><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> High (&ge; 0.6)</div>
                 </div>
             </div>
 
@@ -309,8 +306,8 @@
                 const levels = @json($trendData['levels']);
 
                 // Map risk level strings to numeric values
-                const levelMap = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
-                const levelColors = { 'Low': '#22c55e', 'Medium': '#eab308', 'High': '#f97316', 'Critical': '#ef4444' };
+                const levelMap = { 'Low': 1, 'Moderate': 2, 'High': 3 };
+                const levelColors = { 'Low': '#22c55e', 'Moderate': '#eab308', 'High': '#ef4444' };
 
                 const levelValues = levels.map(l => levelMap[l] ?? 1);
                 const pointColors = levels.map(l => levelColors[l] ?? '#6b7280');
@@ -340,7 +337,7 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(ctx) {
-                                        const names = ['', 'Low', 'Medium', 'High', 'Critical'];
+                                        const names = ['', 'Low', 'Moderate', 'High'];
                                         return ' Risk Level: ' + (names[ctx.raw] ?? ctx.raw);
                                     }
                                 }
@@ -349,11 +346,11 @@
                         scales: {
                             y: {
                                 min: 0.5,
-                                max: 4.5,
+                                max: 3.5,
                                 ticks: {
                                     stepSize: 1,
                                     callback: function(val) {
-                                        return ['', 'Low', 'Medium', 'High', 'Critical'][val] ?? '';
+                                        return ['', 'Low', 'Moderate', 'High'][val] ?? '';
                                     }
                                 },
                                 title: { display: true, text: 'Risk Level' },

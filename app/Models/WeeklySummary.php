@@ -48,9 +48,8 @@ class WeeklySummary extends Model
     {
         return match ($this->risk_level) {
             'Low'      => 'green',
-            'Medium'   => 'yellow',
-            'High'     => 'orange',
-            'Critical' => 'red',
+            'Moderate' => 'yellow',
+            'High'     => 'red',
             default    => 'gray',
         };
     }
@@ -62,9 +61,8 @@ class WeeklySummary extends Model
     {
         return match ($this->risk_level) {
             'Low'      => 'Emotionally stable.',
-            'Medium'   => 'Mild stress indicators.',
+            'Moderate' => 'Mild stress indicators.',
             'High'     => 'High stress signals detected.',
-            'Critical' => 'Immediate intervention recommended.',
             default    => 'No data available.',
         };
     }

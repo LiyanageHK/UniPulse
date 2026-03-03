@@ -12,19 +12,20 @@ class AnalysisResponse(BaseModel):
     pronoun_ratio: float = Field(..., ge=0.0, le=1.0)
     absolutist_score: float = Field(..., ge=0.0, le=1.0)
     withdrawal_score: float = Field(..., ge=0.0, le=1.0)
-    lri_score: float = Field(..., ge=0.0, le=100.0)
+    lri_score: float = Field(..., ge=0.0, le=1.0)
     risk_level: str
+    debug: Optional[dict] = None
 
     class Config:
         json_schema_extra = {
             "example": {
-                "stress_probability": 0.72,
-                "sentiment_score": 0.65,
-                "pronoun_ratio": 0.12,
-                "absolutist_score": 0.08,
+                "stress_probability": 0.90,
+                "sentiment_score": 0.94,
+                "pronoun_ratio": 1.0,
+                "absolutist_score": 0.80,
                 "withdrawal_score": 0.05,
-                "lri_score": 48.35,
-                "risk_level": "Medium",
+                "lri_score": 0.91,
+                "risk_level": "High",
             }
         }
 

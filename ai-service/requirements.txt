@@ -3,4 +3,4 @@ uvicorn
 torch
 transformers
 pydantic
-textblob
+nltk

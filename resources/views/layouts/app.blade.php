@@ -48,5 +48,7 @@
             </main>
             @include('layouts.footer')
         </div>
+
+        @include('components.journal-reminder-popup')
     </body>
 </html>

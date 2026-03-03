@@ -33,22 +33,6 @@
                 </div> --}}
             </div>
 
-            <!-- Info Sections -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-blue-50 rounded-lg p-6">
-                    <h3 class="font-semibold mb-2">About this Page</h3>
-                    <p class="text-sm text-gray-700">This page summarizes your wellbeing across 5 categories, showing your
-                        current scores and trends. It helps you understand your emotional, social, and mental health
-                        patterns over the past weeks.</p>
-                </div>
-
-                <div class="bg-green-50 rounded-lg p-6">
-                    <h3 class="font-semibold mb-2">Privacy Notice</h3>
-                    <p class="text-sm text-gray-700">All your responses are kept completely private and are not shared. The
-                        scores and trends are generated anonymously to ensure your confidentiality.</p>
-                </div>
-            </div>
-
             <!-- Overall Score -->
             {{-- <div class="bg-white rounded-lg shadow p-6 mb-8">
                 <h2 class="text-2xl font-bold mb-4">Overall Score</h2>
@@ -136,31 +120,31 @@
                                                 @case('depression')
                                                     <div class="text-5xl mb-3">🌧️</div>
                                                     <h2 class="text-3xl font-bold mb-2">Depression Analysis</h2>
-                                                    <p>This measures feelings of sadness or low motivation. Trend: Stable</p>
+                                                    <p class="text-gray-500">This measures feelings of sadness, hopelessness, or low motivation over recent weeks.</p>
                                                 @break
 
                                                 @case('stress')
                                                     <div class="text-5xl mb-3">😟</div>
                                                     <h2 class="text-3xl font-bold mb-2">Emotional Stress Analysis</h2>
-                                                    <p>This measures how overwhelmed or tense you feel. Trend: Worsening</p>
+                                                    <p class="text-gray-500">This measures how overwhelmed or emotionally tense you have been feeling.</p>
                                                 @break
 
                                                 @case('social_isolation')
                                                     <div class="text-5xl mb-3">🔥</div>
-                                                    <h2 class="text-3xl font-bold mb-2">Burnout & Fatigue Analysis</h2>
-                                                    <p>This measures fatigue or disengagement from studies. Trend: Worsening</p>
+                                                    <h2 class="text-3xl font-bold mb-2">Social Isolation Analysis</h2>
+                                                    <p class="text-gray-500">This measures your social connections and how isolated or included you feel around others.</p>
                                                 @break
 
                                                 @case('disengagement')
                                                     <div class="text-5xl mb-3">🫂</div>
                                                     <h2 class="text-3xl font-bold mb-2">Disengagement Analysis</h2>
-                                                    <p>This measures how connected or isolated you feel socially. Trend: Improving</p>
+                                                    <p class="text-gray-500">This measures your level of academic engagement, motivation, and study participation.</p>
                                                 @break
 
                                                 @case('openness')
                                                     <div class="text-5xl mb-3">💬</div>
                                                     <h2 class="text-3xl font-bold mb-2">Openness to Support Analysis</h2>
-                                                    <p>This measures your openness to seeking help when needed. Trend: Stable</p>
+                                                    <p class="text-gray-500">This measures your willingness to seek or accept help and support when needed.</p>
                                                 @break
                                             @endswitch
 
@@ -213,6 +197,149 @@
                 @endif
             </div>
 
+            {{-- ═══════════════════════════════════════
+                 JOURNAL-BASED LINGUISTIC RISK ANALYSIS
+                 ═══════════════════════════════════════ --}}
+            @if ($journalRisk)
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                📓 Journal-Based Risk Analysis
+                                @if ($journalRisk['escalation_flag'])
+                                    <span class="ml-2 inline-block px-3 py-1 text-xs font-bold rounded-full bg-red-600 text-white animate-pulse">
+                                        ⚠ Escalating Risk
+                                    </span>
+                                @endif
+                            </h2>
+                            <p class="text-sm text-gray-500 mt-1">
+                                NLP analysis of your journal entries &mdash;
+                                Week #{{ $journalRisk['week_index'] }}:
+                                {{ $journalRisk['week_start'] }} to {{ $journalRisk['week_end'] }}
+                            </p>
+                        </div>
+                        <div class="flex gap-3 mt-4 md:mt-0">
+                            <a href="{{ route('journal.index') }}"
+                               class="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                ✏ Write Journal
+                            </a>
+                            <a href="{{ route('risk-dashboard.index') }}"
+                               class="text-sm px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition">
+                                Full Dashboard →
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- LRI Score + Risk Level + Interpretation --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-gray-50 rounded-xl p-5 text-center">
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Linguistic Risk Index</p>
+                            @php
+                                $lriColor = match(true) {
+                                    $journalRisk['lri_score'] >= 80 => '#ef4444',
+                                    $journalRisk['lri_score'] >= 60 => '#f97316',
+                                    $journalRisk['lri_score'] >= 30 => '#ca8a04',
+                                    default => '#16a34a',
+                                };
+                            @endphp
+                            <p class="text-5xl font-extrabold" style="color: {{ $lriColor }}">
+                                {{ $journalRisk['lri_score'] }}
+                            </p>
+                            <p class="text-xs text-gray-400 mt-1">out of 100</p>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-xl p-5 text-center flex flex-col justify-center">
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Risk Level</p>
+                            @php
+                                $badgeCls = match($journalRisk['risk_color']) {
+                                    'green'  => 'bg-green-100 text-green-800 border-green-200',
+                                    'yellow' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                    'orange' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                    'red'    => 'bg-red-100 text-red-800 border-red-200',
+                                    default  => 'bg-gray-100 text-gray-600 border-gray-200',
+                                };
+                            @endphp
+                            <span class="inline-block px-5 py-2 rounded-full text-lg font-bold border {{ $badgeCls }}">
+                                {{ $journalRisk['risk_level'] }} Risk
+                            </span>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-xl p-5 flex flex-col justify-center">
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Interpretation</p>
+                            <p class="text-base font-medium text-gray-700">{{ $journalRisk['risk_message'] }}</p>
+                            @if ($journalRisk['summary_text'])
+                                <p class="text-xs text-gray-400 mt-2 italic line-clamp-2">
+                                    "{{ \Illuminate\Support\Str::limit($journalRisk['summary_text'], 130) }}"
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Linguistic Factor Breakdown --}}
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Linguistic Factor Breakdown</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            @php
+                                $jFactors = [
+                                    ['label' => 'Stress Probability',  'key' => 'stress_score',     'weight' => '40%', 'color' => 'purple'],
+                                    ['label' => 'Sentiment Score',     'key' => 'sentiment_score',   'weight' => '20%', 'color' => 'blue'],
+                                    ['label' => 'Pronoun Ratio',       'key' => 'pronoun_ratio',     'weight' => '15%', 'color' => 'indigo'],
+                                    ['label' => 'Absolutist Language', 'key' => 'absolutist_score',  'weight' => '15%', 'color' => 'amber'],
+                                    ['label' => 'Withdrawal Score',    'key' => 'withdrawal_score',  'weight' => '10%', 'color' => 'rose'],
+                                ];
+                            @endphp
+                            @foreach ($jFactors as $f)
+                                <div class="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
+                                    <p class="text-xs text-gray-500 mb-1">{{ $f['label'] }}</p>
+                                    <p class="text-xl font-bold text-{{ $f['color'] }}-600">
+                                        {{ number_format($journalRisk[$f['key']], 4) }}
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-1">Weight: {{ $f['weight'] }}</p>
+                                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                                        <div class="bg-{{ $f['color'] }}-500 h-1.5 rounded-full"
+                                             style="width: {{ min($journalRisk[$f['key']] * 100, 100) }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    @if (count($journalTrend) > 1)
+                        {{-- LRI Weekly Trend Chart --}}
+                        <div class="bg-gray-50 rounded-xl p-5 mb-4">
+                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">
+                                LRI Trend — Last {{ count($journalTrend) }} Weeks
+                            </h3>
+                            <canvas id="lriTrendChart" height="100"></canvas>
+                        </div>
+                    @endif
+
+                    {{-- LRI Formula Reference --}}
+                    <div class="text-xs text-gray-400 font-mono bg-gray-50 rounded-lg p-3 mt-2">
+                        LRI = (0.4 × Stress + 0.2 × Sentiment + 0.15 × Pronoun + 0.15 × Absolutist + 0.1 × Withdrawal) × 100
+                        &nbsp;&nbsp;
+                        <span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-0.5"></span>Low &lt;30
+                        <span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-0.5 ml-2"></span>Medium 30–59
+                        <span class="inline-block w-2 h-2 rounded-full bg-orange-400 mr-0.5 ml-2"></span>High 60–79
+                        <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-0.5 ml-2"></span>Critical ≥80
+                    </div>
+                </div>
+            @else
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-indigo-800">📓 Journal-Based Risk Analysis</h3>
+                        <p class="text-sm text-indigo-700 mt-1">
+                            Write daily journal entries to unlock AI-powered linguistic risk analysis. Your entries are
+                            analyzed for stress patterns, sentiment, and withdrawal indicators.
+                        </p>
+                    </div>
+                    <a href="{{ route('journal.index') }}"
+                       class="shrink-0 bg-indigo-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition">
+                        Start Journaling
+                    </a>
+                </div>
+            @endif
+
             <div class="text-center">
                 <a href="{{ route('suggestions') }}"
                     class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition my-6" style="background-color: blue">
@@ -222,7 +349,7 @@
         </div>
     </div>
 
-    @if ($survey_count >= 5)
+    @if ($survey_count >= 5 || count($journalTrend) > 1)
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
         <script>
             const modalCharts = {};
@@ -331,6 +458,91 @@
                     });
                 }
             });
+
+            // ─── LRI Trend Chart (Journal-Based) ───────────────────
+            @if (count($journalTrend) > 1)
+            (function () {
+                const ctx = document.getElementById('lriTrendChart');
+                if (!ctx) return;
+
+                const trendData = @json($journalTrend);
+                const labels = trendData.map(d => d.label);
+                const scores = trendData.map(d => d.lri_score);
+
+                const pointColors = scores.map(s => {
+                    if (s >= 80) return '#ef4444';
+                    if (s >= 60) return '#f97316';
+                    if (s >= 30) return '#ca8a04';
+                    return '#16a34a';
+                });
+
+                const riskZonePlugin = {
+                    id: 'riskZones',
+                    beforeDraw(chart) {
+                        const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                        const zones = [
+                            { min: 0,  max: 30,  color: 'rgba(34,197,94,0.06)' },
+                            { min: 30, max: 60,  color: 'rgba(234,179,8,0.06)' },
+                            { min: 60, max: 80,  color: 'rgba(249,115,22,0.06)' },
+                            { min: 80, max: 100, color: 'rgba(239,68,68,0.06)' },
+                        ];
+                        zones.forEach(z => {
+                            const yTop    = y.getPixelForValue(z.max);
+                            const yBottom = y.getPixelForValue(z.min);
+                            ctx.fillStyle = z.color;
+                            ctx.fillRect(left, yTop, right - left, yBottom - yTop);
+                        });
+                    }
+                };
+
+                new Chart(ctx, {
+                    type: 'line',
+                    plugins: [riskZonePlugin],
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'LRI Score',
+                            data: scores,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124,58,237,0.08)',
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: pointColors,
+                            pointBorderColor: pointColors,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            borderWidth: 2.5,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ` LRI: ${ctx.parsed.y}`,
+                                    afterLabel: ctx => {
+                                        const s = ctx.parsed.y;
+                                        if (s >= 80) return 'Risk: Critical';
+                                        if (s >= 60) return 'Risk: High';
+                                        if (s >= 30) return 'Risk: Medium';
+                                        return 'Risk: Low';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0, max: 100,
+                                ticks: { stepSize: 20 },
+                                grid: { color: 'rgba(0,0,0,0.04)' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            })();
+            @endif
         </script>
     @endif
 </x-app-layout>

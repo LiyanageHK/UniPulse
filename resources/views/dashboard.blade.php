@@ -398,5 +398,101 @@
 
 </div>
 
+{{-- ═══════════════════════════════════════════════
+     JOURNAL WRITING MODAL — Auto-shows for new users
+     ═══════════════════════════════════════════════ --}}
+@if (!empty($showJournalModal))
+<div id="journalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-fade-in">
+        {{-- Modal Header --}}
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-5 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    @if (!empty($isFirstJournal))
+                        <h2 class="text-xl font-bold">&#9997; Write Your First Journal</h2>
+                        <p class="text-purple-200 text-sm mt-1">Share how you're feeling — our AI will analyze your entry</p>
+                    @else
+                        <h2 class="text-xl font-bold">&#128196; This Week's Journal Entry</h2>
+                        <p class="text-purple-200 text-sm mt-1">You haven't written a journal this week — take a moment to check in with yourself</p>
+                    @endif
+                </div>
+                <button onclick="closeJournalModal()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+        </div>
+
+        {{-- Modal Body --}}
+        <form action="{{ route('journal.store') }}" method="POST" id="journalModalForm">
+            @csrf
+            <input type="hidden" name="redirect_to" value="dashboard">
+            <div class="px-6 py-5">
+                <p class="text-sm text-gray-500 mb-3">{{ now()->format('l, F j, Y') }}</p>
+
+                <textarea name="content" rows="7" id="journalContent"
+                    class="w-full border-gray-300 rounded-xl shadow-sm focus:ring-purple-500
+                           focus:border-purple-500 resize-y text-gray-700"
+                    placeholder="How are you feeling today? What's on your mind? Write freely about your day, your emotions, or anything you'd like to share..."
+                    required minlength="10" maxlength="5000"></textarea>
+
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-xs text-gray-400" id="charCount">Min 10 characters</span>
+                    <span class="text-xs text-gray-400">Your entry is private and secure</span>
+                </div>
+            </div>
+
+            {{-- Modal Footer --}}
+            <div class="bg-gray-50 px-6 py-4 flex justify-between items-center">
+                <button type="button" onclick="closeJournalModal()"
+                    class="text-gray-500 hover:text-gray-700 text-sm font-medium">
+                    I'll do it later
+                </button>
+                <button type="submit" id="journalSubmitBtn"
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2.5
+                           rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                    @if (!empty($isFirstJournal))
+                        Save &amp; See My Risk Profile
+                    @else
+                        Save This Week's Entry
+                    @endif
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter and submit button toggle
+    const textarea = document.getElementById('journalContent');
+    const charCount = document.getElementById('charCount');
+    const submitBtn = document.getElementById('journalSubmitBtn');
+
+    textarea.addEventListener('input', function () {
+        const len = this.value.trim().length;
+        charCount.textContent = len < 10
+            ? `${10 - len} more characters needed`
+            : `${len} / 5000 characters`;
+        submitBtn.disabled = len < 10;
+    });
+
+    // Auto-focus textarea
+    textarea.focus();
+
+    // Close modal
+    function closeJournalModal() {
+        document.getElementById('journalModal').remove();
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeJournalModal();
+    });
+
+    // Disable double-submit
+    document.getElementById('journalModalForm').addEventListener('submit', function () {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Analyzing...';
+    });
+</script>
+@endif
 
 </x-app-layout>

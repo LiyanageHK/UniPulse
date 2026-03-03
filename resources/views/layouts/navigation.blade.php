@@ -17,20 +17,14 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('dashboard-poornima')" :active="request()->routeIs('dashboard-poornima')">
+                    <x-nav-link :href="route('risk-dashboard.index')" :active="request()->routeIs('risk-dashboard.*')">
                         Risk Detection
                     </x-nav-link>
                     <x-nav-link :href="route('peer-matchings')" :active="request()->routeIs('peer-matchings')">
                         Peer Matching
                     </x-nav-link>
-
-                    {{-- <a href="{{ route('peer-matchings') }}" class="text-gray-600 hover:text-purple-600 transition
-                        {{ request()->is('peer-matchings') || request()->is('profile/*') || request()->is('chat-view') || request()->is('requests')  || request()->is('groups') || request()->is('groups/*') ? 'active' : '' }}
-                         ">Peer Matching</a> --}}
-
-
                     <x-nav-link :href="route('chat.support')" :active="request()->routeIs('chat.support')">
-                     Conversational Support
+                        Conversational Support
                     </x-nav-link>
                 </div>
             </div>
@@ -87,10 +81,10 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('risk-dashboard.index')" :active="request()->routeIs('risk-dashboard.*')">
                 Risk Detection
             </x-responsive-nav-link>
-            <x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('peer-matchings')" :active="request()->routeIs('peer-matchings')">
                 Peer Matching
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('chat.support')" :active="request()->routeIs('chat.support')">

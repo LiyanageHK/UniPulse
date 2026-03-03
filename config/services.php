@@ -73,5 +73,11 @@ return [
         'sms_enabled' => env('CRISIS_SMS_ENABLED', false),
     ],
 
+    'ai' => [
+        'base_url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8000'),
+        'timeout'  => env('AI_SERVICE_TIMEOUT', 30),
+        'retries'  => env('AI_SERVICE_RETRIES', 2),
+    ],
+
 
 ];

@@ -13,6 +13,8 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\OnBoardingPoornimaController;
 use App\Http\Controllers\DashboardPoornimaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\JournalController;
+use App\Http\Controllers\RiskDashboardController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -67,6 +69,22 @@ Route::middleware(['auth', 'check.onboarding'])->group(function () {
     Route::get('/risk-level',[DashboardPoornimaController::class,'riskLevel'])->name('risk-level');
     Route::get('/suggestions',[DashboardPoornimaController::class,'suggestions'])->name('suggestions');
 
+    // Journal routes
+    Route::get('/journal', [JournalController::class, 'index'])->name('journal.index');
+    Route::post('/journal', [JournalController::class, 'store'])->name('journal.store')->middleware('journal.access');
+    Route::get('/journal/{id}', [JournalController::class, 'show'])->name('journal.show');
+    Route::delete('/journal/{id}', [JournalController::class, 'destroy'])->name('journal.destroy');
+
+    // Risk Dashboard routes
+    Route::get('/risk-dashboard', [RiskDashboardController::class, 'index'])->name('risk-dashboard.index');
+    Route::get('/risk-dashboard/history', [RiskDashboardController::class, 'history'])->name('risk-dashboard.history');
+    Route::get('/risk-dashboard/report/{id}', [RiskDashboardController::class, 'showReport'])->name('risk-dashboard.report');
+    Route::delete('/risk-dashboard/summary/{id}', [RiskDashboardController::class, 'destroySummary'])->name('risk-dashboard.summary.destroy');
+    Route::get('/api/risk/latest', [RiskDashboardController::class, 'apiLatest'])->name('risk.api.latest');
+    Route::get('/api/risk/history', [RiskDashboardController::class, 'apiHistory'])->name('risk.api.history');
+
+    // Test: manually trigger weekly summary for current user
+    Route::post('/test/weekly-summary', [RiskDashboardController::class, 'testProcessWeekly'])->name('test.weekly-summary');
 
 });
 

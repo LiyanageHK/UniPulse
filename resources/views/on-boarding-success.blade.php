@@ -9,21 +9,30 @@
         </div>
 
         <!-- Success Message -->
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Survey Submitted!</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Profile Complete!</h2>
         <p class="text-gray-600 mb-6">
-            Thank you for completing your wellbeing survey. Your responses are recorded securely.
+            Thank you for completing your profile, <span class="font-semibold">{{ $username }}</span>! Your responses are recorded securely.
         </p>
 
-        <!-- Reminder -->
-        <p class="text-gray-600 mb-6">
-            Visit every week to take a new survey and track your wellbeing progress.
-        </p>
+        <!-- Journal Prompt -->
+        <div class="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-6">
+            <div class="text-4xl mb-2">&#9997;</div>
+            <h3 class="text-lg font-bold text-purple-800 mb-2">Write Your First Journal Entry</h3>
+            <p class="text-sm text-purple-700">
+                Start by writing about your day, your feelings, or anything on your mind.
+                Our AI will analyze your entry and generate your personalized risk profile.
+            </p>
+        </div>
 
-        <!-- Button to Dashboard -->
-        <a href="{{ url('/dashboard') }}"
-           class="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition">
-            Go to Dashboard
+        <!-- Button to Journal -->
+        <a href="{{ route('journal.index') }}"
+           class="inline-block bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition text-lg mb-3">
+            Write Your First Journal
         </a>
+
+        <p class="text-xs text-gray-400 mt-3">
+            Or <a href="{{ url('/dashboard') }}" class="text-purple-600 hover:underline">skip to dashboard</a>
+        </p>
     </div>
 </div>
 </x-app-layout>

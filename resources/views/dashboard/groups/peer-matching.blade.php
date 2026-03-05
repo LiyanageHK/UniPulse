@@ -41,9 +41,12 @@
                             <select name="purpose"
                                 style="width:100%; height:48px; border:1px solid #d1d5db; border-radius:12px; padding:0 16px; background:#fff; color:#1f2937; font-size:0.95rem; outline:none; appearance:auto;">
                                 <option value="default"     {{ old('purpose', $purpose) === 'default'     ? 'selected' : '' }}>Default</option>
-                                <option value="academic"    {{ old('purpose', $purpose) === 'academic'    ? 'selected' : '' }}>Academic</option>
-                                <option value="hobby"       {{ old('purpose', $purpose) === 'hobby'       ? 'selected' : '' }}>Hobby</option>
+                                <option value="academic"    {{ old('purpose', $purpose) === 'academic'    ? 'selected' : '' }}>Academic Study Group</option>
+                                <option value="hobby"       {{ old('purpose', $purpose) === 'hobby'       ? 'selected' : '' }}>Hobby &amp; Interests</option>
                                 <option value="personality" {{ old('purpose', $purpose) === 'personality' ? 'selected' : '' }}>Personality</option>
+                                <option value="wellbeing"   {{ old('purpose', $purpose) === 'wellbeing'   ? 'selected' : '' }}>Wellbeing Support Group</option>
+                                <option value="sports"      {{ old('purpose', $purpose) === 'sports'      ? 'selected' : '' }}>Sports Team</option>
+                                <option value="social"      {{ old('purpose', $purpose) === 'social'      ? 'selected' : '' }}>Social Bonding Team</option>
                             </select>
                         </div>
 
@@ -75,8 +78,24 @@
             {{-- Results --}}
             @if (isset($matches) && $matches->count() > 0)
                 @php
-                    $purposeLabel = ['default' => 'General', 'academic' => 'Academic', 'hobby' => 'Hobby', 'personality' => 'Personality'][$purpose] ?? ucfirst($purpose ?? '');
-                    $purposeEmoji = ['default' => '🌐', 'academic' => '📚', 'hobby' => '🎨', 'personality' => '🧠'][$purpose] ?? '👥';
+                    $purposeLabel = [
+                        'default'     => 'General',
+                        'academic'    => 'Academic Study Group',
+                        'hobby'       => 'Hobby & Interests',
+                        'personality' => 'Personality',
+                        'wellbeing'   => 'Wellbeing Support Group',
+                        'sports'      => 'Sports Team',
+                        'social'      => 'Social Bonding Team',
+                    ][$purpose] ?? ucfirst($purpose ?? '');
+                    $purposeEmoji = [
+                        'default'     => '🌐',
+                        'academic'    => '📚',
+                        'hobby'       => '🎨',
+                        'personality' => '🧠',
+                        'wellbeing'   => '💚',
+                        'sports'      => '⚽',
+                        'social'      => '🤝',
+                    ][$purpose] ?? '👥';
                     $avgScore     = round($matches->avg('match_score'));
                     $requestStatuses  = $requestStatuses  ?? collect();
                     $sentRequestIds   = $sentRequestIds   ?? collect();
@@ -88,7 +107,7 @@
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
                             <p class="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">Your Best Match Group</p>
-                            <h3 class="text-2xl font-bold">{{ $purposeEmoji }} {{ $purposeLabel }} Group</h3>
+                            <h3 class="text-2xl font-bold">{{ $purposeEmoji }} {{ $purposeLabel }}</h3>
                             <p class="text-blue-200 text-sm mt-1">{{ $matches->count() }} students &bull; Average compatibility {{ $avgScore }}%</p>
                         </div>
                         <div class="text-center bg-white/20 backdrop-blur rounded-xl px-7 py-3">
@@ -106,10 +125,10 @@
                             $score = $match['match_score'] ?? 0;
                             $rank  = $match['rank']        ?? ($index + 1);
 
-                            if      ($score >= 80) { $barColor = 'bg-green-500'; $badge = 'bg-green-100 text-green-700';    $qlabel = 'Excellent'; }
-                            elseif  ($score >= 60) { $barColor = 'bg-blue-500';  $badge = 'bg-blue-100 text-blue-700';      $qlabel = 'Great';     }
-                            elseif  ($score >= 40) { $barColor = 'bg-yellow-500';$badge = 'bg-yellow-100 text-yellow-700';  $qlabel = 'Good';      }
-                            else                   { $barColor = 'bg-orange-500';$badge = 'bg-orange-100 text-orange-700';  $qlabel = 'Fair';      }
+                            if      ($score >= 80) { $barBg = '#22c55e'; $badgeStyle = 'background:#dcfce7;color:#15803d;';  $qlabel = 'Excellent'; }
+                            elseif  ($score >= 60) { $barBg = '#3b82f6'; $badgeStyle = 'background:#dbeafe;color:#1d4ed8;';  $qlabel = 'Great';     }
+                            elseif  ($score >= 40) { $barBg = '#eab308'; $badgeStyle = 'background:#fef9c3;color:#a16207;';  $qlabel = 'Good';      }
+                            else                   { $barBg = '#f97316'; $badgeStyle = 'background:#ffedd5;color:#c2410c;';  $qlabel = 'Fair';      }
 
                             $initials  = $user ? strtoupper(substr($user->name, 0, 2)) : '??';
                             $gradients = ['from-blue-400 to-blue-600','from-purple-400 to-purple-600','from-green-400 to-green-600',
@@ -144,7 +163,7 @@
                                     {{-- Name + badge --}}
                                     <div class="flex flex-wrap items-center gap-2 mb-2">
                                         <p class="font-bold text-gray-900 text-base leading-tight">{{ $user->name ?? 'Unknown Student' }}</p>
-                                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {{ $badge }}">{{ $qlabel }}</span>
+                                        <span style="font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:9999px;{{ $badgeStyle }}">{{ $qlabel }}</span>
                                     </div>
 
                                     {{-- Tags --}}
@@ -167,13 +186,18 @@
                                     </div>
 
                                     {{-- Compatibility bar --}}
-                                    <div>
-                                        <div class="flex justify-between items-center mb-1">
-                                            <span class="text-xs text-gray-400 font-medium">Compatibility</span>
-                                            <span class="text-sm font-bold text-gray-800">{{ $score }}%</span>
+                                    @php 
+                                        $pct = min(100, max(0, floatval($score))); 
+                                        $pctString = number_format($pct, 1, '.', '');
+                                        $scoreString = number_format($score, 1, '.', '');
+                                    @endphp
+                                    <div style="width:100%; margin-top:8px; display:block;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                            <span style="font-size:0.75rem; color:#9ca3af; font-weight:500;">Compatibility</span>
+                                            <span style="font-size:0.875rem; font-weight:700; color:#1f2937;">{{ $scoreString }}%</span>
                                         </div>
-                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                            <div class="{{ $barColor }} h-2 rounded-full" style="width: {{ $score }}%"></div>
+                                        <div style="width:100%; height:8px; background-color:#e5e7eb; border-radius:9999px; overflow:hidden; display:block; clear:both;">
+                                            <div style="width:{{ $pctString }}%; height:100%; min-height:8px; background-color:{{ $barBg }}; border-radius:9999px; display:block;"></div>
                                         </div>
                                     </div>
                                 </div>

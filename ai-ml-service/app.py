@@ -14,8 +14,8 @@ app = Flask(__name__)
 # DATABASE CONNECTION
 # ==============================
 
+
 def get_db_connection():
-    """Create a MySQL database connection using environment variables or defaults."""
     return pymysql.connect(
         host=os.environ.get("DB_HOST", "127.0.0.1"),
         database=os.environ.get("DB_DATABASE", "peer_db"),
@@ -27,10 +27,7 @@ def get_db_connection():
 
 
 def get_data_from_db():
-    """Fetch student profiles from the database.
-    
-    Returns a tuple of (dataframe, user_ids_list).
-    """
+
     conn = get_db_connection()
 
     query = """
@@ -44,9 +41,23 @@ def get_data_from_db():
             sp.overwhelmed,
             sp.social_setting,
             sp.confidence,
-            sp.group_comfort
+            sp.group_comfort,
+            sp.top_interests,
+            sp.communication_methods,
+            COALESCE(wc.mood, 3)          AS weekly_mood,
+            COALESCE(wc.feel_left_out, 3) AS weekly_feel_left_out
         FROM student_profiles sp
         INNER JOIN users u ON u.id = sp.user_id
+        LEFT JOIN (
+            SELECT wc1.user_id, wc1.mood, wc1.feel_left_out
+            FROM weekly_checkins wc1
+            INNER JOIN (
+                SELECT user_id, MAX(week_start) AS latest_week
+                FROM weekly_checkins
+                GROUP BY user_id
+            ) latest ON wc1.user_id = latest.user_id
+                    AND wc1.week_start = latest.latest_week
+        ) wc ON wc.user_id = sp.user_id
         ORDER BY sp.user_id
     """
     df = pd.read_sql(query, conn)
@@ -63,39 +74,80 @@ def get_data_from_db():
 # ==============================
 
 # Columns that are categorical (strings)
-CATEGORICAL_COLS = ['faculty', 'al_stream', 'learning_style', 'stress_level', 'social_setting']
+CATEGORICAL_COLS = ['faculty', 'al_stream',
+                    'learning_style', 'stress_level', 'social_setting']
 
 # Columns that are already numeric
-NUMERIC_COLS = ['intro_extro', 'overwhelmed', 'confidence', 'group_comfort']
+NUMERIC_COLS = ['intro_extro', 'overwhelmed', 'confidence', 'group_comfort',
+                'weekly_mood', 'weekly_feel_left_out']
 
 # Ordinal mapping for stress_level so distance is meaningful
 STRESS_MAP = {'Low': 1, 'Moderate': 2, 'High': 3}
 
 
+def _parse_json_list(val):
+    import json as _json
+    if isinstance(val, list):
+        return val
+    try:
+        parsed = _json.loads(val) if isinstance(
+            val, str) and val not in ('', 'Unknown', 'unknown') else []
+        return parsed if isinstance(parsed, list) else []
+    except Exception:
+        return []
+
+
 def preprocess_data(df):
-    """
-    Encode categorical features via label encoding and z-score normalise
-    every column so KMeans sees real variance.
-    """
+
+    from collections import Counter as _Counter
     df = df.copy()
     df.fillna("Unknown", inplace=True)
 
     # --- Convert stress_level to ordinal number ---
     if 'stress_level' in df.columns:
-        df['stress_level'] = df['stress_level'].map(STRESS_MAP).fillna(2).astype(float)
+        df['stress_level'] = df['stress_level'].map(
+            STRESS_MAP).fillna(2).astype(float)
+
+    # --- Multi-hot encode top_interests (top 12 categories) ---
+    if 'top_interests' in df.columns:
+        parsed_interests = df['top_interests'].apply(_parse_json_list)
+        all_cats = []
+        for lst in parsed_interests:
+            all_cats.extend(lst)
+        top_cats = [c for c, _ in _Counter(all_cats).most_common(12)]
+        for cat in top_cats:
+            col = 'int_' + cat.lower().replace(' ', '_').replace('/',
+                                                                '_').replace('-', '_')[:18]
+            df[col] = parsed_interests.apply(
+                lambda lst, c=cat: 1 if c in lst else 0)
+        df.drop(columns=['top_interests'], inplace=True)
+
+    # --- Multi-hot encode communication_methods (top 6) ---
+    if 'communication_methods' in df.columns:
+        parsed_comms = df['communication_methods'].apply(_parse_json_list)
+        all_comms = []
+        for lst in parsed_comms:
+            all_comms.extend(lst)
+        top_comms = [c for c, _ in _Counter(all_comms).most_common(6)]
+        for comm in top_comms:
+            col = 'comm_' + comm.lower().replace(' ', '_').replace('/',
+                                                                '_').replace('-', '_')[:18]
+            df[col] = parsed_comms.apply(
+                lambda lst, c=comm: 1 if c in lst else 0)
+        df.drop(columns=['communication_methods'], inplace=True)
 
     # --- Label-encode remaining categoricals ---
     label_encoders = {}
-    remaining_cats = [c for c in CATEGORICAL_COLS if c in df.columns and c != 'stress_level']
+    remaining_cats = [
+        c for c in CATEGORICAL_COLS if c in df.columns and c != 'stress_level']
     for col in remaining_cats:
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col].astype(str))
         label_encoders[col] = le
 
     # --- Ensure all numeric ---
-    for col in NUMERIC_COLS:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
     # --- Z-score standardisation (mean=0, std=1) ---
     scaler = StandardScaler()
@@ -112,57 +164,106 @@ def preprocess_data(df):
 WEIGHT_PROFILES = {
     # Default: balanced — no particular bias
     "default": {
-        "faculty":        1.0,
-        "al_stream":      1.0,
-        "learning_style": 1.0,
-        "confidence":     1.0,
-        "intro_extro":    1.0,
-        "stress_level":   1.0,
-        "overwhelmed":    1.0,
-        "social_setting": 1.0,
-        "group_comfort":  1.0,
+        "faculty":               1.0,
+        "al_stream":             1.0,
+        "learning_style":        1.5,
+        "confidence":            1.0,
+        "intro_extro":           1.5,
+        "stress_level":          1.5,
+        "overwhelmed":           1.5,
+        "social_setting":        1.5,
+        "group_comfort":         1.0,
+        "weekly_mood":           1.5,
+        "weekly_feel_left_out":  1.0,
     },
-    # Academic: match by faculty, stream, and learning style
+    # Academic study groups: match by faculty, stream, and learning style
     "academic": {
-        "faculty":        3.5,
-        "al_stream":      3.5,
-        "learning_style": 3.0,
-        "confidence":     1.5,
-        "intro_extro":    1.0,
-        "stress_level":   1.2,
-        "overwhelmed":    1.0,
-        "social_setting": 0.5,
-        "group_comfort":  1.5,
+        "faculty":               3.5,
+        "al_stream":             3.5,
+        "learning_style":        3.0,
+        "confidence":            1.5,
+        "intro_extro":           1.0,
+        "stress_level":          1.2,
+        "overwhelmed":           1.0,
+        "social_setting":        0.5,
+        "group_comfort":         1.5,
+        "weekly_mood":           0.8,
+        "weekly_feel_left_out":  0.5,
     },
-    # Hobby: shared activity style, social comfort, extroversion
+    # Hobby / interest groups: shared interests, social comfort, extroversion
     "hobby": {
-        "faculty":        0.5,
-        "al_stream":      0.3,
-        "learning_style": 2.0,
-        "confidence":     1.5,
-        "intro_extro":    2.5,
-        "stress_level":   1.0,
-        "overwhelmed":    0.8,
-        "social_setting": 2.5,
-        "group_comfort":  3.0,
+        "faculty":               0.5,
+        "al_stream":             0.3,
+        "learning_style":        2.0,
+        "confidence":            1.5,
+        "intro_extro":           2.5,
+        "stress_level":          1.0,
+        "overwhelmed":           0.8,
+        "social_setting":        2.5,
+        "group_comfort":         3.0,
+        "weekly_mood":           0.5,
+        "weekly_feel_left_out":  0.3,
     },
     # Personality: deep personality trait compatibility
     "personality": {
-        "faculty":        0.5,
-        "al_stream":      0.3,
-        "learning_style": 1.0,
-        "confidence":     3.0,
-        "intro_extro":    3.5,
-        "stress_level":   2.5,
-        "overwhelmed":    2.5,
-        "social_setting": 2.0,
-        "group_comfort":  2.5,
+        "faculty":               0.5,
+        "al_stream":             0.3,
+        "learning_style":        1.0,
+        "confidence":            3.0,
+        "intro_extro":           3.5,
+        "stress_level":          2.5,
+        "overwhelmed":           2.5,
+        "social_setting":        2.0,
+        "group_comfort":         2.5,
+        "weekly_mood":           1.0,
+        "weekly_feel_left_out":  0.8,
+    },
+    # Wellbeing support groups: prioritise emotional & stress alignment
+    "wellbeing": {
+        "faculty":               0.5,
+        "al_stream":             0.3,
+        "learning_style":        0.8,
+        "confidence":            1.5,
+        "intro_extro":           1.5,
+        "stress_level":          3.5,
+        "overwhelmed":           3.5,
+        "social_setting":        1.5,
+        "group_comfort":         2.0,
+        "weekly_mood":           3.5,
+        "weekly_feel_left_out":  3.5,
+    },
+    # Sports teams: extroversion, group comfort, social setting
+    "sports": {
+        "faculty":               0.3,
+        "al_stream":             0.2,
+        "learning_style":        0.5,
+        "confidence":            2.5,
+        "intro_extro":           3.0,
+        "stress_level":          0.8,
+        "overwhelmed":           0.5,
+        "social_setting":        3.5,
+        "group_comfort":         3.5,
+        "weekly_mood":           1.0,
+        "weekly_feel_left_out":  0.5,
+    },
+    # Social bonding teams: communication style, social setting, interests
+    "social": {
+        "faculty":               0.5,
+        "al_stream":             0.3,
+        "learning_style":        1.5,
+        "confidence":            2.0,
+        "intro_extro":           2.5,
+        "stress_level":          1.0,
+        "overwhelmed":           1.0,
+        "social_setting":        3.0,
+        "group_comfort":         3.0,
+        "weekly_mood":           1.5,
+        "weekly_feel_left_out":  1.0,
     },
 }
 
 
-def apply_weights(df, purpose="study"):
-    """Multiply each feature column by the purpose-specific weight."""
+def apply_weights(df, purpose="academic"):
     weights = WEIGHT_PROFILES.get(purpose, WEIGHT_PROFILES["default"])
     df = df.copy()
     for col in df.columns:
@@ -176,12 +277,6 @@ def apply_weights(df, purpose="study"):
 # ==============================
 
 def run_kmeans(df, group_size):
-    """KMeans with iterative split/merge post-processing.
-    1. KMeans with k = n // group_size.
-    2. Iteratively split any cluster > max_size into sub-groups.
-    3. Merge clusters < min_size into nearest neighbour (respecting max_size).
-    Returns ``(labels_list, final_k, silhouette)``.
-    """
     n = len(df)
     if n == 0:
         return [], 0, 0.0
@@ -204,7 +299,6 @@ def run_kmeans(df, group_size):
 
 
 def _split_and_merge(X, labels, group_size):
-    """Split big clusters, merge small clusters, renumber."""
     from collections import Counter
 
     min_size = max(2, int(np.ceil(group_size * 0.5)))
@@ -238,7 +332,7 @@ def _split_and_merge(X, labels, group_size):
     centroids = {c: X[np.where(new_labels == c)[0]].mean(axis=0) for c in cids}
 
     tiny = sorted([c for c, cnt in counts.items() if cnt < min_size],
-                  key=lambda c: counts[c])
+                key=lambda c: counts[c])
 
     for cid in tiny:
         if counts[cid] == 0:
@@ -257,7 +351,8 @@ def _split_and_merge(X, labels, group_size):
             idxs = np.where(new_labels == cid)[0]
             new_labels[idxs] = best_c
             counts[best_c] += counts[cid]
-            centroids[best_c] = X[np.where(new_labels == best_c)[0]].mean(axis=0)
+            centroids[best_c] = X[np.where(new_labels == best_c)[
+                0]].mean(axis=0)
             counts[cid] = 0
 
     # --- Renumber 0..m-1 ---
@@ -272,8 +367,7 @@ def _split_and_merge(X, labels, group_size):
 
 @app.route('/run-clustering', methods=['POST'])
 def cluster_students():
-    """API endpoint for clustering students into peer groups."""
-
+    
     try:
         data = request.get_json()
 
@@ -281,7 +375,8 @@ def cluster_students():
             return jsonify({"error": "Missing required field: group_size"}), 400
 
         group_size = int(data['group_size'])
-        purpose = data.get('purpose', 'study')
+        # academic|sports|wellbeing|social
+        purpose = data.get('purpose', 'academic')
 
         if group_size < 2 or group_size > 10:
             return jsonify({"error": "group_size must be between 2 and 10"}), 400
@@ -329,7 +424,6 @@ def cluster_students():
 
 @app.route('/debug', methods=['GET'])
 def debug_data():
-    """Return preprocessed feature stats for debugging."""
     try:
         df, user_ids = get_data_from_db()
 
@@ -346,7 +440,8 @@ def debug_data():
 
         # Variance per column – zero variance = useless feature
         var = df_proc.var()
-        info["processed_variance"] = {c: round(float(v), 6) for c, v in var.items()}
+        info["processed_variance"] = {
+            c: round(float(v), 6) for c, v in var.items()}
         info["zero_variance_cols"] = [c for c, v in var.items() if v < 1e-10]
 
         # Distinct rows
@@ -364,20 +459,125 @@ def debug_data():
 
 @app.route('/find-my-group', methods=['POST'])
 def find_my_group():
-    """Return the top N best-matching students for a specific user.
 
-    Request JSON:
-        user_id    (int)  – the logged-in student's user ID
-        purpose    (str)  – 'study' | 'sports' | 'social'
-        group_size (int)  – how many members to include (including the user)
+    import json as _json
 
-    Response JSON:
-        user_id       – the queried user
-        purpose
-        group_size
-        matches       – list of {user_id, match_score, rank}   (best first)
-                        match_score is 0-100 (100 = identical profile)
-    """
+    def _parse_list(val):
+        """Safely parse a JSON array field into a Python list."""
+        if isinstance(val, list):
+            return val
+        try:
+            parsed = _json.loads(val) if isinstance(val, str) and val else []
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            return []
+
+    def _safe_float(val, default=0.0):
+        try:
+            return float(val) if val is not None else default
+        except (TypeError, ValueError):
+            return default
+
+    # ── Purpose-specific weights (each row sums to 100) ───────────────────
+    # Keys: interests, learning_style, faculty, al_stream, intro_extro,
+    #       stress_level, overwhelmed, mood, feel_left_out, communication,
+    #       social_setting
+    PURPOSE_WEIGHTS = {
+        'default':     dict(interests=15, learning_style=10, faculty=10, al_stream=10,
+                            intro_extro=10, stress_level=10, overwhelmed=5,
+                            mood=5, feel_left_out=5, communication=10, social_setting=10),
+        'academic':    dict(interests=5,  learning_style=15, faculty=20, al_stream=20,
+                            intro_extro=5,  stress_level=5,  overwhelmed=3,
+                            mood=3, feel_left_out=4, communication=10, social_setting=10),
+        'hobby':       dict(interests=30, learning_style=10, faculty=3,  al_stream=2,
+                            intro_extro=10, stress_level=5,  overwhelmed=3,
+                            mood=3, feel_left_out=4, communication=15, social_setting=15),
+        'personality': dict(interests=10, learning_style=10, faculty=3,  al_stream=2,
+                            intro_extro=20, stress_level=20, overwhelmed=7,
+                            mood=8, feel_left_out=5, communication=10, social_setting=5),
+        'wellbeing':   dict(interests=5,  learning_style=5,  faculty=3,  al_stream=2,
+                            intro_extro=10, stress_level=15, overwhelmed=15,
+                            mood=15, feel_left_out=10, communication=10, social_setting=10),
+        'sports':      dict(interests=20, learning_style=5,  faculty=3,  al_stream=2,
+                            intro_extro=5,  stress_level=5,  overwhelmed=3,
+                            mood=3, feel_left_out=4, communication=20, social_setting=30),
+        'social':      dict(interests=10, learning_style=5,  faculty=3,  al_stream=2,
+                            intro_extro=10, stress_level=5,  overwhelmed=3,
+                            mood=5, feel_left_out=7, communication=25, social_setting=25),
+    }
+
+    def _safe_str(val):
+        
+        if val is None or pd.isna(val):
+            return None
+        s = str(val).strip()
+        if s.lower() in ['', 'none', 'null', 'nan']:
+            return None
+        return s
+
+    def compute_score(my_p, other_p, my_c, other_c, p=None):
+        w = PURPOSE_WEIGHTS.get(p or 'default', PURPOSE_WEIGHTS['default'])
+        score = 0.0
+
+        # ── 1. Interest & Hobby Match ───────────────────────────────────────
+        mine_interests = _parse_list(my_p.get('top_interests'))
+        other_interests = _parse_list(other_p.get('top_interests'))
+        common = len(set(mine_interests) & set(other_interests))
+        max_len = max(len(mine_interests), 1)
+        score += (common / max_len) * w['interests']
+
+        my_ls = _safe_str(my_p.get('learning_style'))
+        if my_ls and my_ls == _safe_str(other_p.get('learning_style')):
+            score += w['learning_style']
+
+        # ── 2. Academic Compatibility ───────────────────────────────────────
+        my_fac = _safe_str(my_p.get('faculty'))
+        if my_fac and my_fac == _safe_str(other_p.get('faculty')):
+            score += w['faculty']
+
+        my_als = _safe_str(my_p.get('al_stream'))
+        if my_als and my_als == _safe_str(other_p.get('al_stream')):
+            score += w['al_stream']
+
+        # ── 3. Personality Compatibility ────────────────────────────────────
+        intro_diff = abs(_safe_float(my_p.get('intro_extro'), 5) -
+                        _safe_float(other_p.get('intro_extro'), 5))
+        if intro_diff <= 2:
+            score += w['intro_extro']
+
+        my_stress = _safe_str(my_p.get('stress_level'))
+        if my_stress and my_stress == _safe_str(other_p.get('stress_level')):
+            score += w['stress_level']
+
+        # ── 4. Emotional & Wellbeing Alignment ─────────────────────────────
+        ow_diff = abs(_safe_float(my_p.get('overwhelmed'), 3) -
+                    _safe_float(other_p.get('overwhelmed'), 3))
+        if ow_diff <= 1:
+            score += w['overwhelmed']
+
+        if my_c and other_c:
+            mood_diff = abs(_safe_float(my_c.get('mood'), 0) -
+                            _safe_float(other_c.get('mood'), 0))
+            if mood_diff <= 1:
+                score += w['mood']
+            flo_diff = abs(_safe_float(my_c.get('feel_left_out'), 0) -
+                        _safe_float(other_c.get('feel_left_out'), 0))
+            if flo_diff <= 1:
+                score += w['feel_left_out']
+
+        # ── 5. Communication Preference ─────────────────────────────────────
+        mine_comm = set(_parse_list(my_p.get('communication_methods')))
+        other_comm = set(_parse_list(other_p.get('communication_methods')))
+        if mine_comm and other_comm and (mine_comm & other_comm):
+            score += w['communication']
+
+        # ── 6. Social Preferences ───────────────────────────────────────────
+        my_social = _safe_str(my_p.get('social_setting'))
+        if my_social and my_social == _safe_str(other_p.get('social_setting')):
+            score += w['social_setting']
+
+        return round(score, 1)
+
     try:
         data = request.get_json()
 
@@ -385,15 +585,15 @@ def find_my_group():
             return jsonify({"error": "Missing required fields: user_id, group_size"}), 400
 
         target_user_id = int(data['user_id'])
-        purpose        = data.get('purpose', 'study')
-        group_size     = int(data['group_size'])
+        purpose = data.get('purpose', 'default')
+        group_size = int(data['group_size'])
 
         if group_size < 2 or group_size > 20:
             return jsonify({"error": "group_size must be between 2 and 20"}), 400
 
-        # --- load all profiles ---
+        # ── Load all student profiles ───────────────────────────────────────
         conn = get_db_connection()
-        query = """
+        profile_query = """
             SELECT
                 sp.user_id,
                 u.name,
@@ -405,74 +605,75 @@ def find_my_group():
                 sp.overwhelmed,
                 sp.social_setting,
                 sp.confidence,
-                sp.group_comfort
+                sp.group_comfort,
+                sp.top_interests,
+                sp.communication_methods
             FROM student_profiles sp
             INNER JOIN users u ON u.id = sp.user_id
             ORDER BY sp.user_id
         """
-        df_full = pd.read_sql(query, conn)
+        df_full = pd.read_sql(profile_query, conn)
+
+        # ── Load latest weekly check-in per user (single query) ─────────────
+        checkin_query = """
+            SELECT wc.user_id, wc.mood, wc.feel_left_out
+            FROM weekly_checkins wc
+            INNER JOIN (
+                SELECT user_id, MAX(week_start) AS latest_week
+                FROM weekly_checkins
+                GROUP BY user_id
+            ) latest ON wc.user_id = latest.user_id
+                    AND wc.week_start = latest.latest_week
+        """
+        checkin_df = pd.read_sql(checkin_query, conn)
         conn.close()
 
         if target_user_id not in df_full['user_id'].values:
             return jsonify({"error": f"No profile found for user_id={target_user_id}"}), 404
 
-        user_ids = df_full['user_id'].tolist()
-        names    = df_full['name'].tolist()
-        faculties = df_full['faculty'].tolist()
-        streams   = df_full['al_stream'].tolist()
-        learning_styles = df_full['learning_style'].tolist()
-        stress_levels   = df_full['stress_level'].tolist()
-        social_settings = df_full['social_setting'].tolist()
+        # ── Build look-up dicts ─────────────────────────────────────────────
+        checkins = {
+            int(row['user_id']): {
+                'mood':          row['mood'],
+                'feel_left_out': row['feel_left_out'],
+            }
+            for _, row in checkin_df.iterrows()
+        }
 
-        # drop non-feature columns before preprocessing
-        df_features = df_full.drop(columns=['user_id', 'name'])
+        profiles = {
+            int(row['user_id']): row.to_dict()
+            for _, row in df_full.iterrows()
+        }
 
-        # --- preprocess + weight ---
-        df_proc    = preprocess_data(df_features)
-        df_weighted = apply_weights(df_proc, purpose)
-        X = df_weighted.values
+        my_profile = profiles[target_user_id]
+        my_checkin = checkins.get(target_user_id)
 
-        # --- find target user row ---
-        target_idx = user_ids.index(target_user_id)
-        target_vec = X[target_idx]
-
-        # --- compute euclidean distance to every other student ---
-        distances = np.linalg.norm(X - target_vec, axis=1)  # shape (n,)
-
-        # Normalise distances to a 0-100 match score
-        # distance=0 → score=100, distance=max → score=0
-        max_dist = distances.max()
-        if max_dist > 0:
-            match_scores = (1 - distances / max_dist) * 100
-        else:
-            match_scores = np.full(len(distances), 100.0)
-
-        # Build sorted list (exclude the target user themselves)
+        # ── Score every other student ───────────────────────────────────────
         candidates = []
-        for i, uid in enumerate(user_ids):
+        for uid, profile in profiles.items():
             if uid == target_user_id:
                 continue
+            other_checkin = checkins.get(uid)
+            score = compute_score(my_profile, profile,
+                                my_checkin, other_checkin, purpose)
             candidates.append({
-                "user_id":       int(uid),
-                "name":          names[i],
-                "faculty":       faculties[i],
-                "al_stream":     streams[i],
-                "learning_style": learning_styles[i],
-                "stress_level":  stress_levels[i],
-                "social_setting": social_settings[i],
-                "match_score":   round(float(match_scores[i]), 1),
-                "distance":      round(float(distances[i]), 6),
+                "user_id":         uid,
+                "name":            profile.get('name', ''),
+                "faculty":         profile.get('faculty', ''),
+                "al_stream":       profile.get('al_stream', ''),
+                "learning_style":  profile.get('learning_style', ''),
+                "stress_level":    profile.get('stress_level', ''),
+                "social_setting":  profile.get('social_setting', ''),
+                "match_score":     score,
             })
 
-        candidates.sort(key=lambda x: x['distance'])
+        # Sort descending by score (best match first)
+        candidates.sort(key=lambda x: x['match_score'], reverse=True)
 
-        # Return top (group_size - 1) matches
         top_n = group_size - 1
         top_matches = candidates[:top_n]
-
         for rank, m in enumerate(top_matches, start=1):
             m['rank'] = rank
-            del m['distance']  # internal detail, not needed by client
 
         return jsonify({
             "user_id":    target_user_id,

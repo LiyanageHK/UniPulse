@@ -56,7 +56,7 @@ class PeerMatchingController extends Controller
     public function findMyGroup(Request $request)
     {
         $request->validate([
-            'purpose'    => 'required|in:default,academic,hobby,personality',
+            'purpose'    => 'required|in:default,academic,hobby,personality,wellbeing,social,sports',
             'group_size' => 'required|integer|min:2|max:20',
         ]);
 
@@ -128,7 +128,7 @@ class PeerMatchingController extends Controller
     public function generate(Request $request)
     {
         $request->validate([
-            'purpose'    => 'required|in:study,sports,social',
+            'purpose'    => 'required|in:academic,sports,wellbeing,social',
             'group_size' => 'required|integer|min:2|max:10',
         ]);
 

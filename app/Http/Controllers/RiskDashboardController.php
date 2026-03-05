@@ -6,6 +6,7 @@ use App\Services\RiskAssessmentService;
 use App\Services\WeeklySummaryService;
 use App\Services\RollingWeekService;
 use App\Services\AIService;
+use App\Services\AiSuggestionService;
 use App\Models\WeeklySummary;
 use App\Models\Journal;
 use Illuminate\Support\Facades\Auth;
@@ -18,17 +19,20 @@ class RiskDashboardController extends Controller
     protected WeeklySummaryService $weeklySummary;
     protected RollingWeekService $rollingWeek;
     protected AIService $aiService;
+    protected AiSuggestionService $aiSuggestionService;
 
     public function __construct(
         RiskAssessmentService $riskAssessment,
         WeeklySummaryService $weeklySummary,
         RollingWeekService $rollingWeek,
         AIService $aiService,
+        AiSuggestionService $aiSuggestionService,
     ) {
         $this->riskAssessment = $riskAssessment;
         $this->weeklySummary = $weeklySummary;
         $this->rollingWeek = $rollingWeek;
         $this->aiService = $aiService;
+        $this->aiSuggestionService = $aiSuggestionService;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -49,7 +53,7 @@ class RiskDashboardController extends Controller
         } catch (\Exception $e) {
             Log::error('Dashboard: failed to calculate current week summary', [
                 'user_id' => $userId,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             $currentSummary = null;
         }
@@ -155,7 +159,7 @@ class RiskDashboardController extends Controller
 
         return response()->json([
             'risk_profile' => $riskProfile,
-            'trend'        => $trendData,
+            'trend' => $trendData,
             'trend_direction' => $trend,
         ]);
     }
@@ -171,18 +175,124 @@ class RiskDashboardController extends Controller
             ->orderByDesc('week_start')
             ->take(6)
             ->get()
-            ->map(fn ($s) => [
-                'id'              => $s->id,
-                'week_index'      => $s->week_index,
-                'week_start'      => $s->week_start->format('Y-m-d'),
-                'week_end'        => $s->week_end->format('Y-m-d'),
-                'lri_score'       => round($s->lri_score, 2),
-                'risk_level'      => $s->risk_level,
-                'risk_color'      => $s->risk_color,
+            ->map(fn($s) => [
+                'id' => $s->id,
+                'week_index' => $s->week_index,
+                'week_start' => $s->week_start->format('Y-m-d'),
+                'week_end' => $s->week_end->format('Y-m-d'),
+                'lri_score' => round($s->lri_score, 2),
+                'risk_level' => $s->risk_level,
+                'risk_color' => $s->risk_color,
                 'escalation_flag' => $s->escalation_flag,
             ]);
 
         return response()->json(['history' => $history]);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  AI Suggestions Page (dedicated view)
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * Display the dedicated AI Wellbeing Suggestions page.
+     *
+     * Low Risk:          Shows action buttons (Conversational Flow + Peer Matching).
+     * Moderate/High Risk: Shows AI-generated suggestions with refresh capability.
+     */
+    public function aiSuggestionsPage()
+    {
+        $userId = Auth::id();
+
+        try {
+            $currentSummary = $this->weeklySummary->getOrCalculateCurrentWeek($userId);
+        } catch (\Exception $e) {
+            Log::error('AI Suggestions page: failed to calculate current week summary', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+            $currentSummary = null;
+        }
+
+        $riskProfile = $currentSummary
+            ? $this->buildRiskProfile($currentSummary)
+            : null;
+
+        $riskLevel = $riskProfile['risk_level'] ?? null;
+
+        // Generate AI suggestions for Moderate/High risk
+        $aiSuggestions = [];
+        if ($riskLevel && in_array($riskLevel, ['Moderate', 'High'])) {
+            $journalText = $currentSummary->summary_text ?? '';
+            $aiSuggestions = $this->aiSuggestionService->generateAISuggestions($journalText, $riskLevel);
+        }
+
+        return view('risk-dashboard.ai-suggestions', compact(
+            'riskProfile',
+            'riskLevel',
+            'aiSuggestions',
+        ));
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  AI Suggestions API Endpoint
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * API endpoint: fetch AI-generated suggestions for the current user.
+     *
+     * For Low Risk:  returns buttons linking to Conversational Flow & Peer Matching.
+     * For Moderate/High Risk: calls Gemini API to generate 3 supportive suggestions.
+     */
+    public function apiSuggestions()
+    {
+        $userId = Auth::id();
+
+        try {
+            $currentSummary = $this->weeklySummary->getOrCalculateCurrentWeek($userId);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Unable to calculate risk profile.',
+            ], 500);
+        }
+
+        if (!$currentSummary) {
+            return response()->json([
+                'riskLevel' => null,
+                'message' => 'No risk data available. Write journal entries to get started.',
+                'suggestions' => [],
+            ]);
+        }
+
+        $riskLevel = $currentSummary->risk_level;
+
+        // Low Risk → return action buttons only
+        if ($riskLevel === 'Low') {
+            return response()->json([
+                'riskLevel' => 'Low',
+                'actions' => [
+                    [
+                        'label' => 'Start Conversation',
+                        'url' => route('chat.support'),
+                        'icon' => '💬',
+                    ],
+                    [
+                        'label' => 'Find Peer Match',
+                        'url' => route('peer-matchings'),
+                        'icon' => '🤝',
+                    ],
+                ],
+                'suggestions' => [],
+            ]);
+        }
+
+        // Moderate or High Risk → generate AI suggestions
+        $journalText = $currentSummary->summary_text ?? '';
+        $suggestions = $this->aiSuggestionService->generateAISuggestions($journalText, $riskLevel);
+
+        return response()->json([
+            'riskLevel' => $riskLevel,
+            'suggestions' => $suggestions,
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -198,7 +308,7 @@ class RiskDashboardController extends Controller
 
         $weekInfo = $this->rollingWeek->getCurrentWeekInfo($userId);
 
-        if (! $weekInfo) {
+        if (!$weekInfo) {
             return redirect()->route('risk-dashboard.index')
                 ->with('warning', 'No journal entries found. Write your first journal entry to start tracking.');
         }
@@ -221,7 +331,7 @@ class RiskDashboardController extends Controller
         } catch (\Exception $e) {
             Log::error('Manual weekly summary trigger failed', [
                 'user_id' => $userId,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return redirect()->route('risk-dashboard.index')
@@ -239,21 +349,21 @@ class RiskDashboardController extends Controller
     private function buildRiskProfile(WeeklySummary $summary): array
     {
         return [
-            'summary_id'      => $summary->id,
-            'week_index'       => $summary->week_index,
-            'lri_score'        => round($summary->lri_score, 2),
-            'risk_level'       => $summary->risk_level,
-            'risk_color'       => $summary->risk_color,
-            'risk_message'     => $summary->risk_message,
-            'escalation_flag'  => $summary->escalation_flag,
-            'stress_score'     => round($summary->stress_score, 4),
-            'sentiment_score'  => round($summary->sentiment_score, 4),
-            'pronoun_ratio'    => round($summary->pronoun_ratio, 4),
+            'summary_id' => $summary->id,
+            'week_index' => $summary->week_index,
+            'lri_score' => round($summary->lri_score, 2),
+            'risk_level' => $summary->risk_level,
+            'risk_color' => $summary->risk_color,
+            'risk_message' => $summary->risk_message,
+            'escalation_flag' => $summary->escalation_flag,
+            'stress_score' => round($summary->stress_score, 4),
+            'sentiment_score' => round($summary->sentiment_score, 4),
+            'pronoun_ratio' => round($summary->pronoun_ratio, 4),
             'absolutist_score' => round($summary->absolutist_score, 4),
             'withdrawal_score' => round($summary->withdrawal_score, 4),
-            'week_start'       => $summary->week_start->format('Y-m-d'),
-            'week_end'         => $summary->week_end->format('Y-m-d'),
-            'created_at'       => $summary->created_at->toDateTimeString(),
+            'week_start' => $summary->week_start->format('Y-m-d'),
+            'week_end' => $summary->week_end->format('Y-m-d'),
+            'created_at' => $summary->created_at->toDateTimeString(),
         ];
     }
 }

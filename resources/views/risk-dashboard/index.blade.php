@@ -4,7 +4,7 @@
             <h1 class="text-3xl font-bold text-gray-800">Social Inclusion Risk Dashboard</h1>
             <div class="flex gap-3">
                 <a href="{{ route('risk-dashboard.history') }}"
-                   class="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 py-2 rounded-lg transition text-sm">
+                    class="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 py-2 rounded-lg transition text-sm">
                     View History
                 </a>
                 <form action="{{ route('test.weekly-summary') }}" method="POST">
@@ -20,7 +20,8 @@
 
         {{-- AI Service Status --}}
         @if (isset($aiHealthy) && !$aiHealthy)
-            <div class="bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+            <div
+                class="bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
                 <span class="text-lg">&#9888;</span>
                 <span>AI service is currently unavailable. Risk scores may use fallback values.</span>
             </div>
@@ -28,25 +29,30 @@
 
         {{-- Flash messages --}}
         @if (session('success'))
-            <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-6">{{ session('success') }}</div>
+            <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-6">
+                {{ session('success') }}
+            </div>
         @endif
         @if (session('warning'))
-            <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg mb-6">{{ session('warning') }}</div>
+            <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg mb-6">
+                {{ session('warning') }}
+            </div>
         @endif
         @if (session('error'))
-            <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-6">{{ session('error') }}</div>
+            <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-6">{{ session('error') }}
+            </div>
         @endif
 
         @if ($riskProfile)
             {{-- ═══════════════════════════════════════════════
-                 A. CURRENT WEEK RISK
-                 ═══════════════════════════════════════════════ --}}
+            A. CURRENT WEEK RISK
+            ═══════════════════════════════════════════════ --}}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {{-- LRI Score Card --}}
                 <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase tracking-wide mb-2">Linguistic Risk Index</p>
                     <p class="text-5xl font-extrabold"
-                       style="color: {{ $riskProfile['risk_color'] === 'yellow' ? '#ca8a04' : $riskProfile['risk_color'] }}">
+                        style="color: {{ $riskProfile['risk_color'] === 'yellow' ? '#ca8a04' : $riskProfile['risk_color'] }}">
                         {{ $riskProfile['lri_score'] }}
                     </p>
                     <p class="text-gray-400 text-sm mt-1">out of 1.0</p>
@@ -57,11 +63,11 @@
                     <p class="text-sm text-gray-500 uppercase tracking-wide mb-3">Risk Level</p>
                     @php
                         $bgColors = [
-                            'green'  => 'bg-green-100 text-green-800 border-green-300',
+                            'green' => 'bg-green-100 text-green-800 border-green-300',
                             'yellow' => 'bg-yellow-100 text-yellow-800 border-yellow-300',
                             'orange' => 'bg-orange-100 text-orange-800 border-orange-300',
-                            'red'    => 'bg-red-100 text-red-800 border-red-300',
-                            'gray'   => 'bg-gray-100 text-gray-600 border-gray-300',
+                            'red' => 'bg-red-100 text-red-800 border-red-300',
+                            'gray' => 'bg-gray-100 text-gray-600 border-gray-300',
                         ];
                         $badgeClass = $bgColors[$riskProfile['risk_color']] ?? $bgColors['gray'];
                     @endphp
@@ -71,7 +77,8 @@
 
                     {{-- Escalation Flag --}}
                     @if ($riskProfile['escalation_flag'])
-                        <span class="mt-3 inline-block px-4 py-1 rounded-full text-sm font-semibold bg-red-600 text-white animate-pulse">
+                        <span
+                            class="mt-3 inline-block px-4 py-1 rounded-full text-sm font-semibold bg-red-600 text-white animate-pulse">
                             &#9888; Escalating Risk
                         </span>
                     @endif
@@ -84,7 +91,7 @@
                         $trendColors = [
                             'increasing' => 'text-red-600',
                             'decreasing' => 'text-green-600',
-                            'stable'     => 'text-blue-600',
+                            'stable' => 'text-blue-600',
                         ];
                         $trendColor = $trendColors[$trend['direction']] ?? 'text-gray-600';
                     @endphp
@@ -109,15 +116,16 @@
             </div>
 
             {{-- ═══════════════════════════════════════════════
-                 B. RISK HISTORY — LRI Trend Chart + Table
-                 ═══════════════════════════════════════════════ --}}
+            B. RISK HISTORY — LRI Trend Chart + Table
+            ═══════════════════════════════════════════════ --}}
             <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-700">
                         Risk Level Trend &mdash;
                         Last {{ count($trendData['scores']) }} {{ Str::plural('Week', count($trendData['scores'])) }}
                     </h2>
-                    <a href="{{ route('risk-dashboard.history') }}" class="text-sm text-indigo-600 hover:underline">View all &rarr;</a>
+                    <a href="{{ route('risk-dashboard.history') }}" class="text-sm text-indigo-600 hover:underline">View all
+                        &rarr;</a>
                 </div>
 
                 @if ($trendData['has_data'] && count($trendData['scores']) >= 2)
@@ -145,23 +153,24 @@
                                         $delta = $prevScore !== null ? $score - $prevScore : null;
                                         $rowTrend = $delta === null ? '&mdash;' : ($delta > 0.02 ? '<span class="text-red-600">&#8593;</span>' : ($delta < -0.02 ? '<span class="text-green-600">&#8595;</span>' : '<span class="text-blue-600">&#8594;</span>'));
                                         $riskColor = match ($level) {
-                                            'Low'      => 'green',
+                                            'Low' => 'green',
                                             'Moderate' => 'yellow',
-                                            'High'     => 'red',
-                                            default    => 'gray',
+                                            'High' => 'red',
+                                            default => 'gray',
                                         };
                                         $pillClass = match ($riskColor) {
-                                            'green'  => 'bg-green-100 text-green-800',
+                                            'green' => 'bg-green-100 text-green-800',
                                             'yellow' => 'bg-yellow-100 text-yellow-800',
-                                            'red'    => 'bg-red-100 text-red-800',
-                                            default  => 'bg-gray-100 text-gray-600',
+                                            'red' => 'bg-red-100 text-red-800',
+                                            default => 'bg-gray-100 text-gray-600',
                                         };
                                     @endphp
                                     <tr class="border-b {{ $i === count($trendData['scores']) - 1 ? 'bg-indigo-50' : '' }}">
                                         <td class="px-4 py-2 font-medium">{{ $label }}</td>
                                         <td class="px-4 py-2 text-center font-semibold">{{ $score }}</td>
                                         <td class="px-4 py-2 text-center">
-                                            <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $pillClass }}">{{ $level }}</span>
+                                            <span
+                                                class="px-2 py-1 rounded-full text-xs font-semibold {{ $pillClass }}">{{ $level }}</span>
                                         </td>
                                         <td class="px-4 py-2 text-center text-lg">{!! $rowTrend !!}</td>
                                     </tr>
@@ -177,16 +186,29 @@
                 @endif
             </div>
 
+
+
             {{-- LRI Formula Reference --}}
             <div class="bg-gray-50 rounded-2xl p-6">
-                <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">LRI Formula</h3>
-                <p class="text-sm text-gray-500 font-mono">
-                    LRI = (Stress + Sentiment + Pronoun + Absolutist) &divide; 4
-                </p>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-xs text-gray-500">
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-green-400 mr-1"></span> Low (&lt; 0.3)</div>
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1"></span> Moderate (0.3&ndash;0.6)</div>
-                    <div><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> High (&ge; 0.6)</div>
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="flex-1">
+                        <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">LRI Formula</h3>
+                        <p class="text-sm text-gray-500 font-mono">
+                            LRI = (Stress + Sentiment + Pronoun + Absolutist) &divide; 4
+                        </p>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-xs text-gray-500">
+                            <div><span class="inline-block w-3 h-3 rounded-full bg-green-400 mr-1"></span> Low (&lt; 0.3)
+                            </div>
+                            <div><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1"></span> Moderate
+                                (0.3&ndash;0.6)</div>
+                            <div><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> High (&ge; 0.6)
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ route('risk-dashboard.ai-suggestions') }}"
+                        class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow text-sm shrink-0 self-center">
+                        💡 View Suggestions
+                    </a>
                 </div>
             </div>
 
@@ -200,7 +222,7 @@
                     your social inclusion risk profile automatically.
                 </p>
                 <a href="{{ route('journal.index') }}"
-                   class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition">
+                    class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition">
                     Start Journaling
                 </a>
             </div>
@@ -208,12 +230,13 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════
-         JOURNAL SECTION
-         ═══════════════════════════════════════════════ --}}
+    JOURNAL SECTION
+    ═══════════════════════════════════════════════ --}}
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
 
         {{-- ── TODAY'S ENTRY (always visible at top) ── --}}
-        <div id="journal-write" class="bg-white rounded-2xl shadow-lg p-6 mb-6 border-l-4 {{ $todayEntry ? 'border-purple-500' : 'border-green-500' }}">
+        <div id="journal-write"
+            class="bg-white rounded-2xl shadow-lg p-6 mb-6 border-l-4 {{ $todayEntry ? 'border-purple-500' : 'border-green-500' }}">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h2 class="text-xl font-bold text-gray-800">
@@ -222,11 +245,13 @@
                     <p class="text-sm text-gray-500 mt-0.5">{{ now()->format('l, F j, Y') }}</p>
                 </div>
                 @if ($todayEntry)
-                    <span class="inline-flex items-center gap-1 text-xs font-semibold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                    <span
+                        class="inline-flex items-center gap-1 text-xs font-semibold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
                         ✅ Written today
                     </span>
                 @else
-                    <span class="inline-flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full animate-pulse">
+                    <span
+                        class="inline-flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full animate-pulse">
                         ✍️ No entry this week
                     </span>
                 @endif
@@ -336,7 +361,7 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: function(ctx) {
+                                    label: function (ctx) {
                                         const names = ['', 'Low', 'Moderate', 'High'];
                                         return ' Risk Level: ' + (names[ctx.raw] ?? ctx.raw);
                                     }
@@ -349,7 +374,7 @@
                                 max: 3.5,
                                 ticks: {
                                     stepSize: 1,
-                                    callback: function(val) {
+                                    callback: function (val) {
                                         return ['', 'Low', 'Moderate', 'High'][val] ?? '';
                                     }
                                 },

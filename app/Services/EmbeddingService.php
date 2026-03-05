@@ -8,30 +8,30 @@ use Illuminate\Support\Facades\Cache;
 
 class EmbeddingService
 {
-    protected string $apiKey;
-    protected string $model;
-    protected string $apiUrl;
-    protected string $provider;
+    protected string $apiKey = '';
+    protected string $model = '';
+    protected string $apiUrl = '';
+    protected string $provider = '';
 
     public function __construct()
     {
         // Use separate embedding provider (defaults to main provider)
         $this->provider = config('services.openai.embedding_provider', config('services.openai.provider', 'azure'));
         $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
-        
+
         // Set API key and URL based on embedding provider
         switch ($this->provider) {
             case 'azure':
-                $this->apiKey = config('services.openai.azure_embedding_api_key');
-                $this->apiUrl = config('services.openai.azure_embedding_url');
+                $this->apiKey = config('services.openai.azure_embedding_api_key', '') ?? '';
+                $this->apiUrl = config('services.openai.azure_embedding_url', '') ?? '';
                 break;
             case 'github':
-                $this->apiKey = config('services.openai.github_embedding_token');
-                $this->apiUrl = config('services.openai.github_embedding_url');
+                $this->apiKey = config('services.openai.github_embedding_token', '') ?? '';
+                $this->apiUrl = config('services.openai.github_embedding_url', '') ?? '';
                 break;
             default: // openai
-                $this->apiKey = config('services.openai.api_key');
-                $this->apiUrl = config('services.openai.embedding_url');
+                $this->apiKey = config('services.openai.api_key', '') ?? '';
+                $this->apiUrl = config('services.openai.embedding_url', '') ?? '';
         }
     }
 
@@ -76,10 +76,10 @@ class EmbeddingService
 
             if ($response->successful()) {
                 $embedding = $response->json('data.0.embedding');
-                
+
                 // Cache for 7 days
                 Cache::put($cacheKey, $embedding, now()->addDays(7));
-                
+
                 return $embedding;
             }
 
@@ -102,7 +102,7 @@ class EmbeddingService
     public function generateBatchEmbeddings(array $texts): array
     {
         $embeddings = [];
-        
+
         // Filter out empty texts
         $texts = array_filter($texts, fn($text) => !empty(trim($text)));
 
@@ -151,13 +151,13 @@ class EmbeddingService
     {
         // Split by sentences first
         $sentences = preg_split('/(?<=[.!?])\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-        
+
         $chunks = [];
         $currentChunk = '';
 
         foreach ($sentences as $sentence) {
             $testChunk = empty($currentChunk) ? $sentence : $currentChunk . ' ' . $sentence;
-            
+
             if (strlen($testChunk) > $maxChunkSize && !empty($currentChunk)) {
                 $chunks[] = trim($currentChunk);
                 $currentChunk = $sentence;
@@ -207,7 +207,7 @@ class EmbeddingService
      */
     public function getDimensions(): int
     {
-        return match($this->model) {
+        return match ($this->model) {
             'text-embedding-3-small' => 1536,
             'text-embedding-3-large' => 3072,
             //'text-embedding-ada-002' => 1536,

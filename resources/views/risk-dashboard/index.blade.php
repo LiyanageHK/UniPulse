@@ -187,29 +187,11 @@
             </div>
 
 
-
-            {{-- LRI Formula Reference --}}
-            <div class="bg-gray-50 rounded-2xl p-6">
-                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">LRI Formula</h3>
-                        <p class="text-sm text-gray-500 font-mono">
-                            LRI = (Stress + Sentiment + Pronoun + Absolutist) &divide; 4
-                        </p>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-xs text-gray-500">
-                            <div><span class="inline-block w-3 h-3 rounded-full bg-green-400 mr-1"></span> Low (&lt; 0.3)
-                            </div>
-                            <div><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1"></span> Moderate
-                                (0.3&ndash;0.6)</div>
-                            <div><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> High (&ge; 0.6)
-                            </div>
-                        </div>
-                    </div>
-                    <a href="{{ route('risk-dashboard.ai-suggestions') }}"
-                        class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow text-sm shrink-0 self-center">
-                        💡 View Suggestions
-                    </a>
-                </div>
+            <div class="bg-gray-50 rounded-2xl p-6 flex justify-center">
+                <a href="{{ route('risk-dashboard.ai-suggestions') }}"
+                    class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow text-sm">
+                    💡 View Suggestions
+                </a>
             </div>
 
         @else

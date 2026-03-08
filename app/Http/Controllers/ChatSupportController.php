@@ -9,6 +9,7 @@ use App\Models\ConversationEmbedding;
 use App\Services\AiChatService;
 use App\Services\KnowledgeBaseService;
 use App\Services\MemoryManagementService;
+use App\Services\PineconeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -19,15 +20,18 @@ class ChatSupportController extends Controller
     protected AiChatService $aiChat;
     protected KnowledgeBaseService $knowledgeBase;
     protected MemoryManagementService $memoryManagement;
+    protected PineconeService $pinecone;
 
     public function __construct(
         AiChatService $aiChat,
         KnowledgeBaseService $knowledgeBase,
-        MemoryManagementService $memoryManagement
+        MemoryManagementService $memoryManagement,
+        PineconeService $pinecone
     ) {
         $this->aiChat = $aiChat;
         $this->knowledgeBase = $knowledgeBase;
         $this->memoryManagement = $memoryManagement;
+        $this->pinecone = $pinecone;
     }
 
     /**
@@ -37,16 +41,23 @@ class ChatSupportController extends Controller
     {
         $user = Auth::user();
 
-        $totalConversations = Conversation::where('user_id', $user->id)->count();
-        $activeChats = Conversation::where('user_id', $user->id)->active()->count();
-        $archivedChats = Conversation::where('user_id', $user->id)->archived()->count();
+        $activeChatsCount = Conversation::where('user_id', $user->id)->where('status', 'active')->count();
+        $archivedChatsCount = Conversation::where('user_id', $user->id)->where('status', 'archived')->count();
+        $totalCrisisFlags = \App\Models\CrisisFlag::where('user_id', $user->id)->count();
+        $lastMessage = Message::where('user_id', $user->id)
+            ->where('role', 'user')
+            ->latest()
+            ->first();
+        $lastChatTime = $lastMessage ? $lastMessage->created_at->diffForHumans() : null;
 
+        // Keep the rest of the dashboard data for other sections
+        $totalConversations = Conversation::where('user_id', $user->id)->count();
+        $activeChats = $activeChatsCount;
+        $archivedChats = $archivedChatsCount;
         $totalMessagesSent = Message::where('user_id', $user->id)
             ->where('role', 'user')
             ->count();
-
         $memoryCount = Memory::where('user_id', $user->id)->count();
-
         $recentConversations = Conversation::where('user_id', $user->id)
             ->where('status', 'active')
             ->orderByDesc('last_message_at')
@@ -73,20 +84,18 @@ class ChatSupportController extends Controller
                 ];
             });
 
-        $lastMessage = Message::where('user_id', $user->id)
-            ->where('role', 'user')
-            ->latest()
-            ->first();
-        $lastChatTime = $lastMessage ? $lastMessage->created_at->diffForHumans() : null;
-
         return view('chat-dashboard', [
+            'activeChatsCount' => $activeChatsCount,
+            'archivedChatsCount' => $archivedChatsCount,
+            'totalCrisisFlags' => $totalCrisisFlags,
+            'lastChatTime' => $lastChatTime,
+            // legacy keys for other dashboard sections
             'totalConversations' => $totalConversations,
             'activeChats' => $activeChats,
             'archivedChats' => $archivedChats,
             'totalMessagesSent' => $totalMessagesSent,
             'memoryCount' => $memoryCount,
             'recentConversations' => $recentConversations,
-            'lastChatTime' => $lastChatTime,
         ]);
     }
 
@@ -244,7 +253,7 @@ class ChatSupportController extends Controller
                 'id' => $message->id,
                 'role' => $message->role,
                 'content' => $message->content,
-                'created_at' => $message->created_at,
+                'created_at' => $message->created_at->setTimezone(config('app.timezone'))->toIso8601String(),
                 'formatted_time' => $message->getFormattedTime(),
             ];
         });
@@ -437,7 +446,10 @@ class ChatSupportController extends Controller
                 $deletedData['messages'] = $conversation->messages()->delete();
             }
 
-            // 6. Finally delete the conversation itself
+            // 6. Clean up Pinecone vectors for this conversation
+            $this->pinecone->deleteByFilter(['conversation_id' => (int) $conversation->id]);
+
+            // 7. Finally delete the conversation itself
             $conversation->delete();
 
             Log::info('Conversation deleted with all references', [
@@ -568,6 +580,12 @@ class ChatSupportController extends Controller
         $user = Auth::user();
 
         $count = Memory::where('user_id', $user->id)->delete();
+
+        // Clean up memory vectors from Pinecone
+        $this->pinecone->deleteByFilter([
+            'user_id' => (int) $user->id,
+            'type'    => 'memory',
+        ]);
 
         Log::info('All memories cleared for user', [
             'user_id' => $user->id,
@@ -808,17 +826,17 @@ class ChatSupportController extends Controller
             abort(403);
         }
 
-        $format = $request->query('format', 'md');
+        $format = $request->query('format', 'txt');
         $lines = [];
         $lines[] = "# {$conversation->title}";
-        $lines[] = "Exported: " . now()->format('d M Y, g:i A');
+        $lines[] = "Downloaded: " . now()->format('Y-m-d H:i:s');
         $lines[] = str_repeat('-', 50);
         $lines[] = "";
 
         foreach ($conversation->messages as $message) {
             $role = $message->role === 'user' ? 'You' : 'UniPulse AI';
-            $time = $message->created_at->format('g:i A');
-            $lines[] = "**{$role}** ({$time})";
+            $msgTime = $message->created_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s');
+            $lines[] = "**{$role}** ({$msgTime})";
             $lines[] = $message->content;
             $lines[] = "";
         }

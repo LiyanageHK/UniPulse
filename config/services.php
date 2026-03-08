@@ -87,5 +87,12 @@ return [
         'sms_enabled' => env('CRISIS_SMS_ENABLED', false),
     ],
 
+    'pinecone' => [
+        'api_key'         => env('PINECONE_API_KEY'),
+        'index_host'      => env('PINECONE_INDEX_HOST'),       // e.g. 'https://your-index-xxxxx.svc.pinecone.io'
+        'namespace'       => env('PINECONE_NAMESPACE', 'unipulse'),
+        'enabled'         => env('PINECONE_ENABLED', false),    // Toggle Pinecone on/off (graceful fallback)
+        'embedding_model' => env('PINECONE_EMBEDDING_MODEL', 'multilingual-e5-large'),
+    ],
 
 ];

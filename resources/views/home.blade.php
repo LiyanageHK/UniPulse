@@ -1268,9 +1268,9 @@
 
 					// Demo function to auto-fill the feedback form
 					window.fillDemoFeedback = function() {
-						document.getElementById('guestName').value = 'Nethmini';
-						document.getElementById('guestEmail').value = 'nethmini@gmail.com';
-						document.getElementById('guestContent').value = 'Great service';
+						document.getElementById('guestName').value = 'Kavithma';
+						document.getElementById('guestEmail').value = 'kavithma@gmail.com';
+						document.getElementById('guestContent').value = 'Fantastic platform';
 						document.getElementById('guestRating').value = 5;
 						highlightStars(5);
 					};

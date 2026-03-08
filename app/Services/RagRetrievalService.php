@@ -7,14 +7,17 @@ use App\Models\Memory;
 use App\Models\ConversationEmbedding;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class RagRetrievalService
 {
     protected EmbeddingService $embeddingService;
+    protected PineconeService $pinecone;
 
-    public function __construct(EmbeddingService $embeddingService)
+    public function __construct(EmbeddingService $embeddingService, PineconeService $pinecone)
     {
         $this->embeddingService = $embeddingService;
+        $this->pinecone = $pinecone;
     }
 
     /**
@@ -38,6 +41,102 @@ class RagRetrievalService
         float $minSimilarity = 0.5,
         ?int $currentConversationId = null,
         bool $includePastConversations = true
+    ): Collection {
+        // Try Pinecone first for fast ANN search
+        if ($this->pinecone->isAvailable()) {
+            return $this->retrieveContextFromPinecone(
+                $user, $queryEmbedding, $topK, $minSimilarity,
+                $currentConversationId, $includePastConversations
+            );
+        }
+
+        // Fallback: MySQL-based brute-force cosine similarity
+        return $this->retrieveContextFromMySQL(
+            $user, $queryEmbedding, $topK, $minSimilarity,
+            $currentConversationId, $includePastConversations
+        );
+    }
+
+    /**
+     * Retrieve context from Pinecone using ANN search.
+     */
+    protected function retrieveContextFromPinecone(
+        User $user,
+        array $queryEmbedding,
+        int $topK,
+        float $minSimilarity,
+        ?int $currentConversationId,
+        bool $includePastConversations
+    ): Collection {
+        // Build filter for Pinecone query
+        $filter = ['user_id' => (int) $user->id];
+
+        // If not including past conversations, restrict to profile + current conversation
+        if (!$includePastConversations && $currentConversationId) {
+            // Pinecone doesn't directly support OR filters on different fields easily,
+            // so we'll query profiles and messages separately
+            $profileResults = $this->pinecone->query($queryEmbedding, $topK, [
+                'user_id' => (int) $user->id,
+                'type'    => ConversationEmbedding::TYPE_PROFILE,
+            ]);
+
+            $messageResults = $this->pinecone->query($queryEmbedding, $topK, [
+                'user_id'         => (int) $user->id,
+                'type'            => ConversationEmbedding::TYPE_MESSAGE,
+                'conversation_id' => (int) $currentConversationId,
+            ]);
+
+            $matches = array_merge($profileResults, $messageResults);
+        } else {
+            // Search across all user vectors
+            $matches = $this->pinecone->query($queryEmbedding, $topK + 5, $filter);
+        }
+
+        if (empty($matches)) {
+            Log::info('Pinecone returned no results for user', ['user_id' => $user->id]);
+            return collect();
+        }
+
+        // Separate profile and message results
+        $profileContext = collect($matches)->filter(
+            fn($m) => ($m['metadata']['type'] ?? '') === ConversationEmbedding::TYPE_PROFILE
+        );
+
+        $messageContext = collect($matches)->filter(
+            fn($m) => ($m['metadata']['type'] ?? '') === ConversationEmbedding::TYPE_MESSAGE
+                   && ($m['score'] ?? 0) >= $minSimilarity
+        )->take($topK - $profileContext->count());
+
+        $allResults = $profileContext->concat($messageContext);
+
+        Log::info('Pinecone RAG retrieval results', [
+            'user_id'           => $user->id,
+            'profile_included'  => $profileContext->count(),
+            'messages_included' => $messageContext->count(),
+            'threshold'         => $minSimilarity,
+        ]);
+
+        return $allResults->map(fn($match) => [
+            'content'    => $match['metadata']['content'] ?? '',
+            'summary'    => $match['metadata']['summary'] ?? '',
+            'type'       => $match['metadata']['type'] ?? 'message',
+            'topic'      => $match['metadata']['topic'] ?? 'general',
+            'similarity' => round($match['score'] ?? 0, 3),
+            'importance' => $match['metadata']['importance_score'] ?? 0.5,
+            'created_at' => now(), // Pinecone doesn't store created_at, use now as fallback
+        ])->values();
+    }
+
+    /**
+     * Fallback: MySQL-based brute-force cosine similarity retrieval.
+     */
+    protected function retrieveContextFromMySQL(
+        User $user,
+        array $queryEmbedding,
+        int $topK,
+        float $minSimilarity,
+        ?int $currentConversationId,
+        bool $includePastConversations
     ): Collection {
         // Pre-filter in DB: skip low-importance embeddings and scope by conversation if needed
         $embeddings = ConversationEmbedding::where('user_id', $user->id)
@@ -282,7 +381,45 @@ class RagRetrievalService
      */
     public function retrieveMemoriesWithEmbedding(User $user, array $queryEmbedding, int $topK = 10): Collection
     {
-        // Include memories without embeddings too (newly saved ones may not have embeddings yet)
+        // Try Pinecone first for memory retrieval
+        if ($this->pinecone->isAvailable()) {
+            $matches = $this->pinecone->query($queryEmbedding, $topK, [
+                'user_id' => (int) $user->id,
+                'type'    => 'memory',
+            ]);
+
+            if (!empty($matches)) {
+                // Get memory IDs from Pinecone results and load full Memory models
+                $memoryIds = collect($matches)->map(function ($match) {
+                    // Vector IDs are 'mem_{id}'
+                    return (int) str_replace('mem_', '', $match['id'] ?? '');
+                })->filter()->toArray();
+
+                $memories = Memory::whereIn('id', $memoryIds)
+                    ->where('user_id', $user->id)
+                    ->get();
+
+                foreach ($memories as $memory) {
+                    $memory->markAsReferenced();
+                }
+
+                Log::info('Pinecone memory retrieval', [
+                    'user_id' => $user->id,
+                    'matches' => count($matches),
+                    'loaded'  => $memories->count(),
+                ]);
+
+                // Also include high-importance memories without embeddings
+                $noEmbedding = Memory::where('user_id', $user->id)
+                    ->whereNull('embedding')
+                    ->where('importance_score', '>=', 0.7)
+                    ->get();
+
+                return $memories->concat($noEmbedding)->unique('id')->values();
+            }
+        }
+
+        // Fallback: MySQL-based memory retrieval
         $memories = Memory::where('user_id', $user->id)
             ->where('importance_score', '>', 0.2)
             ->orderBy('importance_score', 'desc')
@@ -394,27 +531,30 @@ class RagRetrievalService
             return $this->emptyContext();
         }
 
-        // Get RAG context using pre-generated embedding
-        $ragContext = $this->retrieveContextWithEmbedding(
-            $user,
-            $queryEmbedding,
-            $topK,
-            $minSimilarity,
-            $currentConversationId,
-            $includePastConversations
+        $isTrivial = $this->isTrivialMessage($query);
+
+        // ─── PINECONE PARALLEL PATH ───
+        // Run profile, message, and memory queries in ONE parallel round-trip
+        if ($this->pinecone->isAvailable()) {
+            return $this->getSmartContextFromPinecone(
+                $user, $queryEmbedding, $query,
+                $currentConversationId, $topK, $minSimilarity,
+                $includePastConversations, $isTrivial
+            );
+        }
+
+        // ─── MYSQL FALLBACK PATH ───
+        $ragContext = $this->retrieveContextFromMySQL(
+            $user, $queryEmbedding, $topK, $minSimilarity,
+            $currentConversationId, $includePastConversations
         );
 
-        // Only retrieve memories when the message carries personal context.
-        // Trivial messages (greetings, "ok", "thanks") skip memory lookup.
         $memories = collect();
-        if (!$this->isTrivialMessage($query)) {
+        if (!$isTrivial) {
             $memories = $this->retrieveMemoriesWithEmbedding($user, $queryEmbedding, $includePastConversations ? 10 : 5);
         }
 
         $contextWindow = $this->buildContextWindow($ragContext, $memories, $includePastConversations);
-
-        // Conversation history is already handled by buildPrompt() via the messages table.
-        // Do NOT call getConversationSummary() here — redundant DB query eliminated.
 
         return [
             'rag_context' => $contextWindow,
@@ -423,6 +563,134 @@ class RagRetrievalService
             'memories_count' => $memories->count(),
             'includes_past_conversations' => $includePastConversations,
             'has_profile_data' => $ragContext->contains('type', ConversationEmbedding::TYPE_PROFILE),
+        ];
+    }
+
+    /**
+     * Get smart context using PARALLEL Pinecone queries.
+     * Fires profile, message, and memory queries concurrently in one round-trip.
+     */
+    protected function getSmartContextFromPinecone(
+        User $user,
+        array $queryEmbedding,
+        string $query,
+        ?int $currentConversationId,
+        int $topK,
+        float $minSimilarity,
+        bool $includePastConversations,
+        bool $isTrivial
+    ): array {
+        $userId = (int) $user->id;
+        $profileCacheKey = "user_profile_context_{$userId}";
+
+        // 1. Try to get profile context from Laravel Cache first
+        $profileContext = Cache::remember($profileCacheKey, 600, function () use ($userId, $queryEmbedding) {
+            $results = $this->pinecone->query($queryEmbedding, 2, [
+                'user_id' => $userId,
+                'type'    => ConversationEmbedding::TYPE_PROFILE,
+            ]);
+
+            return collect($results)->map(fn($m) => [
+                'content'    => $m['metadata']['content'] ?? '',
+                'summary'    => $m['metadata']['summary'] ?? '',
+                'type'       => ConversationEmbedding::TYPE_PROFILE,
+                'topic'      => 'profile',
+                'similarity' => round($m['score'] ?? 0, 3),
+                'importance' => 1.0,
+                'created_at' => now(),
+            ])->toArray();
+        });
+
+        $profileContext = collect($profileContext);
+
+        // Build remaining queries to run in parallel
+        $queries = [
+            [
+                'key'    => 'messages',
+                'vector' => $queryEmbedding,
+                'topK'   => $topK + 3,
+                'filter' => array_merge(
+                    ['user_id' => $userId, 'type' => ConversationEmbedding::TYPE_MESSAGE],
+                    (!$includePastConversations && $currentConversationId)
+                        ? ['conversation_id' => (int) $currentConversationId]
+                        : []
+                ),
+            ],
+        ];
+
+        // Only add memory query for non-trivial messages
+        if (!$isTrivial) {
+            $queries[] = [
+                'key'    => 'memories',
+                'vector' => $queryEmbedding,
+                'topK'   => $includePastConversations ? 10 : 5,
+                'filter' => [
+                    'user_id' => $userId,
+                    'type'    => 'memory',
+                ],
+            ];
+        }
+
+        // 🚀 Remaining queries run in parallel — single round-trip
+        $results = $this->pinecone->queryParallel($queries);
+
+        // Process message results (filter by minSimilarity)
+        $messageContext = collect($results['messages'] ?? [])
+            ->filter(fn($m) => ($m['score'] ?? 0) >= $minSimilarity)
+            ->take($topK)
+            ->map(fn($m) => [
+                'content'    => $m['metadata']['content'] ?? '',
+                'summary'    => $m['metadata']['summary'] ?? '',
+                'type'       => ConversationEmbedding::TYPE_MESSAGE,
+                'topic'      => $m['metadata']['topic'] ?? 'general',
+                'similarity' => round($m['score'] ?? 0, 3),
+                'importance' => $m['metadata']['importance_score'] ?? 0.5,
+                'created_at' => now(),
+            ]);
+
+        $ragContext = $profileContext->concat($messageContext)->values();
+
+        // Process memory results — load full Memory models for context building
+        $memories = collect();
+        if (!$isTrivial && !empty($results['memories'])) {
+            $memoryIds = collect($results['memories'])->map(function ($match) {
+                return (int) str_replace('mem_', '', $match['id'] ?? '');
+            })->filter()->toArray();
+
+            $memories = Memory::whereIn('id', $memoryIds)
+                ->where('user_id', $user->id)
+                ->get();
+
+            foreach ($memories as $memory) {
+                $memory->markAsReferenced();
+            }
+
+            // Also include high-importance memories without embeddings
+            $noEmbedding = Memory::where('user_id', $user->id)
+                ->whereNull('embedding')
+                ->where('importance_score', '>=', 0.7)
+                ->get();
+
+            $memories = $memories->concat($noEmbedding)->unique('id')->values();
+        }
+
+        Log::info('Pinecone parallel RAG retrieval', [
+            'user_id'  => $userId,
+            'profile'  => $profileContext->count(),
+            'messages' => $messageContext->count(),
+            'memories' => $memories->count(),
+            'parallel' => true,
+        ]);
+
+        $contextWindow = $this->buildContextWindow($ragContext, $memories, $includePastConversations);
+
+        return [
+            'rag_context' => $contextWindow,
+            'recent_context' => '',
+            'retrieved_chunks' => $ragContext->count(),
+            'memories_count' => $memories->count(),
+            'includes_past_conversations' => $includePastConversations,
+            'has_profile_data' => $profileContext->isNotEmpty(),
         ];
     }
 

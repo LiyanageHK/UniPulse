@@ -3829,12 +3829,12 @@
         // ─── Export ───────────────────────────────────────────────────────────
         function exportConversation(convId) {
             const link = document.createElement('a');
-            link.href = `/chat/conversation/${convId}/export?format=md`;
-            link.download = `unipulse-chat-${convId}.md`;
+            link.href = `/chat/conversation/${convId}/export?format=txt`;
+            link.download = `unipulse-chat-${convId}.txt`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            showToast('success', 'Export started', 'Your conversation is downloading.');
+            showToast('success', 'Export started', 'Your conversation is downloading as a text file.');
         }
 
         // ─── Feedback ─────────────────────────────────────────────────────────
@@ -3910,14 +3910,9 @@
             // Load the conversation list in sidebar
             loadConversations();
 
-            // If a conversation was restored, load it; otherwise show empty state
-            if (currentConversationId) {
-                console.log('Restoring conversation:', currentConversationId);
-                loadConversation(currentConversationId);
-            } else {
-                document.getElementById('emptyState').style.display = 'flex';
-                document.getElementById('messagesContent').style.display = 'none';
-            }
+            // Always show empty state, do NOT auto-load recent chat
+            document.getElementById('emptyState').style.display = 'flex';
+            document.getElementById('messagesContent').style.display = 'none';
 
             // Handle hash-based navigation from dashboard quick actions
             const hash = window.location.hash;
@@ -3978,29 +3973,29 @@
                                     <span class="conversation-date">${formatDate(conv.last_message_at || conv.created_at)}</span>
                                     <div class="conversation-actions">
                                         ${currentTab === 'active' ? `
-                                        <button class="action-btn archive" onclick="event.stopPropagation(); archiveConversation(${conv.id})" title="Archive">
+                                        <button class="action-btn archive" style="background: #f59e42; color: white; border: none;" onclick="event.stopPropagation(); archiveConversation(${conv.id})" title="Archive">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0-3-3m3 3 3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
                                             </svg>
                                         </button>
                                         ` : `
-                                        <button class="action-btn restore" onclick="event.stopPropagation(); unarchiveConversation(${conv.id})" title="Restore">
+                                        <button class="action-btn restore" style="background: #f59e42; color: white; border: none;" onclick="event.stopPropagation(); unarchiveConversation(${conv.id})" title="Restore">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0 3-3m-3 3-3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
                                             </svg>
                                         </button>
                                         `}
-                                        <button class="action-btn" onclick="event.stopPropagation(); renameConversation(${conv.id}, '${conv.title.replace(/'/g, "\\'")}')" title="Rename">
+                                        <button class="action-btn" style="background: #2563eb; color: white; border: none;" onclick="event.stopPropagation(); renameConversation(${conv.id}, '${conv.title.replace(/'/g, "\\'")}')" title="Rename">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                                             </svg>
                                         </button>
-                                        <button class="action-btn" onclick="event.stopPropagation(); exportConversation(${conv.id})" title="Export">
+                                        <button class="action-btn" style="background: #22c55e; color: white; border: none;" onclick="event.stopPropagation(); exportConversation(${conv.id})" title="Export">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                             </svg>
                                         </button>
-                                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteConversation(${conv.id})" title="Delete">
+                                        <button class="action-btn delete" style="background: #ef4444; color: white; border: none;" onclick="event.stopPropagation(); deleteConversation(${conv.id})" title="Delete">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                                             </svg>
@@ -4735,7 +4730,8 @@
 
         // Format time
         function formatTime(date) {
-            return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const d = new Date(date);
+            return d.toLocaleString([], {hour: '2-digit', minute: '2-digit' });
         }
 
         // ==================== Settings Functions ====================
@@ -4786,6 +4782,9 @@
             closeArchiveAllModal();
 
             try {
+                const btn = document.querySelector('#archiveAllModal .btn-danger');
+                if(btn) btn.innerHTML = '<span class="spinner"></span> Archiving...';
+
                 const response = await fetch('/chat/conversations/archive-all', {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrfToken }
@@ -4793,13 +4792,18 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    startNewConversation();
-                    await loadConversations();
-                    await loadChatStatistics();
+                    // Show success immediately
                     showToast('success', 'All Chats Archived', `${data.archived_count} conversation(s) moved to archive.`);
+                    
+                    // Reload data in background
+                    startNewConversation();
+                    loadConversations();
+                    loadChatStatistics();
                 } else {
                     showToast('error', 'Archive Failed', data.error || 'Something went wrong.');
                 }
+                
+                if(btn) btn.innerHTML = 'Archive All Active Chats';
             } catch (error) {
                 console.error('Archive all error:', error);
                 showToast('error', 'Archive Failed', 'Something went wrong. Please try again.');
@@ -4839,6 +4843,9 @@
             closeUnarchiveAllModal();
 
             try {
+                const btn = document.querySelector('#unarchiveAllModal .btn-primary');
+                if(btn) btn.innerHTML = '<span class="spinner"></span> Restoring...';
+
                 const response = await fetch('/chat/conversations/unarchive-all', {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrfToken }
@@ -4846,12 +4853,17 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    await loadConversations();
-                    await loadChatStatistics();
+                    // Show success immediately
                     showToast('success', 'All Chats Restored', `${data.unarchived_count} conversation(s) restored to active.`);
+                    
+                    // Reload data in background
+                    loadConversations();
+                    loadChatStatistics();
                 } else {
                     showToast('error', 'Restore Failed', data.error || 'Something went wrong.');
                 }
+                
+                if(btn) btn.innerHTML = 'Restore All Archived Chats';
             } catch (error) {
                 console.error('Unarchive all error:', error);
                 showToast('error', 'Restore Failed', 'Something went wrong. Please try again.');

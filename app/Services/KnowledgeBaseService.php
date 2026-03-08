@@ -7,14 +7,17 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\ConversationEmbedding;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class KnowledgeBaseService
 {
     protected EmbeddingService $embeddingService;
+    protected PineconeService $pinecone;
 
-    public function __construct(EmbeddingService $embeddingService)
+    public function __construct(EmbeddingService $embeddingService, PineconeService $pinecone)
     {
         $this->embeddingService = $embeddingService;
+        $this->pinecone = $pinecone;
     }
 
     /**
@@ -50,13 +53,23 @@ class KnowledgeBaseService
             return;
         }
 
-        // Delete old profile embedding
+        // Delete old profile embedding (MySQL + Pinecone)
+        $oldProfileIds = ConversationEmbedding::where('user_id', $user->id)
+            ->where('type', ConversationEmbedding::TYPE_PROFILE)
+            ->pluck('id')
+            ->map(fn($id) => 'emb_' . $id)
+            ->toArray();
+
         ConversationEmbedding::where('user_id', $user->id)
             ->where('type', ConversationEmbedding::TYPE_PROFILE)
             ->delete();
 
+        if (!empty($oldProfileIds)) {
+            $this->pinecone->delete($oldProfileIds);
+        }
+
         // Create new profile embedding
-        ConversationEmbedding::create([
+        $embeddingRecord = ConversationEmbedding::create([
             'user_id' => $user->id,
             'type' => ConversationEmbedding::TYPE_PROFILE,
             'content' => $profileText,
@@ -64,10 +77,23 @@ class KnowledgeBaseService
             'embedding' => $embedding,
             'topic' => 'profile',
             'keywords' => $this->extractKeywords($profileText),
-            'importance_score' => 1.0, // Profile is always highly important
+            'importance_score' => 1.0,
             'model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
             'dimensions' => $this->embeddingService->getDimensions(),
         ]);
+
+        // Dual-write to Pinecone
+        $this->pinecone->upsertAsync('emb_' . $embeddingRecord->id, $embedding, [
+            'user_id'          => $user->id,
+            'type'             => ConversationEmbedding::TYPE_PROFILE,
+            'topic'            => 'profile',
+            'importance_score' => 1.0,
+            'content'          => substr($profileText, 0, 1000),
+            'summary'          => 'User profile information',
+        ]);
+
+        // Invalidate profile context cache
+        Cache::forget("user_profile_context_{$user->id}");
     }
 
     /**
@@ -308,13 +334,13 @@ class KnowledgeBaseService
         // Calculate importance score based on length, recency, and crisis flags
         $importanceScore = $this->calculateImportanceScore($message);
 
-        return ConversationEmbedding::create([
+        $embeddingRecord = ConversationEmbedding::create([
             'user_id' => $message->user_id,
             'conversation_id' => $message->conversation_id,
             'message_id' => $message->id,
             'type' => ConversationEmbedding::TYPE_MESSAGE,
             'content' => $message->content,
-            'summary' => substr($message->content, 0, 100), // First 100 chars as summary
+            'summary' => substr($message->content, 0, 100),
             'embedding' => $embedding,
             'topic' => $topic,
             'keywords' => $keywords,
@@ -322,6 +348,19 @@ class KnowledgeBaseService
             'model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
             'dimensions' => $this->embeddingService->getDimensions(),
         ]);
+
+        // Dual-write to Pinecone
+        $this->pinecone->upsertAsync('emb_' . $embeddingRecord->id, $embedding, [
+            'user_id'          => (int) $message->user_id,
+            'type'             => ConversationEmbedding::TYPE_MESSAGE,
+            'conversation_id'  => (int) $message->conversation_id,
+            'message_id'       => (int) $message->id,
+            'topic'            => $topic,
+            'importance_score' => $importanceScore,
+            'content'          => substr($message->content, 0, 1000),
+            'summary'          => substr($message->content, 0, 100),
+        ]);
+        return $embeddingRecord;
     }
 
     /**
@@ -375,10 +414,26 @@ class KnowledgeBaseService
      */
     public function cleanupOldEmbeddings(User $user, int $daysToKeep = 90): int
     {
-        return ConversationEmbedding::where('user_id', $user->id)
+        // Get IDs before deleting from MySQL so we can remove from Pinecone too
+        $idsToDelete = ConversationEmbedding::where('user_id', $user->id)
             ->where('type', ConversationEmbedding::TYPE_MESSAGE)
             ->where('created_at', '<', now()->subDays($daysToKeep))
-            ->where('importance_score', '<', 0.7) // Keep important ones
+            ->where('importance_score', '<', 0.7)
+            ->pluck('id')
+            ->map(fn($id) => 'emb_' . $id)
+            ->toArray();
+
+        $deleted = ConversationEmbedding::where('user_id', $user->id)
+            ->where('type', ConversationEmbedding::TYPE_MESSAGE)
+            ->where('created_at', '<', now()->subDays($daysToKeep))
+            ->where('importance_score', '<', 0.7)
             ->delete();
+
+        // Clean up Pinecone
+        if (!empty($idsToDelete)) {
+            $this->pinecone->delete($idsToDelete);
+        }
+
+        return $deleted;
     }
 }

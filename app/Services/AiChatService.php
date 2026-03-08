@@ -566,7 +566,8 @@ CONCERNING;
             }
 
             $response = Http::withHeaders($headers)
-                ->timeout(30)
+                ->timeout(20)
+                ->connectTimeout(5)
                 ->post($this->apiUrl, $requestBody);
 
             if ($response->successful()) {

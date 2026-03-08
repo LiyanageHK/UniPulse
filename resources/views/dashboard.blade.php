@@ -147,12 +147,29 @@
             <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-yellow-500">
                 <p class="mb-2 text-gray-700">
                     @if($aiRecommendation['type'] === 'risk_detection')
-                        ⚠️ Your emotional status requires attention. 
-                        @if($aiRecommendation['link'] && $aiRecommendation['link'] !== '#')
-                            Please check the <a href="{{ $aiRecommendation['link'] }}" class="text-blue-600 font-semibold underline">Risk Detection Component</a>.
-                        @else
-                            Please check the Risk Detection component (link not available).
-                        @endif
+                        ⚠️ Your emotional status requires attention.
+                        <div class="mt-3">
+                            @php
+                                $riskLink = ($aiRecommendation['link'] && $aiRecommendation['link'] !== '#')
+                                    ? $aiRecommendation['link']
+                                    : (Route::has('dashboard-poornima') ? route('dashboard-poornima') : '#');
+                            @endphp
+                            <a href="{{ $riskLink }}" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                                Open Risk Detection
+                            </a>
+                        </div>
+                    @elseif($aiRecommendation['type'] === 'peer_matching')
+                        🤝 It looks like you could benefit from connecting with peers.
+                        <div class="mt-3">
+                            @php
+                                $peerLink = ($aiRecommendation['link'] && $aiRecommendation['link'] !== '#')
+                                    ? $aiRecommendation['link']
+                                    : (Route::has('peer-matchings') ? route('peer-matchings') : '#');
+                            @endphp
+                            <a href="{{ $peerLink }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                Open Peer Matching
+                            </a>
+                        </div>
                     @elseif($aiRecommendation['type'] === 'encouragement')
                         💡 {{ $aiRecommendation['message'] ?? 'Keep up your good progress! Stay motivated.' }}
                     @elseif($aiRecommendation['type'] === 'conversational_support')
@@ -200,6 +217,13 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Emotional Status Trend</h3>
             <canvas id="emotionalChart" class="w-full h-64"></canvas>
         </div>
+
+    </div>
+
+    <!-- Risk vs Peer Matching Comparison -->
+    <div class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-yellow-500 mb-12">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Risk vs Peer Matching Trend</h3>
+        <canvas id="riskPeerChart" class="w-full h-64"></canvas>
 
     </div>
 
@@ -272,6 +296,102 @@
             },
             options: chartOptions
         });
+
+        // --- Risk vs Peer Matching comparison chart ---
+        const riskData = {!! json_encode($riskHistory) !!};
+        const peerData = {!! json_encode($peerHistory) !!};
+        // Create dual-axis chart for risk vs peer count
+        const ctx = document.getElementById('riskPeerChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                        {
+                            label: 'Risk',
+                            data: riskData,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#ef4444',
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                    {
+                        label: 'Available Peer Matches',
+                        data: peerData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#10b981',
+                        yAxisID: 'y1',
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { font: { size: 12 } } },
+                    tooltip: { 
+                        mode: 'index', 
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.dataset.yAxisID === 'y') {
+                                        const labels = {1: 'Low Risk', 2: 'Low-Moderate', 3: 'Moderate', 4: 'High', 5: 'Very High'};
+                                    label += labels[Math.round(context.parsed.y)] || context.parsed.y.toFixed(1);
+                                } else {
+                                    label += Math.round(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                            title: { display: true, text: 'Risk Level (1 = Low, 5 = High)' },
+                        min: 0.5,
+                        max: 5.5,
+                        ticks: {
+                            stepSize: 1,
+                                callback: function(value) {
+                                    const labels = {1: 'Low Risk', 2: 'Low-Moderate', 3: 'Moderate', 4: 'High', 5: 'Very High'};
+                                return labels[value] || '';
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Peer Count' },
+                        grid: { drawOnChartArea: false },
+                        min: 0,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
     </script>
     @else
         <div class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-12">
@@ -294,59 +414,14 @@
                 <div class="text-sm text-gray-500 mt-4">If you need support, visit <a href="{{ route('chat.support') }}" class="text-blue-600 underline">Conversation Support</a>.</div>
             </div>
 
+            <!-- Placeholder for Risk vs Peer Matching -->
+            <div class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-yellow-500 flex flex-col items-start justify-center h-64">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Risk vs Peer Matching</h3>
+                <div class="flex-1 flex items-center justify-center text-sm text-gray-500">Chart will appear after a couple of check-ins</div>
+                <div class="text-sm text-gray-500 mt-4">Keep submitting weekly updates.</div>
+            </div>
         </div>
     @endif
-
-    <!-- CONVERSATIONAL SUPPORT & FEEDBACK -->
-    <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Important Measures</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <!-- Active Chats -->
-            <!-- Active Chats -->
-            <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #6366f1;">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-lg font-semibold text-gray-800">Active Chats</h3>
-                    <span class="text-2xl">💬</span>
-                </div>
-                <div class="text-3xl font-bold text-indigo-600">{{ $activeChatsCount }}</div>
-                <div class="text-sm text-gray-600">Current conversations</div>
-            </div>
-
-            <!-- Archived Chats -->
-            <!-- Archived Chats -->
-            <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #22c55e;">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-lg font-semibold text-gray-800">Archived Chats</h3>
-                    <span class="text-2xl">📦</span>
-                </div>
-                <div class="text-3xl font-bold text-green-600">{{ $archivedChatsCount }}</div>
-                <div class="text-sm text-gray-600">Stored interactions</div>
-            </div>
-
-            <!-- Support Alerts -->
-            <!-- Support Alerts -->
-             <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #ef4444;">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-lg font-semibold text-gray-800">Support Alerts</h3>
-                    <span class="text-2xl">🚨</span>
-                </div>
-                <div class="text-3xl font-bold text-red-600">{{ $totalCrisisFlags }}</div>
-                <div class="text-sm text-gray-600">System Alerts Triggered</div>
-            </div>
-
-            <!-- Last Interaction -->
-            <!-- Last Interaction -->
-            <div class="bg-white rounded-lg shadow-lg p-6" style="border-left: 4px solid #eab308;">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-lg font-semibold text-gray-800">Last Chat</h3>
-                    <span class="text-2xl">🕒</span>
-                </div>
-                <div class="text-xl font-bold text-yellow-600 truncate" title="{{ $lastChatTime }}">{{ $lastChatTime }}</div>
-                <div class="text-sm text-gray-600">Since last message</div>
-            </div>
-        </div>
-    </div>
 
     <!-- PROFILE SUMMARY -->
     <div class="bg-white rounded-lg shadow-lg p-6">

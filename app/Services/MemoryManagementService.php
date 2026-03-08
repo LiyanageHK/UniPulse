@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Log;
 class MemoryManagementService
 {
     protected EmbeddingService $embeddingService;
+    protected PineconeService $pinecone;
 
-    public function __construct(EmbeddingService $embeddingService)
+    public function __construct(EmbeddingService $embeddingService, PineconeService $pinecone)
     {
         $this->embeddingService = $embeddingService;
+        $this->pinecone = $pinecone;
     }
 
     /**
@@ -191,6 +193,9 @@ class MemoryManagementService
             'user_id' => $memory->user_id
         ]);
 
+        // Clean up Pinecone vector
+        $this->pinecone->delete(['mem_' . $memory->id]);
+
         return $memory->forceDelete();
     }
 
@@ -252,6 +257,16 @@ class MemoryManagementService
                 'embedding' => $embedding,
                 'embedding_model' => 'text-embedding-3-small',
                 'embedding_dimensions' => count($embedding),
+            ]);
+
+            // Dual-write to Pinecone
+            $this->pinecone->upsertAsync('mem_' . $memory->id, $embedding, [
+                'user_id'          => (int) $memory->user_id,
+                'type'             => 'memory',
+                'category'         => $memory->category,
+                'memory_key'       => $memory->memory_key,
+                'importance_score' => $memory->importance_score,
+                'content'          => substr($memory->memory_value, 0, 1000),
             ]);
 
             Log::info('Generated embedding for memory', [

@@ -38,5 +38,8 @@ class WeeklyCheckinTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('dashboard');
+        // the dashboard should include the comparison chart container and a prediction summary
+        $response->assertSee('riskPeerChart');
+        $response->assertSee('Estimated future risk');
     }
 }

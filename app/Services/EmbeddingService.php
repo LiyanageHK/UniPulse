@@ -80,6 +80,8 @@ class EmbeddingService
 
             // Build request body - Azure uses model in URL
             $requestBody = ['input' => $text];
+
+            // Detailed logging for Unauthorized errors will be added after response
             if ($this->provider !== 'azure') {
                 $requestBody['model'] = $this->model;
             }
@@ -92,6 +94,23 @@ class EmbeddingService
             ]);
 
             $response = Http::withHeaders($headers)->timeout(10)->connectTimeout(5)->post($this->apiUrl, $requestBody);
+
+            // Detailed logging for Unauthorized errors
+            $status = $response->status();
+            $body = $response->body();
+            $errorType = null;
+            if (strpos($body, 'Unauthorized') !== false || $status === 401) {
+                $errorType = 'Unauthorized';
+                Log::error('Embedding API Unauthorized error', [
+                    'status' => $status,
+                    'body' => $body,
+                    'provider' => $this->provider,
+                    'model' => $this->model,
+                    'api_url' => $this->apiUrl,
+                    'api_key_present' => !empty($this->apiKey),
+                    'error_type' => $errorType,
+                ]);
+            }
 
             if ($response->successful()) {
                 $embedding = $response->json('data.0.embedding');

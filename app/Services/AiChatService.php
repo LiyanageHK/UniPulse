@@ -594,7 +594,22 @@ CONCERNING;
                 return $this->getDefaultSupportMessage();
             }
 
-            Log::error('OpenAI API error: ' . $response->body());
+            // Detailed logging for Unauthorized errors
+            $status = $response->status();
+            $body = $response->body();
+            $errorType = null;
+            if (strpos($body, 'Unauthorized') !== false || $status === 401) {
+                $errorType = 'Unauthorized';
+            }
+            Log::error('OpenAI API error', [
+                'status' => $status,
+                'body' => $body,
+                'provider' => $this->provider,
+                'model' => $this->model,
+                'api_url' => $this->apiUrl,
+                'api_key_present' => !empty($this->apiKey),
+                'error_type' => $errorType,
+            ]);
             return $this->getDefaultSupportMessage();
 
         } catch (\Exception $e) {

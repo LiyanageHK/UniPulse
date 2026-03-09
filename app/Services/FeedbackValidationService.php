@@ -146,7 +146,22 @@ PROMPT;
             return $response->json('choices.0.message.content');
         }
 
-        Log::warning('LLM validation API error', ['status' => $response->status(), 'body' => $response->body()]);
+        // Detailed logging for Unauthorized errors
+        $status = $response->status();
+        $body = $response->body();
+        $errorType = null;
+        if (strpos($body, 'Unauthorized') !== false || $status === 401) {
+            $errorType = 'Unauthorized';
+        }
+        Log::warning('LLM validation API error', [
+            'status' => $status,
+            'body' => $body,
+            'provider' => $this->provider,
+            'model' => $this->model,
+            'api_url' => $this->apiUrl,
+            'api_key_present' => !empty($this->apiKey),
+            'error_type' => $errorType,
+        ]);
         return null;
     }
 

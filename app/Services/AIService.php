@@ -18,8 +18,10 @@ class AIService
     public function __construct()
     {
         $this->baseUrl = config('services.ai.base_url', 'http://127.0.0.1:8000');
-        $this->timeout = config('services.ai.timeout', 30);
-        $this->retries = config('services.ai.retries', 2);
+        // Keep timeout low: (timeout × (retries+1)) + retries × 1s sleep must stay < PHP max_execution_time (60s)
+        // Default: 15s × 2 attempts + 1s sleep = ~31s total — safely under 60s
+        $this->timeout = config('services.ai.timeout', 15);
+        $this->retries = config('services.ai.retries', 1);
     }
 
     /**
@@ -35,6 +37,7 @@ class AIService
         while ($attempt <= $this->retries) {
             try {
                 $response = Http::timeout($this->timeout)
+                    ->connectTimeout(5)   // fail fast if Python is not running
                     ->post("{$this->baseUrl}/predict", [
                         'text' => $text,
                     ]);
@@ -43,7 +46,7 @@ class AIService
                     $data = $response->json();
 
                     Log::info('AI analysis completed', [
-                        'lri_score'  => $data['lri_score'] ?? null,
+                        'lri_score' => $data['lri_score'] ?? null,
                         'risk_level' => $data['risk_level'] ?? null,
                     ]);
 
@@ -52,13 +55,13 @@ class AIService
 
                 Log::warning('AI service returned non-success status', [
                     'status' => $response->status(),
-                    'body'   => $response->body(),
+                    'body' => $response->body(),
                     'attempt' => $attempt + 1,
                 ]);
             } catch (\Exception $e) {
                 Log::error('AI service request failed', [
                     'attempt' => $attempt + 1,
-                    'error'   => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
 
@@ -79,7 +82,7 @@ class AIService
     public function isHealthy(): bool
     {
         try {
-            $response = Http::timeout(5)->get("{$this->baseUrl}/health");
+            $response = Http::timeout(5)->connectTimeout(3)->get("{$this->baseUrl}/health");
             return $response->successful();
         } catch (\Exception $e) {
             return false;

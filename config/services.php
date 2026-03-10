@@ -75,8 +75,8 @@ return [
 
     'ai' => [
         'base_url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8000'),
-        'timeout' => env('AI_SERVICE_TIMEOUT', 30),
-        'retries' => env('AI_SERVICE_RETRIES', 2),
+        'timeout' => env('AI_SERVICE_TIMEOUT', 15),  // per-attempt; total = timeout × (retries+1) must be < PHP max_execution_time
+        'retries' => env('AI_SERVICE_RETRIES', 1),
     ],
 
     'gemini' => [

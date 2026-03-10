@@ -15,6 +15,7 @@
                         ->first();
     $__weekEnd       = $__latestSummary?->week_end?->format('Y-m-d');  // "YYYY-MM-DD" or null
     $__weekIndex     = $__latestSummary?->week_index;
+    $__onboardingDone = (bool) auth()->user()->onboarding_completed;
     $__todayEntry    = \App\Models\Journal::where('user_id', auth()->id())
                         ->where('entry_date', \Carbon\Carbon::today()->toDateString())->first();
     $__writtenToday  = (bool) $__todayEntry;
@@ -82,6 +83,7 @@
 <script>
 (function () {
     // ── data injected from PHP (week_end based, NOT created_at) ────
+    var ONBOARDING_DONE   = @json($__onboardingDone);   // true if onboarding is completed
     var WEEK_END          = @json($__weekEnd);          // "YYYY-MM-DD" or null (latest summary week_end)
     var WEEK_INDEX        = @json($__weekIndex);        // latest week_index or null
     var WRITTEN_TODAY     = @json($__writtenToday);      // true / false
@@ -95,6 +97,7 @@
     }
 
     function shouldShow() {
+        if (!ONBOARDING_DONE)  return false;  // new user hasn't finished onboarding yet
         if (WRITTEN_TODAY)     return false;  // already wrote today → no popup
         if (DUPLICATE_IN_WEEK) return false;  // already have journal for this week
 

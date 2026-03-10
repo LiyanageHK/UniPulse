@@ -8,31 +8,42 @@ use Illuminate\Support\Facades\Cache;
 
 class EmbeddingService
 {
-    protected string $apiKey = '';
-    protected string $model = '';
-    protected string $apiUrl = '';
-    protected string $provider = '';
+    protected ?string $apiKey = null;
+    protected ?string $model = null;
+    protected ?string $apiUrl = null;
+    protected string $provider;
+    protected PineconeService $pinecone;
 
-    public function __construct()
+    public function __construct(PineconeService $pinecone)
     {
+        $this->pinecone = $pinecone;
         // Use separate embedding provider (defaults to main provider)
         $this->provider = config('services.openai.embedding_provider', config('services.openai.provider', 'azure'));
-        $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
-
-        // Set API key and URL based on embedding provider
+        
+        // Set model, API key and URL based on embedding provider
         switch ($this->provider) {
             case 'azure':
-                $this->apiKey = config('services.openai.azure_embedding_api_key', '') ?? '';
-                $this->apiUrl = config('services.openai.azure_embedding_url', '') ?? '';
+                $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
+                $this->apiKey = config('services.openai.azure_embedding_api_key');
+                $this->apiUrl = config('services.openai.azure_embedding_url');
                 break;
             case 'github':
-                $this->apiKey = config('services.openai.github_embedding_token', '') ?? '';
-                $this->apiUrl = config('services.openai.github_embedding_url', '') ?? '';
+                $this->model = config('services.openai.github_embedding_model', 'text-embedding-3-large');
+                $this->apiKey = config('services.openai.github_embedding_token');
+                $this->apiUrl = config('services.openai.github_embedding_url');
+                break;
+            case 'pinecone':
+                $this->model = config('services.pinecone.embedding_model', 'multilingual-e5-large');
+                $this->apiKey = config('services.pinecone.api_key');
+                $this->apiUrl = 'https://api.pinecone.io/embed';
                 break;
             default: // openai
-                $this->apiKey = config('services.openai.api_key', '') ?? '';
-                $this->apiUrl = config('services.openai.embedding_url', '') ?? '';
+                $this->model = config('services.openai.embedding_model', 'text-embedding-3-small');
+                $this->apiKey = config('services.openai.api_key');
+                $this->apiUrl = config('services.openai.embedding_url');
         }
+
+        Log::info('EmbeddingService initialized', ['provider' => $this->provider, 'model' => $this->model]);
     }
 
     /**
@@ -44,13 +55,21 @@ class EmbeddingService
             return null;
         }
 
-        // Check cache first
-        $cacheKey = 'embedding_' . md5($text);
+        // Check cache first (includes model to prevent dimension mismatch on switch)
+        $cacheKey = "embedding_{$this->model}_" . md5($text);
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
         }
 
         try {
+            if ($this->provider === 'pinecone') {
+                $embedding = $this->pinecone->embed($text, $this->model);
+                if ($embedding) {
+                    Cache::put($cacheKey, $embedding, now()->addDays(7));
+                }
+                return $embedding;
+            }
+
             // Azure uses api-key header, others use Bearer token
             $headers = ['Content-Type' => 'application/json'];
             if ($this->provider === 'azure') {
@@ -61,6 +80,8 @@ class EmbeddingService
 
             // Build request body - Azure uses model in URL
             $requestBody = ['input' => $text];
+
+            // Detailed logging for Unauthorized errors will be added after response
             if ($this->provider !== 'azure') {
                 $requestBody['model'] = $this->model;
             }
@@ -72,7 +93,24 @@ class EmbeddingService
                 'has_api_key' => !empty($this->apiKey),
             ]);
 
-            $response = Http::withHeaders($headers)->timeout(30)->post($this->apiUrl, $requestBody);
+            $response = Http::withHeaders($headers)->timeout(10)->connectTimeout(5)->post($this->apiUrl, $requestBody);
+
+            // Detailed logging for Unauthorized errors
+            $status = $response->status();
+            $body = $response->body();
+            $errorType = null;
+            if (strpos($body, 'Unauthorized') !== false || $status === 401) {
+                $errorType = 'Unauthorized';
+                Log::error('Embedding API Unauthorized error', [
+                    'status' => $status,
+                    'body' => $body,
+                    'provider' => $this->provider,
+                    'model' => $this->model,
+                    'api_url' => $this->apiUrl,
+                    'api_key_present' => !empty($this->apiKey),
+                    'error_type' => $errorType,
+                ]);
+            }
 
             if ($response->successful()) {
                 $embedding = $response->json('data.0.embedding');
@@ -210,7 +248,7 @@ class EmbeddingService
         return match ($this->model) {
             'text-embedding-3-small' => 1536,
             'text-embedding-3-large' => 3072,
-            //'text-embedding-ada-002' => 1536,
+            'multilingual-e5-large'  => 1024,
             default => 1536,
         };
     }

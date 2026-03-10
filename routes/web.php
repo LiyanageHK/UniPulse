@@ -13,6 +13,8 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\OnBoardingPoornimaController;
 use App\Http\Controllers\DashboardPoornimaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\JournalController;
+use App\Http\Controllers\RiskDashboardController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -23,16 +25,16 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 
 
 Route::middleware(['auth', 'check.onboarding'])->group(function () {
-   Route::get('/dashboard-poornima',[DashboardPoornimaController::class,'dashboard'])->name('dashboard-poornima');
-    Route::get('/on-boarding',[OnBoardingPoornimaController::class,'onBoarding'])->name('on-boarding');
-    Route::post('/on-boarding-store',[OnBoardingPoornimaController::class,'onBoardingStore'])->name('on-boarding-store');
-    Route::get('/on-boarding-success',[OnBoardingPoornimaController::class,'onBoardingSuccess'])->name('on-boarding-success');
-    Route::get('/survey',[DashboardPoornimaController::class, 'survey'])->name('survey');
+    Route::get('/dashboard-poornima', [DashboardPoornimaController::class, 'dashboard'])->name('dashboard-poornima');
+    Route::get('/on-boarding', [OnBoardingPoornimaController::class, 'onBoarding'])->name('on-boarding');
+    Route::post('/on-boarding-store', [OnBoardingPoornimaController::class, 'onBoardingStore'])->name('on-boarding-store');
+    Route::get('/on-boarding-success', [OnBoardingPoornimaController::class, 'onBoardingSuccess'])->name('on-boarding-success');
+    Route::get('/survey', [DashboardPoornimaController::class, 'survey'])->name('survey');
     Route::post('/survey', [DashboardPoornimaController::class, 'surveyStore'])->name('survey-store');
-    Route::get('/survey-success',[DashboardPoornimaController::class, 'surveySuccess'])->name('survey-success');
+    Route::get('/survey-success', [DashboardPoornimaController::class, 'surveySuccess'])->name('survey-success');
 
-    Route::get('/weekly-checkings',[DashboardPoornimaController::class, 'weeklyCheckings'])->name('weekly-checkings');
-    Route::get('/weekly-checkings-view/{id}',[DashboardPoornimaController::class, 'weeklyCheckingsView'])->name('weekly-checkings.view');
+    Route::get('/weekly-checkings', [DashboardPoornimaController::class, 'weeklyCheckings'])->name('weekly-checkings');
+    Route::get('/weekly-checkings-view/{id}', [DashboardPoornimaController::class, 'weeklyCheckingsView'])->name('weekly-checkings.view');
 
 
     Route::get('/user-profile/{id}', [DashboardPoornimaController::class, 'profileView'])->name('profile.view');
@@ -41,7 +43,7 @@ Route::middleware(['auth', 'check.onboarding'])->group(function () {
     Route::post('/peer/send/{id}', [DashboardPoornimaController::class, 'sendRequest'])->name('peer.send');
     Route::post('/peer/accept/{id}', [DashboardPoornimaController::class, 'acceptRequest'])->name('peer.accept');
     Route::post('/peer/reject/{id}', [DashboardPoornimaController::class, 'rejectRequest'])->name('peer.reject');
-    Route::post('/peer/rating/{to_id}',[DashboardPoornimaController::class, 'peerRating'])->name('peer.rating');
+    Route::post('/peer/rating/{to_id}', [DashboardPoornimaController::class, 'peerRating'])->name('peer.rating');
 
     Route::get('/chat-view', [DashboardPoornimaController::class, 'chat'])->name('chat.view');
     Route::get('/chat/validate/{chatId}', [DashboardPoornimaController::class, 'validateChatAccess']);
@@ -64,9 +66,27 @@ Route::middleware(['auth', 'check.onboarding'])->group(function () {
     Route::post('/groups/{id}/leave', [GroupController::class, 'leave'])->name('groups.leave');
     Route::delete('/groups/{id}', [GroupController::class, 'destroy'])->name('groups.destroy');
     Route::delete('/groups/{groupId}/members/{userId}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
-    Route::get('/risk-level',[DashboardPoornimaController::class,'riskLevel'])->name('risk-level');
-    Route::get('/suggestions',[DashboardPoornimaController::class,'suggestions'])->name('suggestions');
+    Route::get('/risk-level', [DashboardPoornimaController::class, 'riskLevel'])->name('risk-level');
+    Route::get('/suggestions', [DashboardPoornimaController::class, 'suggestions'])->name('suggestions');
 
+    // Journal routes
+    Route::get('/journal', [JournalController::class, 'index'])->name('journal.index');
+    Route::post('/journal', [JournalController::class, 'store'])->name('journal.store')->middleware('journal.access');
+    Route::get('/journal/{id}', [JournalController::class, 'show'])->name('journal.show');
+    Route::delete('/journal/{id}', [JournalController::class, 'destroy'])->name('journal.destroy');
+
+    // Risk Dashboard routes
+    Route::get('/risk-dashboard', [RiskDashboardController::class, 'index'])->name('risk-dashboard.index');
+    Route::get('/risk-dashboard/history', [RiskDashboardController::class, 'history'])->name('risk-dashboard.history');
+    Route::get('/risk-dashboard/report/{id}', [RiskDashboardController::class, 'showReport'])->name('risk-dashboard.report');
+    Route::delete('/risk-dashboard/summary/{id}', [RiskDashboardController::class, 'destroySummary'])->name('risk-dashboard.summary.destroy');
+    Route::get('/api/risk/latest', [RiskDashboardController::class, 'apiLatest'])->name('risk.api.latest');
+    Route::get('/api/risk/history', [RiskDashboardController::class, 'apiHistory'])->name('risk.api.history');
+    Route::get('/api/risk/suggestions', [RiskDashboardController::class, 'apiSuggestions'])->name('risk.api.suggestions');
+    Route::get('/risk-dashboard/ai-suggestions', [RiskDashboardController::class, 'aiSuggestionsPage'])->name('risk-dashboard.ai-suggestions');
+
+    // Test: manually trigger weekly summary for current user
+    Route::post('/test/weekly-summary', [RiskDashboardController::class, 'testProcessWeekly'])->name('test.weekly-summary');
 
 });
 
@@ -123,8 +143,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth'])
-    ->name('dashboard');
+        ->middleware(['auth'])
+        ->name('dashboard');
 
     // Onboarding step 1
     Route::get('/onboarding/step1', [OnboardingController::class, 'step1'])
@@ -141,8 +161,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('onboarding.step2.store');
 
     // Weekly Chek-in
-    Route::get('/weekly-checkin', [WeeklyCheckinController::class,'showForm'])->name('weekly.checkin');
-    Route::post('/weekly-checkin', [WeeklyCheckinController::class,'submitForm'])->name('weekly.checkin.submit');
+    Route::get('/weekly-checkin', [WeeklyCheckinController::class, 'showForm'])->name('weekly.checkin');
+    Route::post('/weekly-checkin', [WeeklyCheckinController::class, 'submitForm'])->name('weekly.checkin.submit');
 
 
     // profile routes
@@ -209,4 +229,4 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

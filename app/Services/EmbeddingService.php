@@ -114,10 +114,10 @@ class EmbeddingService
 
             if ($response->successful()) {
                 $embedding = $response->json('data.0.embedding');
-                
+
                 // Cache for 7 days
                 Cache::put($cacheKey, $embedding, now()->addDays(7));
-                
+
                 return $embedding;
             }
 
@@ -140,7 +140,7 @@ class EmbeddingService
     public function generateBatchEmbeddings(array $texts): array
     {
         $embeddings = [];
-        
+
         // Filter out empty texts
         $texts = array_filter($texts, fn($text) => !empty(trim($text)));
 
@@ -189,13 +189,13 @@ class EmbeddingService
     {
         // Split by sentences first
         $sentences = preg_split('/(?<=[.!?])\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-        
+
         $chunks = [];
         $currentChunk = '';
 
         foreach ($sentences as $sentence) {
             $testChunk = empty($currentChunk) ? $sentence : $currentChunk . ' ' . $sentence;
-            
+
             if (strlen($testChunk) > $maxChunkSize && !empty($currentChunk)) {
                 $chunks[] = trim($currentChunk);
                 $currentChunk = $sentence;
@@ -245,7 +245,7 @@ class EmbeddingService
      */
     public function getDimensions(): int
     {
-        return match($this->model) {
+        return match ($this->model) {
             'text-embedding-3-small' => 1536,
             'text-embedding-3-large' => 3072,
             'multilingual-e5-large'  => 1024,

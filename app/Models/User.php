@@ -157,4 +157,18 @@ public function latestWeeklyCheckin()
     return $this->hasOne(WeeklyCheckin::class)->latestOfMany();
 }
 
+    public function journals()
+    {
+        return $this->hasMany(Journal::class);
+    }
+
+    public function weeklySummaries()
+    {
+        return $this->hasMany(WeeklySummary::class);
+    }
+
+    public function latestWeeklySummary()
+    {
+        return $this->hasOne(WeeklySummary::class)->latestOfMany();
+    }
 }

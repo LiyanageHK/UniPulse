@@ -479,91 +479,121 @@ class DashboardPoornimaController extends Controller
 
     public function peerMatchings(Request $request)
     {
-
-
-        $user = Auth::user();
+        $user      = Auth::user();
         $myProfile = $user->profile;
 
         if (!$myProfile) {
             return back()->with('error', 'Please complete your profile first.');
         }
 
-        // Fetch ALL other users with profiles
+        // Fetch all other profiles
         $profiles = StudentProfile::where('user_id', '!=', $user->id)->get();
+
+        // Pre-load latest weekly check-in for every involved user in ONE query
+        // to avoid N+1 inside the loop.
+        $allUserIds = $profiles->pluck('user_id')->push($user->id)->unique()->values();
+
+        $latestCheckins = WeeklyChecking::whereIn('user_id', $allUserIds)
+            ->select('user_id', 'overall_mood', 'feel_left_out', 'created_at')
+            ->orderByDesc('created_at')
+            ->get()
+            ->unique('user_id')          // keep only the most-recent row per user
+            ->keyBy('user_id');          // index by user_id for O(1) lookup
+
+        $myCheckin = $latestCheckins->get($user->id);
 
         $matches = [];
 
         foreach ($profiles as $profile) {
-            $score = 0;
-            $total = 0;
+            $score = 0.0;
 
-            // --------- SIMPLE MATCHING ALGORITHM ----------
+            // ── 1. Interest & Hobby Match (25%) ──────────────────────────────
+            $mine_interests  = is_array($myProfile->top_interests)
+                ? $myProfile->top_interests
+                : (json_decode($myProfile->top_interests, true) ?: []);
+            $other_interests = is_array($profile->top_interests)
+                ? $profile->top_interests
+                : (json_decode($profile->top_interests, true) ?: []);
 
-            // AL stream (20 points)
-            $total += 20;
-            if ($profile->al_stream === $myProfile->al_stream) {
-                $score += 20;
-            }
+            $commonInterests = count(array_intersect($mine_interests, $other_interests));
+            $maxInterests    = max(count($mine_interests), 1);
+            $score += ($commonInterests / $maxInterests) * 15; // proportional, max 15%
 
-            // Learning style (20 points)
-            $total += 20;
             if ($profile->learning_style === $myProfile->learning_style) {
-                $score += 20;
+                $score += 10; // learning style = 10%
             }
 
-            // Social setting (10 points)
-            $total += 10;
-            if ($profile->social_setting === $myProfile->social_setting) {
+            // ── 2. Academic Compatibility (20%) ──────────────────────────────
+            if ($profile->faculty === $myProfile->faculty) {
+                $score += 10;
+            }
+            if ($profile->al_stream === $myProfile->al_stream) {
                 $score += 10;
             }
 
-            // Communication preferences (10 points)
-            $total += 10;
-            $mine_comms = json_decode($myProfile->communication_methods, true) ?: [];
-            $other_comms = json_decode($profile->communication_methods, true) ?: [];
-
-            $common_comms = array_intersect($mine_comms, $other_comms);
-            if (count($common_comms) > 0) {
-                $score += 10;
+            // ── 3. Personality Compatibility (20%) ───────────────────────────
+            if ((int) $profile->intro_extro === (int) $myProfile->intro_extro) {
+                $score += 10; // introvert-extrovert scale exact match
             }
-
-            // Interests (20 points)
-            $total += 20;
-            $mine_interests = json_decode($myProfile->top_interests, true) ?: [];
-            $other_interests = json_decode($profile->top_interests, true) ?: [];
-
-            $common_interests = array_intersect($mine_interests, $other_interests);
-            if (count($common_interests) > 0) {
-                $score += 20;
-            }
-
-            // Stress level closeness (10 points)
-            $total += 10;
             if ($profile->stress_level === $myProfile->stress_level) {
                 $score += 10;
             }
 
-            $percentage = round(($score / $total) * 100);
+            // ── 4. Emotional & Wellbeing Alignment (15%) ─────────────────────
+            // Onboard form – overwhelmed easily by academic tasks (5%)
+            if ((int) $profile->overwhelmed === (int) $myProfile->overwhelmed) {
+                $score += 5;
+            }
 
-            $myRating = PeerRating::where('from_id', $user->id)
-                ->where('to_id', $profile->user_id)
-                ->value('rating') ?? 0;
+            // Latest weekly check-in (10%)
+            $otherCheckin = $latestCheckins->get($profile->user_id);
+            if ($myCheckin && $otherCheckin) {
+                // Overall weekly mood – first question (5%)
+                $scoret = $score;
+                if ((int) $myCheckin->overall_mood <= (int) $otherCheckin->overall_mood) {
+                    $score += 5;
+                }
+               
+                //dd($myCheckin->overall_mood, $otherCheckin->overall_mood);
+                // Feel left out / disconnected – Social & Academic Behavior (5%)
+                if ((int) $myCheckin->feel_left_out === (int) $otherCheckin->feel_left_out) {
+                    $score += 5;
+                }
+            }
+
+            // ── 5. Communication Preference (10%) ────────────────────────────
+            $mine_comms  = is_array($myProfile->communication_methods)
+                ? $myProfile->communication_methods
+                : (json_decode($myProfile->communication_methods, true) ?: []);
+            $other_comms = is_array($profile->communication_methods)
+                ? $profile->communication_methods
+                : (json_decode($profile->communication_methods, true) ?: []);
+
+            if (count(array_intersect($mine_comms, $other_comms)) > 0) {
+                $score += 10;
+            }
+
+            // ── 6. Social Preferences (10%) ──────────────────────────────────
+            if ($profile->social_setting === $myProfile->social_setting) {
+                $score += 10;
+            }
+
+            // Score is already out of 100
+            $percentage = (int) round($score);
 
             $matches[] = [
-                'user' => $profile->user,
-                'profile' => $profile,
-                'percentage' => $percentage,
-                'my_rating' => $profile->user->myRating(),
-                'isPeeredWith' => $profile->user->isPeeredWith()
+                'user'        => $profile->user,
+                'profile'     => $profile,
+                'percentage'  => $percentage,
+                'my_rating'   => $profile->user->myRating(),
+                'isPeeredWith' => $profile->user->isPeeredWith(),
             ];
         }
 
         usort($matches, function ($a, $b) {
-            // First, prioritize by my_rating (descending)
             if ($a['my_rating'] !== $b['my_rating']) {
                 return $b['my_rating'] <=> $a['my_rating'];
             }
-            // Then, sort by percentage (descending)
             return $b['percentage'] <=> $a['percentage'];
         });
 
@@ -592,8 +622,8 @@ class DashboardPoornimaController extends Controller
 
             $interests = [];
             if ($otherUser->profile && $otherUser->profile->top_interests) {
-                $decoded = json_decode($otherUser->profile->top_interests, true);
-                $interests = is_array($decoded) ? $decoded : [];
+                $raw = $otherUser->profile->top_interests;
+                $interests = is_array($raw) ? $raw : (json_decode($raw, true) ?: []);
             }
 
             $formatted[] = [
@@ -648,6 +678,18 @@ class DashboardPoornimaController extends Controller
         $req->update(['status' => 'rejected']);
 
         return back()->with('success', 'Request rejected!');
+    }
+
+    public function cancelRequest($requestId)
+    {
+        $req = PeerRequest::where('id', $requestId)
+                          ->where('sender_id', Auth::id())
+                          ->where('status', 'pending')
+                          ->firstOrFail();
+
+        $req->delete();
+
+        return back()->with('success', 'Request cancelled.');
     }
 
     public function chat()

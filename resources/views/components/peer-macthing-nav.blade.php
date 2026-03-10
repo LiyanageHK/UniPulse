@@ -23,8 +23,13 @@
             </a>
 
             <a href="{{ route('groups.index') }}"
-                class="px-6 py-3 font-semibold transition-colors {{ request()->routeIs('groups.index') ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-blue-50' }}">
+                class="px-6 py-3 font-semibold transition-colors border-r-2 border-blue-600 {{ request()->routeIs('groups.index') ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-blue-50' }}">
                 Groups
+            </a>
+
+            <a href="{{ route('peer-matching.index') }}"
+                class="px-6 py-3 font-semibold transition-colors {{ request()->routeIs('peer-matching.*') ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-blue-50' }}">
+                AI Groups
             </a>
         </div>
     </div>

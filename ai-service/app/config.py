@@ -5,7 +5,7 @@ Application configuration for the UniPulse AI Risk Detection Service.
 import os
 
 # Model configuration
-MODEL_PATH = os.getenv("MODEL_PATH", "./saved_model")
+MODEL_PATH = os.getenv("MODEL_PATH", "./ml_modal")
 
 # Server configuration
 HOST = os.getenv("HOST", "0.0.0.0")

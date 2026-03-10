@@ -508,9 +508,12 @@ class DashboardPoornimaController extends Controller
             $otherCheckin = $latestCheckins->get($profile->user_id);
             if ($myCheckin && $otherCheckin) {
                 // Overall weekly mood – first question (5%)
-                if ((int) $myCheckin->overall_mood === (int) $otherCheckin->overall_mood) {
+                $scoret = $score;
+                if ((int) $myCheckin->overall_mood <= (int) $otherCheckin->overall_mood) {
                     $score += 5;
                 }
+               
+                //dd($myCheckin->overall_mood, $otherCheckin->overall_mood);
                 // Feel left out / disconnected – Social & Academic Behavior (5%)
                 if ((int) $myCheckin->feel_left_out === (int) $otherCheckin->feel_left_out) {
                     $score += 5;

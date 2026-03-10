@@ -554,8 +554,8 @@ def find_my_group():
             score += w['overwhelmed']
 
         if my_c and other_c:
-            # weekly mood (first question): exact match = 5 pts
-            if _safe_float(my_c.get('mood'), 0) == _safe_float(other_c.get('mood'), 0):
+            # weekly mood (first question): award points if my mood <= other mood
+            if _safe_float(my_c.get('mood'), 0) <= _safe_float(other_c.get('mood'), 0):
                 score += w['mood']
             # feel_left_out (Social & Academic Behavior): exact match = 5 pts
             if _safe_float(my_c.get('feel_left_out'), 0) == _safe_float(other_c.get('feel_left_out'), 0):

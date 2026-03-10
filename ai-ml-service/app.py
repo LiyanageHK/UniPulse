@@ -18,9 +18,9 @@ app = Flask(__name__)
 def get_db_connection():
     return pymysql.connect(
         host=os.environ.get("DB_HOST", "127.0.0.1"),
-        database=os.environ.get("DB_DATABASE", "peer_db"),
+        database=os.environ.get("DB_DATABASE", "laravel1"),
         user=os.environ.get("DB_USERNAME", "root"),
-        password=os.environ.get("DB_PASSWORD", "root"),
+        password=os.environ.get("DB_PASSWORD", ""),
         port=int(os.environ.get("DB_PORT", "3306")),
         charset="utf8mb4",
     )

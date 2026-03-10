@@ -34,22 +34,53 @@ class MemoryExtractionService
         'save my',
     ];
 
+    // Patterns that signal the student is sharing something personal worth remembering.
+    // These trigger immediate extraction even outside the normal throttle cycle.
+    protected array $personalDisclosurePatterns = [
+        // Likes / loves / enjoys
+        'i like', 'i love', 'i enjoy', 'i really like', 'i really love', 'i really enjoy',
+        'my favourite', 'my favorite', 'i\'m a fan of', 'i\'m into', 'i\'m passionate about',
+        // Dislikes
+        'i hate', 'i dislike', 'i don\'t like', 'i can\'t stand',
+        // Goals / aspirations
+        'i want to be', 'i want to become', 'i want to do', 'i want to study',
+        'my goal is', 'my dream is', 'i plan to', 'i\'m planning to',
+        'i hope to', 'i wish i could', 'someday i want',
+        // Identity / personal facts
+        'i am studying', 'i\'m studying', 'i study', 'my major is', 'my course is',
+        'i\'m in my', 'i am in my', 'i\'m a', 'i am a',
+        'i live', 'i\'m from', 'i am from', 'i grew up',
+        'my family', 'my parents', 'my brother', 'my sister',
+        // Struggles / patterns
+        'i always', 'i usually', 'i tend to', 'i often', 'i never',
+        'i struggle with', 'i find it hard', 'i find it difficult',
+        'i\'m bad at', 'i\'m good at', 'i\'m great at',
+        // Preferences
+        'i prefer', 'i\'d rather', 'i work best', 'i feel better when',
+        // Hobbies / activities
+        'i play', 'i sing', 'i draw', 'i paint', 'i code', 'i program',
+        'i read', 'i write', 'i run', 'i exercise', 'i work out',
+        'i watch', 'i listen to',
+    ];
+
     public function __construct()
     {
         $this->provider = config('services.openai.provider', 'azure');
-        $this->model = config('services.openai.model', 'gpt-4.1');
         
-        // Set API key and URL based on provider
+        // Set model, API key and URL based on provider
         switch ($this->provider) {
             case 'azure':
+                $this->model = config('services.openai.model', 'gpt-4.1');
                 $this->apiKey = config('services.openai.azure_api_key');
                 $this->apiUrl = config('services.openai.azure_chat_url');
                 break;
             case 'github':
+                $this->model = config('services.openai.github_chat_model', 'openai/gpt-4.1');
                 $this->apiKey = config('services.openai.github_token');
                 $this->apiUrl = config('services.openai.github_chat_url');
                 break;
             default:
+                $this->model = config('services.openai.model', 'gpt-4.1');
                 $this->apiKey = config('services.openai.api_key');
                 $this->apiUrl = config('services.openai.api_url');
         }
@@ -72,6 +103,29 @@ class MemoryExtractionService
     }
 
     /**
+     * Detect whether a message contains a personal disclosure worth saving immediately.
+     * Examples: "I like hiking", "my goal is to become a doctor", "I'm studying CS".
+     * These bypass the normal throttle so important facts are never missed.
+     */
+    public function hasPersonalDisclosure(string $message): bool
+    {
+        $lower = strtolower(trim($message));
+
+        // Too short to be meaningful
+        if (strlen($lower) < 10) {
+            return false;
+        }
+
+        foreach ($this->personalDisclosurePatterns as $pattern) {
+            if (str_contains($lower, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Extract memories from a conversation message.
      * Uses AI to identify important information worth remembering.
      */
@@ -84,29 +138,33 @@ class MemoryExtractionService
             return [];
         }
 
-        // Check for explicit save intent - prioritize these
-        $hasExplicitIntent = $this->hasExplicitSaveIntent($message->content);
+        // Check for explicit save intent or personal disclosure
+        $hasExplicitIntent  = $this->hasExplicitSaveIntent($message->content);
+        $hasDisclosure      = $this->hasPersonalDisclosure($message->content);
 
-        // Get conversation context (last few messages for better understanding)
-        $conversation = $message->conversation;
-        $recentMessages = $conversation->messages()
-            ->where('id', '<=', $message->id)
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get()
-            ->reverse()
-            ->map(fn($msg) => [
-                'role' => $msg->role,
-                'content' => $msg->content
-            ])
-            ->toArray();
+        // When triggered by a direct disclosure ("I love X", "my goal is Y"), focus extraction
+        // on just that message — the broader context window pulls in unrelated emotional history.
+        if ($hasDisclosure && !$hasExplicitIntent) {
+            $recentMessages = [['role' => 'user', 'content' => $message->content]];
+        } else {
+            // General extraction: use last 5 messages for context
+            $conversation   = $message->conversation;
+            $recentMessages = $conversation->messages()
+                ->where('id', '<=', $message->id)
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get()
+                ->reverse()
+                ->map(fn($msg) => ['role' => $msg->role, 'content' => $msg->content])
+                ->toArray();
+        }
 
-        // Build extraction prompt with explicit intent flag
-        $extractionPrompt = $this->buildExtractionPrompt($recentMessages, $hasExplicitIntent);
+        // Build extraction prompt
+        $extractionPrompt = $this->buildExtractionPrompt($recentMessages, $hasExplicitIntent, $hasDisclosure);
 
         try {
             $response = $this->callAI($extractionPrompt);
-            
+
             if (!$response) {
                 Log::warning('No AI response for memory extraction', ['message_id' => $message->id]);
                 return [];
@@ -114,7 +172,7 @@ class MemoryExtractionService
 
             // Parse the AI response to extract memories
             $extractedMemories = $this->parseMemoriesFromResponse($response, $message);
-            
+
             // Boost importance for explicit save requests
             if ($hasExplicitIntent && !empty($extractedMemories)) {
                 foreach ($extractedMemories as &$memory) {
@@ -144,7 +202,7 @@ class MemoryExtractionService
     /**
      * Build the AI prompt for memory extraction.
      */
-    protected function buildExtractionPrompt(array $conversationContext, bool $hasExplicitSaveIntent = false): string
+    protected function buildExtractionPrompt(array $conversationContext, bool $hasExplicitSaveIntent = false, bool $hasDisclosure = false): string
     {
         $conversationText = '';
         foreach ($conversationContext as $msg) {
@@ -152,12 +210,23 @@ class MemoryExtractionService
             $conversationText .= "{$role}: {$msg['content']}\n\n";
         }
 
-        $explicitInstructions = $hasExplicitSaveIntent ? <<<EXPLICIT
+        $explicitInstructions = '';
+        if ($hasExplicitSaveIntent) {
+            $explicitInstructions = <<<EXPLICIT
 
 IMPORTANT: The student has EXPLICITLY requested to save something to memory (they used phrases like "save that", "remember this", etc.).
 You MUST extract the specific information they want saved. Look for what follows their save request.
 Give these memories HIGH importance (0.8-1.0) since the user specifically asked to remember them.
-EXPLICIT : '';
+EXPLICIT;
+        } elseif ($hasDisclosure) {
+            $explicitInstructions = <<<DISCLOSURE
+
+IMPORTANT: The student just shared a personal fact (a preference, hobby, goal, or identity detail).
+Focus ONLY on extracting what they shared in this message. Ignore unrelated emotional context.
+Examples of what to extract: hobbies, interests, career goals, study habits, dislikes, skills, lifestyle details.
+Give these a moderate-to-high importance (0.6-0.9).
+DISCLOSURE;
+        }
 
         return <<<PROMPT
 You are a memory extraction system. Analyze the conversation and extract important information about the student that should be remembered for future conversations.
@@ -314,10 +383,10 @@ PROMPT;
 
             // Provider-specific settings
             if ($this->provider === 'github') {
-                $requestBody['max_completion_tokens'] = 1000;
+                $requestBody['max_completion_tokens'] = 300;
             } else {
-                $requestBody['temperature'] = 0.3; // Lower temperature for more consistent extraction
-                $requestBody['max_tokens'] = 1000;
+                $requestBody['temperature'] = 0.3;
+                $requestBody['max_tokens'] = 300;
             }
 
             // Azure uses api-key header, others use Bearer token
@@ -336,7 +405,22 @@ PROMPT;
                 return $response->json('choices.0.message.content');
             }
 
-            Log::error('Memory extraction API error', ['status' => $response->status()]);
+            // Detailed logging for Unauthorized errors
+            $status = $response->status();
+            $body = $response->body();
+            $errorType = null;
+            if (strpos($body, 'Unauthorized') !== false || $status === 401) {
+                $errorType = 'Unauthorized';
+            }
+            Log::error('Memory extraction API error', [
+                'status' => $status,
+                'body' => $body,
+                'provider' => $this->provider,
+                'model' => $this->model,
+                'api_url' => $this->apiUrl,
+                'api_key_present' => !empty($this->apiKey),
+                'error_type' => $errorType,
+            ]);
             return null;
 
         } catch (\Exception $e) {

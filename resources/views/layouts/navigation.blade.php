@@ -23,8 +23,14 @@
                     <x-nav-link :href="route('peer-matchings')" :active="request()->routeIs('peer-matchings')">
                         Peer Matching
                     </x-nav-link>
-                    <x-nav-link :href="route('chat.support')" :active="request()->routeIs('chat.support')">
-                        Conversational Support
+
+                    {{-- <a href="{{ route('peer-matchings') }}" class="text-gray-600 hover:text-purple-600 transition
+                        {{ request()->is('peer-matchings') || request()->is('profile/*') || request()->is('chat-view') || request()->is('requests')  || request()->is('groups') || request()->is('groups/*') ? 'active' : '' }}
+                         ">Peer Matching</a> --}}
+
+
+                    <x-nav-link :href="route('chat.dashboard')" :active="request()->routeIs('chat.dashboard') || request()->routeIs('chat.support')">
+                     Conversational Support
                     </x-nav-link>
                 </div>
             </div>
@@ -87,7 +93,7 @@
             <x-responsive-nav-link :href="route('peer-matchings')" :active="request()->routeIs('peer-matchings')">
                 Peer Matching
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('chat.support')" :active="request()->routeIs('chat.support')">
+            <x-responsive-nav-link :href="route('chat.dashboard')" :active="request()->routeIs('chat.dashboard') || request()->routeIs('chat.support')">
                 Conversational Support
             </x-responsive-nav-link>
         </div>

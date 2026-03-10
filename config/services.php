@@ -91,6 +91,15 @@ return [
         'url' => env('ML_CLUSTERING_URL', 'http://127.0.0.1:5000'),
     ],
 
+    'ai' => [
+        'base_url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8000'),
+        'timeout' => env('AI_SERVICE_TIMEOUT', 30),
+        'retries' => env('AI_SERVICE_RETRIES', 2),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY', ''),
+    ],
     'pinecone' => [
         'api_key'         => env('PINECONE_API_KEY'),
         'index_host'      => env('PINECONE_INDEX_HOST'),       // e.g. 'https://your-index-xxxxx.svc.pinecone.io'

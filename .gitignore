@@ -25,3 +25,7 @@ yarn-error.log
 .DS_Store
 package-lock.json
 composer.lock
+
+# Local/derived ML model artifacts
+ai-service/ml_modal/model.safetensors
+ai-service/saved_model/model.safetensors

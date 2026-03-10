@@ -95,6 +95,8 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY', ''),
+    ],
+
     'pinecone' => [
         'api_key'         => env('PINECONE_API_KEY'),
         'index_host'      => env('PINECONE_INDEX_HOST'),       // e.g. 'https://your-index-xxxxx.svc.pinecone.io'

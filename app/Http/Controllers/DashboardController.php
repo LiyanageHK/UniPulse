@@ -36,18 +36,7 @@ class DashboardController extends Controller
             ->orderBy('week_start', 'desc')
             ->first();
 
-        // ✅ STEP 3 — Enforce weekly check-in ONLY after onboarding week
-        if ($onboardingDate->diffInDays($now) >= 7) {
-            if (
-                !$lastCheckin ||
-                Carbon::parse($lastCheckin->week_start)->lt($now->copy()->subDays(7))
-            ) {
-                return redirect()->route('weekly.checkin')
-                    ->with('info', 'Please complete a weekly check-in.');
-            }
-        }
-
-        // ✅ STEP 4 — Conversational Support Stats
+        // ✅ STEP 3 — Conversational Support Stats
         $activeChatsCount = Conversation::where('user_id', $user->id)->active()->count();
         $archivedChatsCount = Conversation::where('user_id', $user->id)->archived()->count();
         $totalCrisisFlags = Conversation::where('user_id', $user->id)->sum('crisis_flags_count');
@@ -91,10 +80,10 @@ class DashboardController extends Controller
          * =====================================================
          */
 
-        // ✅ STEP 5 — Calculate KPIs from weekly check-in
+        // ✅ STEP 4 — Calculate KPIs from weekly check-in
         $kpiData = $this->calculateKPIsFromCheckin($lastCheckin);
 
-        // ✅ STEP 6 — Save / update current week snapshot
+        // ✅ STEP 5 — Save / update current week snapshot
         KpiSnapshot::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -107,7 +96,7 @@ class DashboardController extends Controller
             ]
         );
 
-        // ✅ STEP 7 — Load KPI history
+        // ✅ STEP 6 — Load KPI history
         $kpiHistory = KpiSnapshot::where('user_id', $user->id)
             ->orderBy('week_start', 'asc')
             ->get();
@@ -141,7 +130,7 @@ class DashboardController extends Controller
         $aiRecommender = new AiRecommender();
 
 
-        // ✅ STEP 8 — AI Recommendation
+        // ✅ STEP 7 — AI Recommendation
         if ($kpiData['emotionalScore'] <= 2.0) {
             $recommendation = [
                 'type' => 'risk_detection',

@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use App\Models\WeeklyCheckin;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -27,10 +29,46 @@ class AuthController extends Controller
                 return redirect()->route('on-boarding');
             }*/
 
+            $user = Auth::user();
+            $now = Carbon::now();
+
+            // Check if user needs weekly check-in before dashboard
+            if ($this->userNeedsWeeklyCheckin($user, $now)) {
+                return redirect()->route('weekly.checkin')
+                    ->with('info', 'Please complete your weekly check-in to continue.');
+            }
+
             return redirect()->route('dashboard');
         }
 
         return back()->withErrors(['email' => 'Invalid login details']);
+    }
+
+    /**
+     * Check if user needs to complete a weekly check-in
+     */
+    private function userNeedsWeeklyCheckin($user, $now): bool
+    {
+        // Skip if onboarding not completed
+        if (!$user->onboarding_completed) {
+            return false;
+        }
+
+        // Skip weekly check-in during the first 7 days after onboarding
+        $onboardingDate = Carbon::parse($user->created_at);
+        if ($onboardingDate->diffInDays($now) < 7) {
+            return false;
+        }
+
+        // Check if user has completed a check-in for the current week
+        $currentWeekStart = $now->copy()->startOfWeek()->toDateString();
+
+        $currentWeekCheckin = WeeklyCheckin::where('user_id', $user->id)
+            ->where('week_start', $currentWeekStart)
+            ->first();
+
+        // User needs check-in if they haven't done one for the current week
+        return !$currentWeekCheckin;
     }
 
     public function logout()

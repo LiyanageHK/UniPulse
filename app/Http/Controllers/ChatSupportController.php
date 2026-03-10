@@ -120,7 +120,19 @@ class ChatSupportController extends Controller
         $user = Auth::user();
 
         // Generate title for the conversation
+        Log::info('Starting conversation title generation', [
+            'user_id' => $user->id,
+            'initial_message_length' => strlen($request->initial_message),
+            'initial_message_preview' => substr($request->initial_message, 0, 100) . (strlen($request->initial_message) > 100 ? '...' : ''),
+        ]);
+
         $title = $this->aiChat->generateAiConversationTitle($request->initial_message);
+
+        Log::info('Conversation title generated', [
+            'user_id' => $user->id,
+            'generated_title' => $title,
+            'title_length' => strlen($title),
+        ]);
 
         // IDEMPOTENCY CHECK: Prevent duplicate conversations created by retries/double-submits
         // Check if an identical conversation was created in the last 10 seconds
@@ -584,7 +596,7 @@ class ChatSupportController extends Controller
         // Clean up memory vectors from Pinecone
         $this->pinecone->deleteByFilter([
             'user_id' => (int) $user->id,
-            'type'    => 'memory',
+            'type' => 'memory',
         ]);
 
         Log::info('All memories cleared for user', [

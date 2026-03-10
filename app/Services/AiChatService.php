@@ -65,10 +65,10 @@ class AiChatService
     public function chat(User $user, Conversation $conversation, string $userMessage): array
     {
         $chatConfig = config('services.openai.chat', []);
-        
+
         // Strict chat isolation: Never pull past conversations into the current active conversation
         $includePastConversations = false;
-        
+
         $minSimilarity = (float) ($chatConfig['current_conversation_similarity'] ?? 0.4);
 
         // 1. Store user message
@@ -136,13 +136,21 @@ class AiChatService
 
             // Now generate AI conversational response (like a real friend)
             $contextData = $this->ragRetrieval->getSmartContext(
-                $user, $userMessage, $conversation->id, 5,
-                $includePastConversations, $minSimilarity
+                $user,
+                $userMessage,
+                $conversation->id,
+                5,
+                $includePastConversations,
+                $minSimilarity
             );
 
             $messages = $this->buildPrompt(
-                $user, $conversation, $userMessage, $contextData,
-                $crisisFlags, $includePastConversations
+                $user,
+                $conversation,
+                $userMessage,
+                $contextData,
+                $crisisFlags,
+                $includePastConversations
             );
 
             $aiResponse = $this->generateResponse($messages);
@@ -234,7 +242,7 @@ class AiChatService
         // 2. Explicit: student says "save that", "remember this", etc.
         // 3. Disclosure: student shares personal info — "I like X", "my goal is Y", "I'm studying Z"
         $userMsgCount = $conversation->messages()->where('role', 'user')->count();
-        $isExplicit   = $this->memoryExtraction->hasExplicitSaveIntent($msgContent);
+        $isExplicit = $this->memoryExtraction->hasExplicitSaveIntent($msgContent);
         $isDisclosure = $this->memoryExtraction->hasPersonalDisclosure($msgContent);
 
         $shouldExtract = $contentLength >= 15   // lower bar — short disclosures like "I love music" count
@@ -366,7 +374,7 @@ class AiChatService
         // Dynamic length rule based on user message length
         // This forces the AI to output short responses when the user is sending short messages.
         $wordCount = str_word_count($userMessage);
-        
+
         if ($looksLikeProblem || !empty($crisisFlags)) {
             $systemPrompt .= "\n\nCRITICAL EMOTION RULE: The user is expressing serious distress. Respond like a close friend who genuinely cares. Your FIRST priority is to ask what's wrong — 'What happened?' or 'Why do you feel like that?' or 'Do you want to talk about it?'. Be warm, real, and conversational. Do NOT give advice or push resources. Just listen and ask. Response should be 20 to 50 words.";
         } elseif ($wordCount <= 7) {
@@ -761,14 +769,52 @@ CONCERNING;
         }
 
         $problemSignals = [
-            'stress', 'stressed', 'anxious', 'anxiety', 'worried', 'worry',
-            'sad', 'depressed', 'depression', 'lonely', 'alone', 'scared',
-            'problem', 'issue', 'trouble', 'difficult', 'hard time', 'struggling',
-            'fail', 'failed', 'failing', 'exam', 'assignment', 'deadline',
-            'fight', 'argument', 'relationship', 'breakup', 'family',
-            'can\'t', 'cannot', 'don\'t know', 'lost', 'confused', 'overwhelmed',
-            'help', 'advice', 'what should', 'what do i', 'how do i',
-            'not okay', 'not ok', 'upset', 'angry', 'frustrated', 'tired',
+            'stress',
+            'stressed',
+            'anxious',
+            'anxiety',
+            'worried',
+            'worry',
+            'sad',
+            'depressed',
+            'depression',
+            'lonely',
+            'alone',
+            'scared',
+            'problem',
+            'issue',
+            'trouble',
+            'difficult',
+            'hard time',
+            'struggling',
+            'fail',
+            'failed',
+            'failing',
+            'exam',
+            'assignment',
+            'deadline',
+            'fight',
+            'argument',
+            'relationship',
+            'breakup',
+            'family',
+            'can\'t',
+            'cannot',
+            'don\'t know',
+            'lost',
+            'confused',
+            'overwhelmed',
+            'help',
+            'advice',
+            'what should',
+            'what do i',
+            'how do i',
+            'not okay',
+            'not ok',
+            'upset',
+            'angry',
+            'frustrated',
+            'tired',
         ];
 
         foreach ($problemSignals as $signal) {
@@ -821,7 +867,19 @@ CONCERNING;
      */
     public function generateAiConversationTitle(string $firstMessage): string
     {
-        return $this->generateConversationTitle($firstMessage);
+        Log::debug('AI conversation title generation started', [
+            'message_length' => strlen($firstMessage),
+            'message_preview' => substr($firstMessage, 0, 150) . (strlen($firstMessage) > 150 ? '...' : ''),
+        ]);
+
+        $title = $this->generateConversationTitle($firstMessage);
+
+        Log::debug('AI conversation title generation completed', [
+            'generated_title' => $title,
+            'title_word_count' => str_word_count($title),
+        ]);
+
+        return $title;
     }
 
     /**
@@ -830,25 +888,84 @@ CONCERNING;
      */
     public function generateConversationTitle(string $firstMessage): string
     {
+        Log::debug('Title generation process started', [
+            'original_message' => $firstMessage,
+            'message_word_count' => str_word_count($firstMessage),
+        ]);
+
         $stopWords = [
-            'i', 'am', 'is', 'are', 'was', 'be', 'been', 'the', 'a', 'an',
-            'and', 'or', 'but', 'my', 'me', 'we', 'to', 'in', 'on', 'at',
-            'so', 'it', 'of', 'do', 'did', 'have', 'has', 'just', 'not',
-            'get', 'got', 'this', 'that', 'with', 'for', 'im', 'its',
+            'i',
+            'am',
+            'is',
+            'are',
+            'was',
+            'be',
+            'been',
+            'the',
+            'a',
+            'an',
+            'and',
+            'or',
+            'but',
+            'my',
+            'me',
+            'we',
+            'to',
+            'in',
+            'on',
+            'at',
+            'so',
+            'it',
+            'of',
+            'do',
+            'did',
+            'have',
+            'has',
+            'just',
+            'not',
+            'get',
+            'got',
+            'this',
+            'that',
+            'with',
+            'for',
+            'im',
+            'its',
         ];
 
         // Strip punctuation, lowercase, split
         $cleaned = preg_replace('/[^a-zA-Z0-9\s]/', '', strtolower($firstMessage));
-        $words   = array_filter(explode(' ', $cleaned), fn($w) => strlen($w) > 2 && !in_array($w, $stopWords));
+        $words = array_filter(explode(' ', $cleaned), fn($w) => strlen($w) > 2 && !in_array($w, $stopWords));
+
+        Log::debug('Title generation processing', [
+            'cleaned_text' => $cleaned,
+            'extracted_words' => array_values($words),
+            'words_after_filtering' => count($words),
+        ]);
 
         $meaningful = array_slice(array_values($words), 0, 5);
 
         if (empty($meaningful)) {
             // Fallback: just take first 6 raw words
             $raw = array_slice(explode(' ', $firstMessage), 0, 6);
-            return ucfirst(implode(' ', $raw)) ?: 'New Conversation';
+            $fallbackTitle = ucfirst(implode(' ', $raw)) ?: 'New Conversation';
+
+            Log::warning('Title generation used fallback method', [
+                'reason' => 'no meaningful words found after filtering',
+                'raw_words_used' => $raw,
+                'fallback_title' => $fallbackTitle,
+            ]);
+
+            return $fallbackTitle;
         }
 
-        return ucfirst(implode(' ', $meaningful));
+        $finalTitle = ucfirst(implode(' ', $meaningful));
+
+        Log::debug('Title generation completed successfully', [
+            'meaningful_words' => $meaningful,
+            'final_title' => $finalTitle,
+        ]);
+
+        return $finalTitle;
     }
 }

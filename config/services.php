@@ -87,6 +87,10 @@ return [
         'sms_enabled' => env('CRISIS_SMS_ENABLED', false),
     ],
 
+    'ml_clustering' => [
+        'url' => env('ML_CLUSTERING_URL', 'http://127.0.0.1:5000'),
+    ],
+
     'pinecone' => [
         'api_key'         => env('PINECONE_API_KEY'),
         'index_host'      => env('PINECONE_INDEX_HOST'),       // e.g. 'https://your-index-xxxxx.svc.pinecone.io'

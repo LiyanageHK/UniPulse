@@ -165,6 +165,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Chat Support Routes (Authentication Required)
     Route::prefix('chat')->name('chat.')->group(function () {
+        // Chat dashboard page
+        Route::get('/dashboard', [ChatSupportController::class, 'dashboard'])->name('dashboard');
+
         // Chat interface page
         Route::get('/support', [ChatSupportController::class, 'index'])->name('support');
 
@@ -189,6 +192,12 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/memory/{id}', [ChatSupportController::class, 'updateMemory'])->name('memory.update');
         Route::delete('/memory/{id}', [ChatSupportController::class, 'deleteMemory'])->name('memory.delete');
         Route::delete('/memories/clear', [ChatSupportController::class, 'clearAllMemories'])->name('memories.clear');
+
+        // Phase 2 — Search, Export, Feedback, Regenerate
+        Route::get('/conversations/search', [ChatSupportController::class, 'searchConversations'])->name('conversations.search');
+        Route::get('/conversation/{id}/export', [ChatSupportController::class, 'exportConversation'])->name('conversation.export');
+        Route::post('/message/{id}/feedback', [ChatSupportController::class, 'submitFeedback'])->name('message.feedback');
+        Route::post('/message/{id}/regenerate', [ChatSupportController::class, 'regenerateMessage'])->name('message.regenerate');
 
         // Counselors endpoint
         Route::get('/counselors', [ChatSupportController::class, 'getCounselors'])->name('counselors');

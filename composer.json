@@ -9,6 +9,7 @@
         "php": ">=8.2",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
+        "predis/predis": "^3.4",
         "rubix/ml": "^2.5"
     },
     "require-dev": {

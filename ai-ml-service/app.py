@@ -540,9 +540,8 @@ def find_my_group():
             score += w['al_stream']
 
         # ── 3. Personality Compatibility ────────────────────────────────────
-        intro_diff = abs(_safe_float(my_p.get('intro_extro'), 5) -
-                        _safe_float(other_p.get('intro_extro'), 5))
-        if intro_diff <= 2:
+        # intro_extro: exact match on the 1-10 scale (+10 pts)
+        if _safe_float(my_p.get('intro_extro'), 5) == _safe_float(other_p.get('intro_extro'), 5):
             score += w['intro_extro']
 
         my_stress = _safe_str(my_p.get('stress_level'))
@@ -550,19 +549,16 @@ def find_my_group():
             score += w['stress_level']
 
         # ── 4. Emotional & Wellbeing Alignment ─────────────────────────────
-        ow_diff = abs(_safe_float(my_p.get('overwhelmed'), 3) -
-                    _safe_float(other_p.get('overwhelmed'), 3))
-        if ow_diff <= 1:
+        # overwhelmed (onboard form, 1-5 scale): exact match = 5 pts
+        if _safe_float(my_p.get('overwhelmed'), 3) == _safe_float(other_p.get('overwhelmed'), 3):
             score += w['overwhelmed']
 
         if my_c and other_c:
-            mood_diff = abs(_safe_float(my_c.get('mood'), 0) -
-                            _safe_float(other_c.get('mood'), 0))
-            if mood_diff <= 1:
+            # weekly mood (first question): exact match = 5 pts
+            if _safe_float(my_c.get('mood'), 0) == _safe_float(other_c.get('mood'), 0):
                 score += w['mood']
-            flo_diff = abs(_safe_float(my_c.get('feel_left_out'), 0) -
-                        _safe_float(other_c.get('feel_left_out'), 0))
-            if flo_diff <= 1:
+            # feel_left_out (Social & Academic Behavior): exact match = 5 pts
+            if _safe_float(my_c.get('feel_left_out'), 0) == _safe_float(other_c.get('feel_left_out'), 0):
                 score += w['feel_left_out']
 
         # ── 5. Communication Preference ─────────────────────────────────────
@@ -688,6 +684,152 @@ def find_my_group():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": f"Find-my-group failed: {str(e)}"}), 500
+
+
+# ==============================
+# TEST SCORING ENDPOINT
+# ==============================
+
+@app.route('/test-scoring', methods=['POST'])
+def test_scoring():
+    """
+    Debug endpoint: returns a full per-category score breakdown between two users.
+    POST body: { "user_id_a": <int>, "user_id_b": <int> }
+    """
+    import json as _json
+
+    def _pl(val):
+        if isinstance(val, list): return val
+        try:
+            p = _json.loads(val) if isinstance(val, str) and val else []
+            return p if isinstance(p, list) else []
+        except Exception: return []
+
+    def _sf(val, default=0.0):
+        try: return float(val) if val is not None else default
+        except (TypeError, ValueError): return default
+
+    def _ss(val):
+        if val is None: return None
+        try:
+            if pd.isna(val): return None
+        except Exception: pass
+        s = str(val).strip()
+        return None if s.lower() in ['', 'none', 'null', 'nan'] else s
+
+    try:
+        data = request.get_json()
+        if not data or 'user_id_a' not in data or 'user_id_b' not in data:
+            return jsonify({"error": "Missing user_id_a or user_id_b"}), 400
+
+        uid_a = int(data['user_id_a'])
+        uid_b = int(data['user_id_b'])
+
+        conn = get_db_connection()
+        df_p = pd.read_sql("""
+            SELECT sp.user_id, sp.faculty, sp.al_stream, sp.learning_style,
+                   sp.intro_extro, sp.stress_level, sp.overwhelmed,
+                   sp.social_setting, sp.top_interests, sp.communication_methods
+            FROM student_profiles sp WHERE sp.user_id IN (%s, %s)
+        """, conn, params=(uid_a, uid_b))
+
+        df_c = pd.read_sql("""
+            SELECT wc.user_id, wc.mood, wc.feel_left_out
+            FROM weekly_checkins wc
+            INNER JOIN (
+                SELECT user_id, MAX(week_start) AS latest_week
+                FROM weekly_checkins WHERE user_id IN (%s, %s) GROUP BY user_id
+            ) latest ON wc.user_id = latest.user_id AND wc.week_start = latest.latest_week
+        """, conn, params=(uid_a, uid_b))
+        conn.close()
+
+        if len(df_p) < 2:
+            return jsonify({"error": "One or both users not found in student_profiles"}), 404
+
+        profiles = {int(r['user_id']): r.to_dict() for _, r in df_p.iterrows()}
+        checkins = {int(r['user_id']): r.to_dict() for _, r in df_c.iterrows()}
+
+        a, b = profiles[uid_a], profiles[uid_b]
+        ca, cb = checkins.get(uid_a), checkins.get(uid_b)
+
+        breakdown = {}
+        total = 0.0
+
+        # 1. Interest & Hobby (25%)
+        ia = _pl(a.get('top_interests')); ib = _pl(b.get('top_interests'))
+        common_i = len(set(ia) & set(ib)); max_i = max(len(ia), 1)
+        i_pts = round((common_i / max_i) * 15, 2)
+        ls_match = _ss(a.get('learning_style')) == _ss(b.get('learning_style'))
+        ls_pts = 10 if ls_match else 0
+        breakdown['1_interest_hobby'] = {
+            'interests_common': common_i, 'interests_max': max_i,
+            'interest_pts': i_pts, 'learning_style_match': ls_match, 'learning_style_pts': ls_pts,
+            'subtotal': round(i_pts + ls_pts, 2)
+        }; total += i_pts + ls_pts
+
+        # 2. Academic (20%)
+        f_match = _ss(a.get('faculty')) == _ss(b.get('faculty'))
+        al_match = _ss(a.get('al_stream')) == _ss(b.get('al_stream'))
+        f_pts = 10 if f_match else 0; al_pts = 10 if al_match else 0
+        breakdown['2_academic'] = {
+            'faculty_a': _ss(a.get('faculty')), 'faculty_b': _ss(b.get('faculty')), 'faculty_match': f_match, 'faculty_pts': f_pts,
+            'al_stream_a': _ss(a.get('al_stream')), 'al_stream_b': _ss(b.get('al_stream')), 'al_stream_match': al_match, 'al_stream_pts': al_pts,
+            'subtotal': f_pts + al_pts
+        }; total += f_pts + al_pts
+
+        # 3. Personality (20%)
+        ie_a = _sf(a.get('intro_extro'), 5); ie_b = _sf(b.get('intro_extro'), 5)
+        ie_match = (ie_a == ie_b); ie_pts = 10 if ie_match else 0
+        sl_match = _ss(a.get('stress_level')) == _ss(b.get('stress_level')); sl_pts = 10 if sl_match else 0
+        breakdown['3_personality'] = {
+            'intro_extro_a': ie_a, 'intro_extro_b': ie_b, 'intro_extro_match': ie_match, 'intro_extro_pts': ie_pts,
+            'stress_level_a': _ss(a.get('stress_level')), 'stress_level_b': _ss(b.get('stress_level')), 'stress_level_match': sl_match, 'stress_level_pts': sl_pts,
+            'subtotal': ie_pts + sl_pts
+        }; total += ie_pts + sl_pts
+
+        # 4. Emotional & Wellbeing (15%)
+        ow_a = _sf(a.get('overwhelmed'), 3); ow_b = _sf(b.get('overwhelmed'), 3)
+        ow_match = (ow_a == ow_b); ow_pts = 5 if ow_match else 0
+        mood_match = flo_match = False; mood_pts = flo_pts = 0
+        if ca and cb:
+            mood_match = _sf(ca.get('mood'), 0) == _sf(cb.get('mood'), 0); mood_pts = 5 if mood_match else 0
+            flo_match = _sf(ca.get('feel_left_out'), 0) == _sf(cb.get('feel_left_out'), 0); flo_pts = 5 if flo_match else 0
+        breakdown['4_emotional_wellbeing'] = {
+            'overwhelmed_a': ow_a, 'overwhelmed_b': ow_b, 'overwhelmed_match': ow_match, 'overwhelmed_pts': ow_pts,
+            'checkin_a_found': ca is not None, 'checkin_b_found': cb is not None,
+            'mood_a': ca.get('mood') if ca else None, 'mood_b': cb.get('mood') if cb else None,
+            'mood_match': mood_match, 'mood_pts': mood_pts,
+            'feel_left_out_a': ca.get('feel_left_out') if ca else None, 'feel_left_out_b': cb.get('feel_left_out') if cb else None,
+            'feel_left_out_match': flo_match, 'feel_left_out_pts': flo_pts,
+            'subtotal': ow_pts + mood_pts + flo_pts
+        }; total += ow_pts + mood_pts + flo_pts
+
+        # 5. Communication (10%)
+        ca_ = set(_pl(a.get('communication_methods'))); cb_ = set(_pl(b.get('communication_methods')))
+        overlap = list(ca_ & cb_); comm_pts = 10 if overlap else 0
+        breakdown['5_communication'] = {
+            'methods_a': list(ca_), 'methods_b': list(cb_), 'overlap': overlap, 'comm_pts': comm_pts, 'subtotal': comm_pts
+        }; total += comm_pts
+
+        # 6. Social (10%)
+        soc_match = _ss(a.get('social_setting')) == _ss(b.get('social_setting')); soc_pts = 10 if soc_match else 0
+        breakdown['6_social'] = {
+            'social_setting_a': _ss(a.get('social_setting')), 'social_setting_b': _ss(b.get('social_setting')),
+            'social_setting_match': soc_match, 'social_pts': soc_pts, 'subtotal': soc_pts
+        }; total += soc_pts
+
+        return jsonify({
+            'user_id_a': uid_a, 'user_id_b': uid_b,
+            'total_score': round(total, 1), 'max_possible': 100,
+            'breakdown': breakdown
+        })
+
+    except pymysql.Error as e:
+        traceback.print_exc()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": f"Test scoring failed: {str(e)}"}), 500
 
 
 if __name__ == "__main__":

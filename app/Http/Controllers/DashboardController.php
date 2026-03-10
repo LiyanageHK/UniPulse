@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WeeklyChecking;
 use App\Models\WeeklyCheckin;
 use App\Models\KpiSnapshot;
 use App\Services\AiRecommender;
@@ -9,6 +10,8 @@ use Carbon\Carbon;
 use App\Models\Conversation;
 use App\Models\Feedback;
 use App\Models\Message;
+use App\Models\StudentProfile;
+use App\Models\PeerRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -109,9 +112,36 @@ class DashboardController extends Controller
             ->orderBy('week_start', 'asc')
             ->get();
 
-        // ✅ STEP 8 — AI Recommendation
+        // Build risk and peer‑matching histories from the snapshots. These are used
+        // by the dashboard comparison graph.
+        
+        // Map emotional status KPI to a risk scale for the graph where
+        // 1 = Low risk and 5 = High risk. Emotional KPI is 1..5 where higher
+        // values indicate better emotional status (lower risk), so invert it.
+        $riskHistory = $kpiHistory->map(function ($snap) {
+            // riskForGraph = 6 - emotional_kpi
+            // emotional_kpi 5 (low risk) -> graph 1 (low risk)
+            // emotional_kpi 1 (high risk) -> graph 5 (high risk)
+            return 6 - (int) ($snap->emotional_kpi ?? 3);
+        });
+
+        // Get actual peer count from available matches for the user
+        $userProfile = $user->profile;
+        $peerCount = 0;
+        
+        if ($userProfile) {
+            $allProfiles = StudentProfile::where('user_id', '!=', $user->id)->get();
+            $peerCount = $allProfiles->count();
+        }
+        
+        // Peer history: show available peer count consistently (since it's current availability)
+        // use the raw count so zeros are reflected too
+        $peerHistory = $kpiHistory->map(fn() => $peerCount);
+
         $aiRecommender = new AiRecommender();
 
+
+        // ✅ STEP 8 — AI Recommendation
         if ($kpiData['emotionalScore'] <= 2.0) {
             $recommendation = [
                 'type' => 'risk_detection',
@@ -141,6 +171,9 @@ class DashboardController extends Controller
             'archivedChatsCount' => $archivedChatsCount,
             'lastChatTime' => $lastChatTime,
             'totalCrisisFlags' => $totalCrisisFlags,
+            // Comparison graph data
+            'riskHistory' => $riskHistory,
+            'peerHistory' => $peerHistory,
         ]);
 
     }

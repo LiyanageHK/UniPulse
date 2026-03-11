@@ -102,45 +102,14 @@ class MemoryManagementService
      */
     protected function findSimilarMemory(User $user, string $key, string $value, string $category): ?Memory
     {
-        // First, try exact key match in same category
+        // Only deduplicate on exact key + category match (same fact being restated).
+        // Never merge different memories just because embeddings are similar.
         $exactMatch = Memory::where('user_id', $user->id)
             ->where('memory_key', $key)
             ->where('category', $category)
             ->first();
 
-        if ($exactMatch) {
-            return $exactMatch;
-        }
-
-        // Second, try semantic similarity using embeddings
-        $newEmbedding = $this->embeddingService->generateEmbedding($value);
-        
-        if (!$newEmbedding) {
-            return null;
-        }
-
-        $memories = Memory::where('user_id', $user->id)
-            ->where('category', $category)
-            ->whereNotNull('embedding')
-            ->get();
-
-        foreach ($memories as $memory) {
-            $similarity = $this->embeddingService->cosineSimilarity(
-                $newEmbedding,
-                $memory->embedding
-            );
-
-            // If very similar (>0.85), consider it the same memory
-            if ($similarity > 0.85) {
-                Log::info('Found similar memory via embedding', [
-                    'existing_memory_id' => $memory->id,
-                    'similarity' => $similarity
-                ]);
-                return $memory;
-            }
-        }
-
-        return null;
+        return $exactMatch;
     }
 
     /**
@@ -259,8 +228,8 @@ class MemoryManagementService
                 'embedding_dimensions' => count($embedding),
             ]);
 
-            // Dual-write to Pinecone
-            $this->pinecone->upsertAsync('mem_' . $memory->id, $embedding, [
+            // Sync write to Pinecone (memories are small — no need to defer)
+            $this->pinecone->upsert('mem_' . $memory->id, $embedding, [
                 'user_id'          => (int) $memory->user_id,
                 'type'             => 'memory',
                 'category'         => $memory->category,

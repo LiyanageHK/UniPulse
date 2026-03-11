@@ -233,22 +233,24 @@ class AiChatService
         // 7. Background jobs — memory extraction + embedding.
         //    Dispatched to Redis queue when worker is running; falls back to sync on 'sync' driver.
 
-        // Skip extraction for very short messages (greetings, "ok", etc. — nothing to extract)
         $contentLength = strlen(trim($userMessageModel->content));
         $msgContent = $userMessageModel->content;
 
-        // Three triggers for memory extraction:
-        // 1. Throttle: every 2nd message in the conversation (catches general context)
-        // 2. Explicit: student says "save that", "remember this", etc.
-        // 3. Disclosure: student shares personal info — "I like X", "my goal is Y", "I'm studying Z"
-        $userMsgCount = $conversation->messages()->where('role', 'user')->count();
+        // Memory extraction triggers — ordered by priority:
+        // 1. Explicit: student says "save that", "remember this", etc.  → ALWAYS extract
+        // 2. Disclosure: student shares personal info ("I like X", "my goal is Y") → ALWAYS extract
+        // 3. Periodic: every 3rd user message with enough content   → catches general context
         $isExplicit = $this->memoryExtraction->hasExplicitSaveIntent($msgContent);
         $isDisclosure = $this->memoryExtraction->hasPersonalDisclosure($msgContent);
 
-        $shouldExtract = $contentLength >= 15   // lower bar — short disclosures like "I love music" count
-            && ($isExplicit
-                || $isDisclosure
-                || ($contentLength >= 40 && $userMsgCount % 2 === 0));
+        // Explicit intent and personal disclosures bypass ALL length/throttle checks
+        if ($isExplicit || $isDisclosure) {
+            $shouldExtract = true;
+        } else {
+            // Periodic extraction for longer messages (general context)
+            $userMsgCount = $conversation->messages()->where('role', 'user')->count();
+            $shouldExtract = $contentLength >= 40 && $userMsgCount % 3 === 0;
+        }
 
         $queueDriver = config('queue.default', 'sync');
 

@@ -32,6 +32,15 @@ class MemoryExtractionService
         'memorize',
         'remember my',
         'save my',
+        'write that down',
+        'keep that',
+        'keep this',
+        'please remember',
+        'can you remember',
+        'you should know',
+        'i want you to know',
+        'i want you to remember',
+        'remember i',
     ];
 
     // Patterns that signal the student is sharing something personal worth remembering.
@@ -42,6 +51,19 @@ class MemoryExtractionService
         'my favourite', 'my favorite', 'i\'m a fan of', 'i\'m into', 'i\'m passionate about',
         // Dislikes
         'i hate', 'i dislike', 'i don\'t like', 'i can\'t stand',
+        // Specific remembering requests
+        'my name is', 'my age is', 'i\'m called', 'call me',
+        'my birthday', 'my hobby is', 'my hobbies are',
+        'i\'m interested in', 'i am interested in',
+        'i\'m working on', 'i am working on',
+        'i need to', 'i have to', 'i must',
+        'i believe', 'i think that', 'i feel like',
+        'my pet', 'my dog', 'my cat',
+        'i\'m learning', 'i am learning', 'i started',
+        'i moved to', 'i transferred',
+        'i\'m taking', 'i am taking',
+        'my project', 'my assignment', 'my thesis',
+        'i work at', 'i volunteer', 'i intern',
         // Goals / aspirations
         'i want to be', 'i want to become', 'i want to do', 'i want to study',
         'my goal is', 'my dream is', 'i plan to', 'i\'m planning to',
@@ -111,8 +133,8 @@ class MemoryExtractionService
     {
         $lower = strtolower(trim($message));
 
-        // Too short to be meaningful
-        if (strlen($lower) < 10) {
+        // Only skip truly empty/trivial input (1-2 chars like "ok")
+        if (strlen($lower) < 5) {
             return false;
         }
 
@@ -127,7 +149,8 @@ class MemoryExtractionService
 
     /**
      * Extract memories from a conversation message.
-     * Uses AI to identify important information worth remembering.
+     * Rule-based extraction runs FIRST (instant, no API call).
+     * AI extraction is only used as fallback for complex messages.
      */
     public function extractMemoriesFromMessage(Message $message): array
     {
@@ -138,16 +161,34 @@ class MemoryExtractionService
             return [];
         }
 
-        // Check for explicit save intent or personal disclosure
         $hasExplicitIntent  = $this->hasExplicitSaveIntent($message->content);
         $hasDisclosure      = $this->hasPersonalDisclosure($message->content);
 
-        // When triggered by a direct disclosure ("I love X", "my goal is Y"), focus extraction
-        // on just that message — the broader context window pulls in unrelated emotional history.
+        // ── RULE-BASED FIRST (no API call needed) ──
+        // For disclosures like "I like X", "my goal is Y" — extract locally.
+        // Instant, free, and immune to rate limits.
+        $ruleMemories = $this->extractMemoryByRules($message);
+        if (!empty($ruleMemories)) {
+            Log::info('Memory extracted via rules (no AI call)', [
+                'message_id' => $message->id,
+                'user_id' => $user->id,
+                'count' => count($ruleMemories),
+            ]);
+
+            if ($hasExplicitIntent) {
+                foreach ($ruleMemories as &$memory) {
+                    $memory['importance'] = min(1.0, $memory['importance'] + 0.2);
+                }
+                unset($memory);
+            }
+
+            return $ruleMemories;
+        }
+
+        // ── AI EXTRACTION (only when rules didn't match) ──
         if ($hasDisclosure && !$hasExplicitIntent) {
             $recentMessages = [['role' => 'user', 'content' => $message->content]];
         } else {
-            // General extraction: use last 5 messages for context
             $conversation   = $message->conversation;
             $recentMessages = $conversation->messages()
                 ->where('id', '<=', $message->id)
@@ -159,21 +200,18 @@ class MemoryExtractionService
                 ->toArray();
         }
 
-        // Build extraction prompt
         $extractionPrompt = $this->buildExtractionPrompt($recentMessages, $hasExplicitIntent, $hasDisclosure);
 
         try {
             $response = $this->callAI($extractionPrompt);
 
             if (!$response) {
-                Log::warning('No AI response for memory extraction', ['message_id' => $message->id]);
+                Log::warning('AI memory extraction returned nothing', ['message_id' => $message->id]);
                 return [];
             }
 
-            // Parse the AI response to extract memories
             $extractedMemories = $this->parseMemoriesFromResponse($response, $message);
 
-            // Boost importance for explicit save requests
             if ($hasExplicitIntent && !empty($extractedMemories)) {
                 foreach ($extractedMemories as &$memory) {
                     $memory['importance'] = min(1.0, $memory['importance'] + 0.2);
@@ -181,7 +219,7 @@ class MemoryExtractionService
                 unset($memory);
             }
             
-            Log::info('Extracted memories from message', [
+            Log::info('Extracted memories via AI', [
                 'message_id' => $message->id,
                 'user_id' => $user->id,
                 'count' => count($extractedMemories),
@@ -405,6 +443,18 @@ PROMPT;
                 return $response->json('choices.0.message.content');
             }
 
+            // Retry once after delay on rate-limit (429)
+            if ($response->status() === 429) {
+                Log::warning('Memory extraction rate-limited (429), retrying after 5s');
+                sleep(5);
+                $retryResponse = Http::withHeaders($headers)
+                    ->timeout(30)
+                    ->post($this->apiUrl, $requestBody);
+                if ($retryResponse->successful()) {
+                    return $retryResponse->json('choices.0.message.content');
+                }
+            }
+
             // Detailed logging for Unauthorized errors
             $status = $response->status();
             $body = $response->body();
@@ -457,5 +507,107 @@ PROMPT;
 
         // Cap at 1.0
         return min(1.0, $baseScore);
+    }
+
+    /**
+     * Rule-based memory extraction fallback.
+     * Parses the message locally using patterns — no AI call needed.
+     * Guarantees a memory is saved even when the LLM is rate-limited or down.
+     */
+    protected function extractMemoryByRules(Message $message): array
+    {
+        $content = $message->content;
+        $lower = strtolower(trim($content));
+
+        // Map patterns → (category, key_prefix)
+        $rules = [
+            // Preferences — likes
+            '/\bi (?:really )?(?:like|love|enjoy)\b\s+(.+)/i' => ['preferences', 'likes'],
+            '/\bi\'?m (?:a fan of|into|passionate about)\b\s+(.+)/i' => ['preferences', 'likes'],
+            '/\bmy favou?rite\b\s+(.+)/i' => ['preferences', 'favourite'],
+            // Preferences — dislikes
+            '/\bi (?:hate|dislike|don\'?t like|can\'?t stand)\b\s+(.+)/i' => ['preferences', 'dislikes'],
+            // Goals
+            '/\bi (?:want to be|want to become|plan to|hope to)\b\s+(.+)/i' => ['goals', 'goal'],
+            '/\bmy (?:goal|dream) is\b\s+(.+)/i' => ['goals', 'goal'],
+            // Academic
+            '/\bi\'?m (?:studying|taking|learning)\b\s+(.+)/i' => ['academic', 'studying'],
+            '/\bmy (?:major|course|degree) is\b\s+(.+)/i' => ['academic', 'major'],
+            '/\bmy (?:project|thesis|assignment) is\b\s+(.+)/i' => ['academic', 'project'],
+            // Personal info
+            '/\bmy name is\b\s+(.+)/i' => ['personal_info', 'name'],
+            '/\bcall me\b\s+(.+)/i' => ['personal_info', 'name'],
+            '/\bi\'?m from\b\s+(.+)/i' => ['personal_info', 'from'],
+            '/\bi live (?:in|at)\b\s+(.+)/i' => ['personal_info', 'location'],
+            '/\bmy birthday\b\s+(.+)/i' => ['personal_info', 'birthday'],
+            // Hobbies / activities
+            '/\bi (?:play|sing|draw|paint|code|program|read|write|run|exercise|work out|watch|listen to)\b\s*(.*)/i' => ['preferences', 'hobby'],
+            // Relationships
+            '/\bmy (?:family|parents|brother|sister|friend|boyfriend|girlfriend)\b\s+(.+)/i' => ['relationships', 'relationship'],
+            // Experiences
+            '/\bi (?:started|moved to|transferred)\b\s+(.+)/i' => ['experiences', 'experience'],
+            '/\bi work at\b\s+(.+)/i' => ['experiences', 'work'],
+            '/\bi (?:volunteer|intern)\b\s+(.+)/i' => ['experiences', 'experience'],
+        ];
+
+        foreach ($rules as $pattern => [$category, $keyPrefix]) {
+            if (preg_match($pattern, $content, $matches)) {
+                // Clean up matched value — strip trailing punctuation
+                $value = trim(preg_replace('/[.!?]+$/', '', $matches[0]));
+                $detail = trim(preg_replace('/[.!?]+$/', '', $matches[1] ?? ''));
+
+                // Build a snake_case key from the captured detail
+                $keyWords = preg_replace('/[^a-z0-9\s]/', '', strtolower($detail));
+                $keyWords = preg_split('/\s+/', $keyWords, 4); // max 3 words for key
+                $key = $keyPrefix . '_' . implode('_', array_filter($keyWords));
+                $key = substr($key, 0, 60); // keep keys reasonable length
+
+                $memory = [
+                    'category' => $category,
+                    'key' => $key,
+                    'value' => ucfirst($value),
+                    'importance' => 0.75,
+                    'source_message_id' => $message->id,
+                    'source_conversation_id' => $message->conversation_id,
+                ];
+
+                Log::info('Rule-based memory extracted (AI fallback)', [
+                    'message_id' => $message->id,
+                    'user_id' => $message->user_id,
+                    'category' => $category,
+                    'key' => $key,
+                    'value' => $value,
+                ]);
+
+                return [$memory];
+            }
+        }
+
+        // No pattern matched — store the raw statement as a general preference
+        // Only if the message is clearly a disclosure (already validated upstream)
+        if ($this->hasPersonalDisclosure($content)) {
+            $cleanContent = trim(preg_replace('/[.!?]+$/', '', $content));
+            $keyWords = preg_replace('/[^a-z0-9\s]/', '', strtolower($cleanContent));
+            $keyWords = preg_split('/\s+/', $keyWords, 5);
+            $key = 'said_' . implode('_', array_filter($keyWords));
+            $key = substr($key, 0, 60);
+
+            Log::info('Rule-based memory extracted (generic disclosure)', [
+                'message_id' => $message->id,
+                'user_id' => $message->user_id,
+                'value' => $cleanContent,
+            ]);
+
+            return [[
+                'category' => 'preferences',
+                'key' => $key,
+                'value' => ucfirst($cleanContent),
+                'importance' => 0.65,
+                'source_message_id' => $message->id,
+                'source_conversation_id' => $message->conversation_id,
+            ]];
+        }
+
+        return [];
     }
 }

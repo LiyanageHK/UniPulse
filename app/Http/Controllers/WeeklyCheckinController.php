@@ -13,29 +13,36 @@ use App\Models\WeeklyChecking;
 class WeeklyCheckinController extends Controller
 {
     public function showForm()
-{
-    $user = Auth::user();
-    $now = Carbon::now();
+    {
+        $user = Auth::user();
+        $now = Carbon::now();
 
-    // 1. Skip weekly check-in during the first 7 days after onboarding
-    $onboardingDate = Carbon::parse($user->created_at);
+        // Skip if onboarding not completed
+        if (!$user->onboarding_completed) {
+            return redirect()->route('onboarding.step1');
+        }
 
-    if ($onboardingDate->diffInDays($now) < 7) {
-        return redirect()->route('dashboard');
+        // 1. Skip weekly check-in during the first 7 days after onboarding
+        $onboardingDate = Carbon::parse($user->created_at);
+
+        if ($onboardingDate->diffInDays($now) < 7) {
+            return redirect()->route('dashboard');
+        }
+
+        // 2. Check if user has already completed check-in for current week
+        $currentWeekStart = $now->copy()->startOfWeek()->toDateString();
+
+        $currentWeekCheckin = WeeklyCheckin::where('user_id', $user->id)
+            ->where('week_start', $currentWeekStart)
+            ->first();
+
+        if ($currentWeekCheckin) {
+            return redirect()->route('dashboard')
+                ->with('info', 'You have already submitted your weekly check-in for this week.');
+        }
+
+        return view('weekly_checkin.form');
     }
-
-    // 2. Enforce rolling 7-day rule after onboarding week
-    $lastCheckin = WeeklyCheckin::where('user_id', $user->id)
-        ->orderBy('week_start', 'desc')
-        ->first();
-
-    if ($lastCheckin && Carbon::parse($lastCheckin->week_start)->gte($now->subDays(7))) {
-        return redirect()->route('dashboard')
-            ->with('info', 'You have already submitted your weekly check-in recently.');
-    }
-
-    return view('weekly_checkin.form');
-}
 
     public function submitForm(Request $request)
     {

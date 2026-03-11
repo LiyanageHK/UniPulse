@@ -145,6 +145,11 @@ class User extends Authenticatable
         return $this->hasMany(Group::class, 'admin_id');
     }
 
+    public function peerGroups()
+    {
+        return $this->hasMany(PeerGroup::class);
+    }
+
 
 
     public function weeklyCheckins()
@@ -157,4 +162,18 @@ public function latestWeeklyCheckin()
     return $this->hasOne(WeeklyCheckin::class)->latestOfMany();
 }
 
+    public function journals()
+    {
+        return $this->hasMany(Journal::class);
+    }
+
+    public function weeklySummaries()
+    {
+        return $this->hasMany(WeeklySummary::class);
+    }
+
+    public function latestWeeklySummary()
+    {
+        return $this->hasOne(WeeklySummary::class)->latestOfMany();
+    }
 }

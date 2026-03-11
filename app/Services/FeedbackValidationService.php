@@ -15,18 +15,20 @@ class FeedbackValidationService
     public function __construct()
     {
         $this->provider = config('services.openai.provider', 'azure');
-        $this->model = config('services.openai.model', 'gpt-4.1');
         
         switch ($this->provider) {
             case 'azure':
+                $this->model = config('services.openai.model', 'gpt-4.1');
                 $this->apiKey = config('services.openai.azure_api_key');
                 $this->apiUrl = config('services.openai.azure_chat_url');
                 break;
             case 'github':
+                $this->model = config('services.openai.github_chat_model', 'openai/gpt-4.1');
                 $this->apiKey = config('services.openai.github_token');
                 $this->apiUrl = config('services.openai.github_chat_url');
                 break;
             default:
+                $this->model = config('services.openai.model', 'gpt-4.1');
                 $this->apiKey = config('services.openai.api_key');
                 $this->apiUrl = config('services.openai.api_url');
         }
@@ -144,7 +146,22 @@ PROMPT;
             return $response->json('choices.0.message.content');
         }
 
-        Log::warning('LLM validation API error', ['status' => $response->status(), 'body' => $response->body()]);
+        // Detailed logging for Unauthorized errors
+        $status = $response->status();
+        $body = $response->body();
+        $errorType = null;
+        if (strpos($body, 'Unauthorized') !== false || $status === 401) {
+            $errorType = 'Unauthorized';
+        }
+        Log::warning('LLM validation API error', [
+            'status' => $status,
+            'body' => $body,
+            'provider' => $this->provider,
+            'model' => $this->model,
+            'api_url' => $this->apiUrl,
+            'api_key_present' => !empty($this->apiKey),
+            'error_type' => $errorType,
+        ]);
         return null;
     }
 

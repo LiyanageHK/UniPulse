@@ -99,11 +99,9 @@ class OnBoardingPoornimaController extends Controller
 
             DB::commit();
 
-            if(true){
-                return redirect()->route('on-boarding-success');
-            }
-
-            return redirect()->route('dashboard');
+            return redirect()->route('dashboard')
+                ->with('show_journal_modal', true)
+                ->with('success', 'Profile complete! Write your first journal entry to get your risk profile.');
 
 
         } catch (\Exception $e) {

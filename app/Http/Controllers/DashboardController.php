@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\WeeklyChecking;
 use App\Models\WeeklyCheckin;
 use App\Models\KpiSnapshot;
+use App\Models\Journal;
 use App\Services\AiRecommender;
+use App\Services\JournalAccessService;
 use Carbon\Carbon;
 use App\Models\Conversation;
 use App\Models\Feedback;
@@ -17,6 +19,13 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected JournalAccessService $journalAccess;
+
+    public function __construct(JournalAccessService $journalAccess)
+    {
+        $this->journalAccess = $journalAccess;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -36,7 +45,7 @@ class DashboardController extends Controller
             ->orderBy('week_start', 'desc')
             ->first();
 
-        // ✅ STEP 3 — Conversational Support Stats
+        // ✅ STEP 4 — Conversational Support Stats
         $activeChatsCount = Conversation::where('user_id', $user->id)->active()->count();
         $archivedChatsCount = Conversation::where('user_id', $user->id)->archived()->count();
         $totalCrisisFlags = Conversation::where('user_id', $user->id)->sum('crisis_flags_count');
@@ -54,6 +63,11 @@ class DashboardController extends Controller
             $onboardAt = $user->onboarding_completed_at ?? $user->created_at;
             $availableDate = Carbon::parse($onboardAt)->addWeek()->format('j M Y');
 
+            $hasJournals      = Journal::where('user_id', $user->id)->exists();
+            $isFirstJournal   = !$hasJournals;
+            // week_end based: use JournalAccessService (NOT created_at)
+            $showJournalModal = $this->journalAccess->shouldShowJournalModal($user->id);
+
             return view('dashboard', [
                 'user' => $user,
                 'motivationScore' => null,
@@ -66,6 +80,8 @@ class DashboardController extends Controller
                 'aiRecommendation' => null,
                 'isFirstWeek' => true,
                 'kpiAvailableDate' => $availableDate,
+                'showJournalModal' => $showJournalModal,
+                'isFirstJournal'   => $isFirstJournal ?? false,
                 // Chat Stats
                 'activeChatsCount' => $activeChatsCount,
                 'archivedChatsCount' => $archivedChatsCount,
@@ -145,6 +161,10 @@ class DashboardController extends Controller
             );
         }
 
+        $isFirstJournal   = !Journal::where('user_id', $user->id)->exists();
+        // week_end based: use JournalAccessService (NOT created_at or entry_date)
+        $showJournalModal = $this->journalAccess->shouldShowJournalModal($user->id);
+
         return view('dashboard', [
             'user' => $user,
             'motivationScore' => $kpiData['motivationScore'],
@@ -155,6 +175,8 @@ class DashboardController extends Controller
             'emotionalInterpretation' => $kpiData['emotionalInterpretation'],
             'kpiHistory' => $kpiHistory,
             'aiRecommendation' => $recommendation,
+            'showJournalModal' => $showJournalModal,
+            'isFirstJournal'   => $isFirstJournal,
             // Chat Stats
             'activeChatsCount' => $activeChatsCount,
             'archivedChatsCount' => $archivedChatsCount,

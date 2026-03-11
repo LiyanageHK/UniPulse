@@ -24,7 +24,8 @@
         {{-- Flash Messages --}}
         @if (session('success'))
             <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-6">
-                {{ session('success') }}</div>
+                {{ session('success') }}
+            </div>
         @endif
 
         @if (!$riskProfile)
@@ -62,7 +63,8 @@
                             <p class="text-sm text-gray-500">LRI Score: <span
                                     class="font-semibold text-gray-700">{{ $riskProfile['lri_score'] }}</span></p>
                             <p class="text-xs text-gray-400">Week #{{ $riskProfile['week_index'] }} &mdash;
-                                {{ $riskProfile['week_start'] }} to {{ $riskProfile['week_end'] }}</p>
+                                {{ $riskProfile['week_start'] }} to {{ $riskProfile['week_end'] }}
+                            </p>
                         </div>
                     </div>
                     <p class="text-sm text-gray-600 font-medium">{{ $riskProfile['risk_message'] }}</p>
@@ -243,11 +245,11 @@
                 btnText.textContent = 'Generating...';
                 icon.classList.add('animate-spin');
 
-                fetch('{{ route("risk.api.suggestions") }}', {
+                fetch('{{ route("risk.api.suggestions") }}?t=' + new Date().getTime(), {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     credentials: 'same-origin',
                 })
@@ -265,25 +267,25 @@
 
                         if (suggestions.length > 0) {
                             container.innerHTML = suggestions.map((s, i) => `
-                                <div class="flex items-start gap-4 p-5 rounded-xl border bg-gradient-to-r ${gradients[i] || gradients[0]} transition-all hover:shadow-md"
-                                     style="animation: fadeInUp 0.4s ease-out ${i * 0.15}s both;">
-                                    <div class="flex-shrink-0 w-14 h-14 ${iconBgs[i] || iconBgs[0]} rounded-xl flex items-center justify-center text-2xl">
-                                        ${icons[i] || '💡'}
-                                    </div>
-                                    <div class="flex-1">
-                                        <span class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1 block">${labels[i] || 'Suggestion'}</span>
-                                        <p class="text-gray-700 leading-relaxed font-medium">${s}</p>
-                                    </div>
-                                </div>
-                            `).join('');
+                                        <div class="flex items-start gap-4 p-5 rounded-xl border bg-gradient-to-r ${gradients[i] || gradients[0]} transition-all hover:shadow-md"
+                                             style="animation: fadeInUp 0.4s ease-out ${i * 0.15}s both;">
+                                            <div class="flex-shrink-0 w-14 h-14 ${iconBgs[i] || iconBgs[0]} rounded-xl flex items-center justify-center text-2xl">
+                                                ${icons[i] || '💡'}
+                                            </div>
+                                            <div class="flex-1">
+                                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1 block">${labels[i] || 'Suggestion'}</span>
+                                                <p class="text-gray-700 leading-relaxed font-medium">${s}</p>
+                                            </div>
+                                        </div>
+                                    `).join('');
                         } else {
                             container.innerHTML = `
-                                <div class="text-center py-8 text-gray-400">
-                                    <div class="text-4xl mb-3">💡</div>
-                                    <p class="font-medium">No suggestions could be generated.</p>
-                                    <p class="text-sm mt-1">Please try again later.</p>
-                                </div>
-                            `;
+                                        <div class="text-center py-8 text-gray-400">
+                                            <div class="text-4xl mb-3">💡</div>
+                                            <p class="font-medium">No suggestions could be generated.</p>
+                                            <p class="text-sm mt-1">Please try again later.</p>
+                                        </div>
+                                    `;
                         }
                         container.classList.remove('hidden');
                         loading.classList.add('hidden');
@@ -291,11 +293,11 @@
                     .catch(err => {
                         console.error('Failed to refresh suggestions:', err);
                         container.innerHTML = `
-                            <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
-                                <span>⚠️</span>
-                                <span>Unable to refresh suggestions right now. Please try again later.</span>
-                            </div>
-                        `;
+                                    <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
+                                        <span>⚠️</span>
+                                        <span>Unable to refresh suggestions right now. Please try again later.</span>
+                                    </div>
+                                `;
                         container.classList.remove('hidden');
                         loading.classList.add('hidden');
                     })

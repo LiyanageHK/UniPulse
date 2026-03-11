@@ -88,18 +88,20 @@ return [
     ],
 
     'ai' => [
-        'base_url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8000'),
+        'base_url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8081'),
         'timeout' => env('AI_SERVICE_TIMEOUT', 15),  // per-attempt; total = timeout × (retries+1) must be < PHP max_execution_time
         'retries' => env('AI_SERVICE_RETRIES', 1),
     ],
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY', ''),
+    ],
+
     'pinecone' => [
-        'api_key'         => env('PINECONE_API_KEY'),
-        'index_host'      => env('PINECONE_INDEX_HOST'),       // e.g. 'https://your-index-xxxxx.svc.pinecone.io'
-        'namespace'       => env('PINECONE_NAMESPACE', 'unipulse'),
-        'enabled'         => env('PINECONE_ENABLED', false),    // Toggle Pinecone on/off (graceful fallback)
+        'api_key' => env('PINECONE_API_KEY'),
+        'index_host' => env('PINECONE_INDEX_HOST'),       // e.g. 'https://your-index-xxxxx.svc.pinecone.io'
+        'namespace' => env('PINECONE_NAMESPACE', 'unipulse'),
+        'enabled' => env('PINECONE_ENABLED', false),    // Toggle Pinecone on/off (graceful fallback)
         'embedding_model' => env('PINECONE_EMBEDDING_MODEL', 'multilingual-e5-large'),
     ],
 

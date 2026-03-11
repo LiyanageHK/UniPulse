@@ -17,7 +17,7 @@ class AIService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.ai.base_url', 'http://127.0.0.1:8000');
+        $this->baseUrl = config('services.ai.base_url', 'http://127.0.0.1:8081');
         // Keep timeout low: (timeout × (retries+1)) + retries × 1s sleep must stay < PHP max_execution_time (60s)
         // Default: 15s × 2 attempts + 1s sleep = ~31s total — safely under 60s
         $this->timeout = config('services.ai.timeout', 15);

@@ -96,10 +96,10 @@ class DashboardController extends Controller
          * =====================================================
          */
 
-        // ✅ STEP 5 — Calculate KPIs from weekly check-in
+        // ✅ STEP 4 — Calculate KPIs from weekly check-in
         $kpiData = $this->calculateKPIsFromCheckin($lastCheckin);
 
-        // ✅ STEP 6 — Save / update current week snapshot
+        // ✅ STEP 5 — Save / update current week snapshot
         KpiSnapshot::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -112,7 +112,7 @@ class DashboardController extends Controller
             ]
         );
 
-        // ✅ STEP 7 — Load KPI history
+        // ✅ STEP 6 — Load KPI history
         $kpiHistory = KpiSnapshot::where('user_id', $user->id)
             ->orderBy('week_start', 'asc')
             ->get();
@@ -146,7 +146,7 @@ class DashboardController extends Controller
         $aiRecommender = new AiRecommender();
 
 
-        // ✅ STEP 8 — AI Recommendation
+        // ✅ STEP 7 — AI Recommendation
         if ($kpiData['emotionalScore'] <= 2.0) {
             $recommendation = [
                 'type' => 'risk_detection',

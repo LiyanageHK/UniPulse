@@ -132,12 +132,16 @@ class DashboardController extends Controller
 
         // Get actual peer count from available matches for the user
         $userProfile = $user->profile;
-        $peerCount = 0;
-        
-        if ($userProfile) {
-            $allProfiles = StudentProfile::where('user_id', '!=', $user->id)->get();
-            $peerCount = $allProfiles->count();
-        }
+$peerCount = 0;
+
+if ($userProfile) {
+    $peerCount = PeerRequest::where(function ($query) use ($user) {
+                    $query->where('sender_id', $user->id)
+                          ->orWhere('receiver_id', $user->id);
+                })
+                ->where('status', 'accepted')
+                ->count();
+}
         
         // Peer history: show available peer count consistently (since it's current availability)
         // use the raw count so zeros are reflected too

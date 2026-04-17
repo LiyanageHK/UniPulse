@@ -84,9 +84,14 @@
                     @endforeach
                 </div>
 
+                @php
+                    $from = request()->query('from');
+                    $backUrl = $from === 'ai-group' ? route('peer-matching.index') : route('peer-matchings');
+                    $backText = $from === 'ai-group' ? '← Back to AI Group' : '← Back to Matches';
+                @endphp
                 <div class="mt-6">
-                    <a href="{{ route('peer-matching.index') }}" class="text-purple-600 hover:underline">
-                        ← Back to Matches
+                    <a href="{{ $backUrl }}" class="text-purple-600 hover:underline">
+                        {{ $backText }}
                     </a>
                 </div>
 

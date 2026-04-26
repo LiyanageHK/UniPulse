@@ -85,7 +85,7 @@
 
 
                             <div class="mt-5 flex justify-between items-center">
-                                <a href="{{ route('profile.view', $match['user']->id) }}"
+                                <a href="{{ route('profile.view', ['id' => $match['user']->id, 'from' => 'suggestions']) }}"
                                     class="text-sm text-blue-600 hover:underline">
                                     View Profile
                                 </a>

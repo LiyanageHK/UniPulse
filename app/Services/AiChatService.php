@@ -12,17 +12,27 @@ use Illuminate\Support\Facades\Log;
 
 class AiChatService
 {
+    // API key used to authenticate requests to the selected AI provider.
     protected string $apiKey;
+    // The model name or deployment identifier used for chat generation.
     protected string $model;
+    // The endpoint URL used to send chat completion requests.
     protected string $apiUrl;
+    // Indicates which provider is currently active.
     protected string $provider;
 
+    // Service for retrieving relevant context from stored knowledge.
     protected RagRetrievalService $ragRetrieval;
+    // Service for detecting crisis-related content in messages.
     protected CrisisDetectionService $crisisDetection;
+    // Service for creating crisis alerts when red flags are detected.
     protected CrisisAlertService $crisisAlert;
+    // Service for recommending appropriate counselors.
     protected CounselorMatchingService $counselorMatching;
+    // Service for deciding whether message memory should be extracted.
     protected MemoryExtractionService $memoryExtraction;
 
+    // Constructor injects all required supporting services.
     public function __construct(
         RagRetrievalService $ragRetrieval,
         CrisisDetectionService $crisisDetection,
@@ -30,32 +40,49 @@ class AiChatService
         CounselorMatchingService $counselorMatching,
         MemoryExtractionService $memoryExtraction
     ) {
+        // Read the configured provider, defaulting to Azure.
         $this->provider = config('services.openai.provider', 'azure');
 
         // Set model, API key and URL based on provider
+        // Choose the correct model and endpoint based on the configured provider.
         switch ($this->provider) {
             case 'azure':
+                // Use Azure OpenAI configuration.
                 $this->model = config('services.openai.model', 'gpt-4.1');
+                // Load the Azure API key.
                 $this->apiKey = config('services.openai.azure_api_key');
+                // Load the Azure chat endpoint.
                 $this->apiUrl = config('services.openai.azure_chat_url');
                 break;
             case 'github':
+                // Use GitHub Models configuration.
                 $this->model = config('services.openai.github_chat_model', 'openai/gpt-4.1');
+                // Load the GitHub token.
                 $this->apiKey = config('services.openai.github_token');
+                // Load the GitHub chat endpoint.
                 $this->apiUrl = config('services.openai.github_chat_url');
                 break;
             default: // openai
+                // Use standard OpenAI configuration.
                 $this->model = config('services.openai.model', 'gpt-4.1');
+                // Load the OpenAI API key.
                 $this->apiKey = config('services.openai.api_key');
+                // Load the OpenAI API endpoint.
                 $this->apiUrl = config('services.openai.api_url');
         }
 
+        // Log the provider and model that were initialized.
         Log::info('AiChatService initialized', ['provider' => $this->provider, 'model' => $this->model]);
 
+        // Store the injected RAG retrieval service.
         $this->ragRetrieval = $ragRetrieval;
+        // Store the injected crisis detection service.
         $this->crisisDetection = $crisisDetection;
+        // Store the injected crisis alert service.
         $this->crisisAlert = $crisisAlert;
+        // Store the injected counselor matching service.
         $this->counselorMatching = $counselorMatching;
+        // Store the injected memory extraction service.
         $this->memoryExtraction = $memoryExtraction;
     }
 
@@ -64,14 +91,18 @@ class AiChatService
      */
     public function chat(User $user, Conversation $conversation, string $userMessage): array
     {
+        // Load chat-related configuration values.
         $chatConfig = config('services.openai.chat', []);
 
         // Strict chat isolation: Never pull past conversations into the current active conversation
+        // Disable past conversation context by default.
         $includePastConversations = false;
 
+        // Read the similarity threshold for the current conversation.
         $minSimilarity = (float) ($chatConfig['current_conversation_similarity'] ?? 0.4);
 
         // 1. Store user message
+        // Save the incoming user message to the database first.
         $userMessageModel = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
@@ -80,27 +111,36 @@ class AiChatService
         ]);
 
         // Update conversation
+        // Increase the message count and update the latest activity time.
         $conversation->update([
             'message_count' => $conversation->message_count + 1,
             'last_message_at' => now(),
         ]);
 
         // 2. Detect crisis indicators in user message
+        // Analyze the user message for crisis signals.
         $crisisFlags = $this->crisisDetection->analyzeMessage($userMessageModel);
 
         // Handle red flags: show default safe message FIRST, then AI conversational response
+        // Filter out red-flag detections.
         $redFlagsEarly = array_filter($crisisFlags, fn($f) => $f['severity'] === 'red');
+        // If red flags exist, trigger the crisis flow.
         if (!empty($redFlagsEarly)) {
             // Create crisis alerts for admin notifications
+            // Create alerts for each detected red flag.
             foreach ($redFlagsEarly as $flag) {
+                // Fetch the crisis flag record attached to the current message.
                 $crisisFlag = $conversation->crisisFlags()
                     ->where('message_id', $userMessageModel->id)
                     ->first();
+                // Create an alert only when a matching crisis flag exists.
                 if ($crisisFlag) {
+                    // Send the crisis flag to the alert service.
                     $this->crisisAlert->createCrisisAlert($crisisFlag);
                 }
             }
 
+            // Log that a red flag was detected.
             Log::warning('RED FLAG detected - sending default + AI response', [
                 'user_id' => $user->id,
                 'conversation_id' => $conversation->id,
@@ -108,7 +148,9 @@ class AiChatService
             ]);
 
             // Store the default safe message as first assistant response
+            // Build the immediate safety response shown to the user.
             $safeResponse = $this->getRedFlagSafeResponse();
+            // Save the safety response as an assistant message.
             $safeMessage = Message::create([
                 'conversation_id' => $conversation->id,
                 'role' => 'assistant',
@@ -120,9 +162,12 @@ class AiChatService
                 ],
                 'has_crisis_flags' => true,
             ]);
+            // Increment the conversation message count for the safety reply.
             $conversation->increment('message_count');
+            // Update the conversation's latest activity timestamp.
             $conversation->update(['last_message_at' => now()]);
 
+            // Prepare crisis response metadata for the frontend.
             $crisisResponse = [
                 'type' => 'crisis_red',
                 'severity' => 'red',
@@ -130,11 +175,13 @@ class AiChatService
                 'hotlines' => $this->getCrisisHotlines(),
             ];
 
+            // Attach the crisis response payload to the safe message.
             $metadata = $safeMessage->metadata ?? [];
             $metadata['crisis_response'] = $crisisResponse;
             $safeMessage->update(['metadata' => $metadata]);
 
             // Now generate AI conversational response (like a real friend)
+            // Retrieve contextual information for the message.
             $contextData = $this->ragRetrieval->getSmartContext(
                 $user,
                 $userMessage,
@@ -144,6 +191,7 @@ class AiChatService
                 $minSimilarity
             );
 
+            // Build the prompt messages for the AI request.
             $messages = $this->buildPrompt(
                 $user,
                 $conversation,
@@ -153,9 +201,12 @@ class AiChatService
                 $includePastConversations
             );
 
+            // Ask the model to generate a follow-up response.
             $aiResponse = $this->generateResponse($messages);
 
+            // If a follow-up response exists, store it.
             if ($aiResponse) {
+                // Save the generated assistant follow-up message.
                 $aiMessage = Message::create([
                     'conversation_id' => $conversation->id,
                     'role' => 'assistant',
@@ -167,10 +218,13 @@ class AiChatService
                         'follow_up_to_safe_response' => true,
                     ],
                 ]);
+                // Increase the conversation message count for the follow-up reply.
                 $conversation->increment('message_count');
+                // Refresh the latest activity timestamp again.
                 $conversation->update(['last_message_at' => now()]);
             }
 
+            // Return the crisis-safe response along with the follow-up AI reply.
             return [
                 'message' => $safeResponse,
                 'message_id' => $safeMessage->id,
@@ -186,6 +240,7 @@ class AiChatService
         }
 
         // 3. Get RAG context
+        // Retrieve relevant retrieval-augmented context for the current message.
         $contextData = $this->ragRetrieval->getSmartContext(
             $user,
             $userMessage,
@@ -196,6 +251,7 @@ class AiChatService
         );
 
         // 4. Build prompt with system instructions
+        // Build the full chat prompt using system instructions and context.
         $messages = $this->buildPrompt(
             $user,
             $conversation,
@@ -206,13 +262,16 @@ class AiChatService
         );
 
         // 5. Generate AI response
+        // Call the provider to generate a response.
         $aiResponse = $this->generateResponse($messages);
 
+        // If generation fails, use a fallback support message.
         if (!$aiResponse) {
             $aiResponse = "I apologize, but I'm having trouble processing your message right now. Please try again in a moment.";
         }
 
         // 6. Store AI response
+        // Save the assistant response in the database.
         $assistantMessage = Message::create([
             'conversation_id' => $conversation->id,
             'role' => 'assistant',
@@ -225,6 +284,7 @@ class AiChatService
         ]);
 
         // Update conversation with message count and last message timestamp
+        // Update the conversation statistics after storing the assistant message.
         $conversation->update([
             'message_count' => $conversation->message_count + 1,
             'last_message_at' => now(),
@@ -233,32 +293,45 @@ class AiChatService
         // 7. Background jobs — memory extraction + embedding.
         //    Dispatched to Redis queue when worker is running; falls back to sync on 'sync' driver.
 
+        // Measure the user message length for memory extraction decisions.
         $contentLength = strlen(trim($userMessageModel->content));
+        // Keep the raw user message text for intent checks.
         $msgContent = $userMessageModel->content;
 
         // Memory extraction triggers — ordered by priority:
         // 1. Explicit: student says "save that", "remember this", etc.  → ALWAYS extract
         // 2. Disclosure: student shares personal info ("I like X", "my goal is Y") → ALWAYS extract
         // 3. Periodic: every 3rd user message with enough content   → catches general context
+        // Check if the user explicitly asked to save something.
         $isExplicit = $this->memoryExtraction->hasExplicitSaveIntent($msgContent);
+        // Check if the user disclosed personal information.
         $isDisclosure = $this->memoryExtraction->hasPersonalDisclosure($msgContent);
 
         // Explicit intent and personal disclosures bypass ALL length/throttle checks
+        // Determine whether memory extraction should run.
         if ($isExplicit || $isDisclosure) {
+            // Always extract when the message clearly indicates a memory-worthy statement.
             $shouldExtract = true;
         } else {
             // Periodic extraction for longer messages (general context)
+            // Count the user's messages inside this conversation.
             $userMsgCount = $conversation->messages()->where('role', 'user')->count();
+            // Trigger periodic extraction based on length and cadence.
             $shouldExtract = $contentLength >= 40 && $userMsgCount % 3 === 0;
         }
 
+        // Read the active queue driver.
         $queueDriver = config('queue.default', 'sync');
 
+        // Dispatch memory extraction only when the rules allow it.
         if ($shouldExtract) {
+            // If the queue is synchronous, process immediately.
             if ($queueDriver === 'sync') {
                 // Sync driver: run inline so memories are saved immediately
+                // Dispatch the memory job synchronously.
                 ExtractMessageMemory::dispatchSync($userMessageModel->id, $user->id);
             } else {
+                // Queue the memory extraction job asynchronously.
                 ExtractMessageMemory::dispatch($userMessageModel->id, $user->id)
                     ->onQueue('memory')
                     ->delay(now()->addSeconds(3));
@@ -266,20 +339,27 @@ class AiChatService
         }
 
         // Always create message embedding (needed for future RAG retrieval)
+        // Always generate a vector embedding for the user message.
         if ($queueDriver === 'sync') {
+            // Run embedding generation immediately in sync mode.
             CreateMessageEmbedding::dispatchSync($userMessageModel->id);
         } else {
+            // Queue embedding generation with a small delay.
             CreateMessageEmbedding::dispatch($userMessageModel->id)
                 ->onQueue('embeddings')
                 ->delay(now()->addSeconds($shouldExtract ? 8 : 3)); // offset from memory job
         }
 
         // 9. Build severity-based crisis response
+        // Prepare default crisis-related response values.
         $counselorRecommendations = [];
+        // Start with an empty crisis resource set.
         $crisisResources = [];
+        // Start with no crisis response.
         $crisisResponse = null;
 
         // Log crisis flags detected
+        // Record all detected crisis signals for debugging.
         Log::info('Crisis flags detected', [
             'message_id' => $userMessageModel->id,
             'total_flags' => count($crisisFlags),
@@ -287,10 +367,14 @@ class AiChatService
         ]);
 
         // Filter flags by severity
+        // Split the detected flags into red, yellow, and blue groups.
         $redFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'red');
+        // Collect yellow flags.
         $yellowFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'yellow');
+        // Collect blue flags.
         $blueFlags = array_filter($crisisFlags, fn($flag) => $flag['severity'] === 'blue');
 
+        // Log the severity breakdown.
         Log::info('Flags filtered by severity', [
             'red_count' => count($redFlags),
             'yellow_count' => count($yellowFlags),
@@ -298,28 +382,35 @@ class AiChatService
         ]);
 
         // Handle based on highest severity
+        // Select the appropriate crisis response based on severity.
         if (!empty($redFlags)) {
             // RED: Show category buttons for user to select
+            // Prepare the severe crisis response payload.
             $crisisResponse = [
                 'type' => 'crisis_red',
                 'severity' => 'red',
                 'categories' => $this->getCounselorCategories(),
                 'hotlines' => $this->getCrisisHotlines(),
             ];
+            // Build crisis resources from the red flags.
             $crisisResources = $this->getCrisisResources(array_values($redFlags));
 
             // Create crisis alerts for red flags
+            // Create alerts for each red-flagged message.
             foreach ($redFlags as $flag) {
+                // Re-fetch the crisis flag linked to the message.
                 $crisisFlag = $conversation->crisisFlags()
                     ->where('message_id', $userMessageModel->id)
                     ->first();
 
+                // Send the alert to the service if the flag exists.
                 if ($crisisFlag) {
                     $this->crisisAlert->createCrisisAlert($crisisFlag);
                 }
             }
         } elseif (!empty($yellowFlags)) {
             // YELLOW: Ask caring escalation questions
+            // Build a softer escalation response.
             $crisisResponse = [
                 'type' => 'crisis_yellow',
                 'severity' => 'yellow',
@@ -331,6 +422,7 @@ class AiChatService
             ];
         } elseif (!empty($blueFlags)) {
             // BLUE: Kind continuation with optional support offer
+            // Build a light-support response for blue flags.
             $crisisResponse = [
                 'type' => 'crisis_blue',
                 'severity' => 'blue',
@@ -340,12 +432,14 @@ class AiChatService
         }
 
         // Update message metadata with crisis response for persistence
+        // Persist the crisis response onto the assistant message metadata.
         if ($crisisResponse) {
             $metadata = $assistantMessage->metadata ?? [];
             $metadata['crisis_response'] = $crisisResponse;
             $assistantMessage->update(['metadata' => $metadata]);
         }
 
+        // Return the final chat result payload.
         return [
             'message' => $aiResponse,
             'message_id' => $assistantMessage->id,
@@ -369,48 +463,64 @@ class AiChatService
         bool $includePastConversations
     ): array {
         // System prompt
+        // Build the base system prompt using crisis flags.
         $systemPrompt = $this->getSystemPrompt($crisisFlags);
 
+        // Decide whether the message looks like a problem statement.
         $looksLikeProblem = $this->messageIndicatesProblem($userMessage);
 
         // Dynamic length rule based on user message length
         // This forces the AI to output short responses when the user is sending short messages.
+        // Count the words in the user message.
         $wordCount = str_word_count($userMessage);
 
+        // Add a crisis-specific emotion rule when distress is detected.
         if ($looksLikeProblem || !empty($crisisFlags)) {
             $systemPrompt .= "\n\nCRITICAL EMOTION RULE: The user is expressing serious distress. Respond like a close friend who genuinely cares. Your FIRST priority is to ask what's wrong — 'What happened?' or 'Why do you feel like that?' or 'Do you want to talk about it?'. Be warm, real, and conversational. Do NOT give advice or push resources. Just listen and ask. Response should be 20 to 50 words.";
+        // Keep responses very short for very short messages.
         } elseif ($wordCount <= 7) {
             $systemPrompt .= "\n\nCRITICAL LENGTH RULE: Your FIRST PRIORITY is brevity. Respond in exactly 2 to 8 words. Do not exceed 8 words.";
+        // Keep responses short for short-to-medium messages.
         } elseif ($wordCount <= 12) {
             $systemPrompt .= "\n\nCRITICAL LENGTH RULE: Your FIRST PRIORITY is brevity. Keep your response short, between 8 to 20 words.";
+        // Use a concise response for longer messages.
         } else {
             $systemPrompt .= "\n\nCRITICAL LENGTH RULE: Provide a thoughtful but concise response. Do not exceed 40 words unless absolutely necessary for emotional support.";
         }
 
+        // Read clarification settings from configuration.
         $requireClarification = (bool) config('services.openai.chat.require_clarification', true);
+        // Determine how early clarification-only behavior should apply.
         $clarificationOnlyUntil = (int) config('services.openai.chat.clarification_only_until', 2);
 
         // Add context from RAG
+        // Start with an empty context string.
         $contextMessage = '';
+        // Append retrieved RAG context if available.
         if (!empty($contextData['rag_context'])) {
             $contextMessage .= $contextData['rag_context'] . "\n\n";
         }
+        // Append recent conversation context if available.
         if (!empty($contextData['recent_context'])) {
             $contextMessage .= $contextData['recent_context'] . "\n\n";
         }
 
+        // Start the message list with the system prompt.
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
         ];
 
         // Add context as a system message if available
+        // Inject background information when context exists.
         if (!empty($contextMessage)) {
+            // Add contextual background as another system message.
             $messages[] = [
                 'role' => 'system',
                 'content' => "Here is relevant background information about the student:\n\n" . $contextMessage
             ];
 
             // Debug: Log what context is being used
+            // Log the context details for debugging.
             Log::info('RAG Context for user ' . $user->id . ':', [
                 'has_profile' => $contextData['has_profile_data'] ?? false,
                 'chunks_retrieved' => $contextData['retrieved_chunks'] ?? 0,
@@ -418,6 +528,7 @@ class AiChatService
             ]);
         }
 
+        // Add a strict instruction to avoid unrelated past conversations when disabled.
         if (!$includePastConversations) {
             $messages[] = [
                 'role' => 'system',
@@ -427,10 +538,12 @@ class AiChatService
 
         // Add conversation history — fetch only what we need from DB, skip the current user message
         // Increase limit to 20 for deep, coherent context within the current conversation
+        // Read the maximum number of history messages.
         $historyLimit = max(0, (int) config('services.openai.chat.history_limit', 20));
 
         // Efficient: pull only last N+1 messages in DB, reverse to chronological order
         // The +1 accounts for the user message we just saved (which we exclude below)
+        // Load recent messages in reverse chronological order.
         $allMessages = $conversation->messages()
             ->where('role', '!=', 'system')
             ->orderBy('created_at', 'desc')
@@ -440,6 +553,7 @@ class AiChatService
             ->values();
 
         // Exclude the last message (current user message already added at bottom)
+        // Slice the list to exclude the current user message duplicate.
         $recentMessages = $historyLimit > 0
             ? $allMessages->slice(0, max(0, $allMessages->count() - 1))
             : collect();
@@ -447,8 +561,10 @@ class AiChatService
         // Only inject a clarification nudge when the student has shared a problem/distress
         // but the conversation is still very early (first 2 AI replies).
         // Never force this for greetings, casual chat, or already-detailed messages.
+        // Count assistant messages in the current history.
         $assistantCount = $allMessages->where('role', 'assistant')->count();
 
+        // Insert a clarification prompt only when early problem detection conditions are met.
         if ($requireClarification && empty($crisisFlags) && $looksLikeProblem && $assistantCount < $clarificationOnlyUntil) {
             $messages[] = [
                 'role' => 'system',
@@ -456,6 +572,7 @@ class AiChatService
             ];
         }
 
+        // Add prior conversation messages into the prompt.
         foreach ($recentMessages as $msg) {
             $messages[] = [
                 'role' => $msg->role,
@@ -464,11 +581,13 @@ class AiChatService
         }
 
         // Add current user message (from parameter, not from DB to avoid duplication)
+        // Append the current user message last.
         $messages[] = [
             'role' => 'user',
             'content' => $userMessage,
         ];
 
+        // Return the fully assembled chat prompt.
         return $messages;
     }
 
@@ -477,6 +596,7 @@ class AiChatService
      */
     protected function getSystemPrompt(array $crisisFlags): string
     {
+        // Start with the core system prompt instructions.
         $basePrompt = <<<PROMPT
 You are a warm, friendly AI support companion for UniPulse, a Sri Lankan university student wellbeing platform.
 
@@ -502,11 +622,15 @@ Using memory and background information:
 PROMPT;
 
         // Adjust prompt based on crisis flags
+        // Modify the prompt based on crisis severity.
         if (!empty($crisisFlags)) {
+            // Check whether any red flags are present.
             $hasRed = collect($crisisFlags)->contains('severity', 'red');
+            // Check whether any yellow flags are present.
             $hasYellow = collect($crisisFlags)->contains('severity', 'yellow');
 
             if ($hasRed) {
+                // Add red-flag crisis instructions.
                 $basePrompt .= <<<CRISIS
 
 
@@ -522,6 +646,7 @@ CRITICAL: The student has expressed serious distress. Your response must:
 Remember: Be a friend first. Listen, ask, and care. The crisis resources will be shown automatically.
 CRISIS;
             } elseif ($hasYellow) {
+                // Add yellow-flag distress instructions.
                 $basePrompt .= <<<CONCERNING
 
 
@@ -535,6 +660,7 @@ CONCERNING;
             }
         }
 
+        // Return the final system prompt.
         return $basePrompt;
     }
 
@@ -545,21 +671,27 @@ CONCERNING;
     protected function generateResponse(array $messages): ?string
     {
         try {
+            // Read chat generation settings.
             $chatConfig = config('services.openai.chat', []);
+            // Read the maximum number of tokens for the response.
             $maxTokens = (int) ($chatConfig['max_tokens'] ?? 250);
+            // Read the temperature setting for response creativity.
             $temperature = (float) ($chatConfig['temperature'] ?? 0.4);
 
             // Build request body - Azure doesn't need model in body since it's in the URL
+            // Prepare the base request payload.
             $requestBody = [
                 'messages' => $messages,
             ];
 
             // Add model to body only for non-Azure providers
+            // Include the model only when the provider expects it in the body.
             if ($this->provider !== 'azure') {
                 $requestBody['model'] = $this->model;
             }
 
             // Provider-specific settings
+            // Choose token settings based on provider type.
             if ($this->provider === 'github') {
                 $requestBody['max_completion_tokens'] = $maxTokens;
             } else {
@@ -568,6 +700,7 @@ CONCERNING;
             }
 
             // Azure uses api-key header, others use Bearer token
+            // Build the HTTP headers for the selected provider.
             $headers = ['Content-Type' => 'application/json'];
             if ($this->provider === 'azure') {
                 $headers['api-key'] = $this->apiKey;
@@ -575,42 +708,56 @@ CONCERNING;
                 $headers['Authorization'] = 'Bearer ' . $this->apiKey;
             }
 
+            // Send the request to the AI provider.
             $response = Http::withHeaders($headers)
                 ->timeout(20)
                 ->connectTimeout(5)
                 ->post($this->apiUrl, $requestBody);
 
+            // If the request succeeds, read the response content.
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
 
                 // Check if response is empty or null
+                // If the model returned empty text, use a fallback message.
                 if (empty(trim($content ?? ''))) {
                     Log::warning('Empty AI response received');
                     return $this->getDefaultSupportMessage();
                 }
 
+                // Return the generated response content.
                 return $content;
             }
 
             // Check for content filter rejection
+            // Inspect the error payload when the request fails.
             $errorBody = $response->json();
+            // Read the top-level error code.
             $errorCode = $errorBody['error']['code'] ?? null;
+            // Read the inner policy violation code.
             $innerCode = $errorBody['error']['innererror']['code'] ?? null;
 
+            // Fall back when the provider blocked the response.
             if ($errorCode === 'content_filter' || $innerCode === 'ResponsibleAIPolicyViolation') {
+                // Log that the response was filtered.
                 Log::warning('AI response blocked by content filter', [
                     'filter_result' => $errorBody['error']['innererror']['content_filter_result'] ?? null
                 ]);
+                // Return the safe fallback response.
                 return $this->getDefaultSupportMessage();
             }
 
             // Detailed logging for Unauthorized errors
+            // Capture the HTTP status and body for diagnostics.
             $status = $response->status();
+            // Store the raw response body.
             $body = $response->body();
+            // Keep track of whether the error looks like an authorization issue.
             $errorType = null;
             if (strpos($body, 'Unauthorized') !== false || $status === 401) {
                 $errorType = 'Unauthorized';
             }
+            // Log the provider response failure in detail.
             Log::error('OpenAI API error', [
                 'status' => $status,
                 'body' => $body,
@@ -620,10 +767,13 @@ CONCERNING;
                 'api_key_present' => !empty($this->apiKey),
                 'error_type' => $errorType,
             ]);
+            // Return the safe fallback message.
             return $this->getDefaultSupportMessage();
 
         } catch (\Exception $e) {
+            // Log unexpected exceptions during response generation.
             Log::error('AI response generation failed: ' . $e->getMessage());
+            // Return the fallback support response.
             return $this->getDefaultSupportMessage();
         }
     }
@@ -634,6 +784,7 @@ CONCERNING;
      */
     protected function getDefaultSupportMessage(): string
     {
+        // Prepare a set of safe fallback support responses.
         $messages = [
             "I hear you, and I want you to know that your feelings are valid. Sometimes it helps to take a moment to breathe. If you're going through a difficult time, please know that support is available. Would you like to talk about what's on your mind, or would you prefer some information about counseling resources?",
 
@@ -642,6 +793,7 @@ CONCERNING;
             "I appreciate you reaching out. It takes courage to share what's on your mind. I'm here to support you in any way I can. Would you like to continue talking, or would you find it helpful if I shared some resources for additional support?",
         ];
 
+        // Return one fallback message at random.
         return $messages[array_rand($messages)];
     }
 
@@ -650,10 +802,12 @@ CONCERNING;
      */
     protected function getCounselorRecommendations(User $user, array $crisisFlags): array
     {
+        // If there are no crisis flags, return no recommendations.
         if (empty($crisisFlags)) {
             return [];
         }
 
+        // Ask the counselor matching service for top counselor suggestions.
         return $this->counselorMatching->getRecommendedCounselors($user->id, 3)->toArray();
     }
 
@@ -663,12 +817,15 @@ CONCERNING;
      */
     protected function getCounselorRecommendationsByCategory(User $user, array $redFlags): array
     {
+        // If no red flags exist, return nothing.
         if (empty($redFlags)) {
             return [];
         }
 
+        // Retrieve counselor matches for the user.
         $topCounselors = $this->counselorMatching->getRecommendedCounselors($user->id);
 
+        // Format counselor recommendations with human-readable reasons.
         return collect($topCounselors)->map(fn($item) => [
             'id' => $item['counselor']->id ?? null,
             'name' => $item['counselor']->name ?? '',
@@ -685,6 +842,7 @@ CONCERNING;
      */
     protected function getCategoryLabel(string $category): string
     {
+        // Convert internal category keys to display labels.
         return match ($category) {
             'suicide_risk' => 'Suicide Prevention',
             'self_harm' => 'Self-Harm Support',
@@ -703,10 +861,12 @@ CONCERNING;
      */
     protected function getCrisisResources(array $crisisFlags): array
     {
+        // If there are no crisis flags, return no resources.
         if (empty($crisisFlags)) {
             return [];
         }
 
+        // Define emergency hotline and online support resources.
         $resources = [
             'hotlines' => [
                 '1333' => 'National Mental Health Helpline (24/7)',
@@ -719,6 +879,7 @@ CONCERNING;
             ],
         ];
 
+        // Return the configured crisis resource list.
         return $resources;
     }
 
@@ -727,6 +888,7 @@ CONCERNING;
      */
     protected function getCounselorCategories(): array
     {
+        // Return the set of categories shown as UI buttons.
         return [
             ['key' => 'Academic & Study Support', 'label' => 'Academic & Study Support', 'color' => '#3b82f6'],
             ['key' => 'Mental Health & Wellness', 'label' => 'Mental Health & Wellness', 'color' => '#8b5cf6'],
@@ -746,6 +908,7 @@ CONCERNING;
      */
     protected function getCrisisHotlines(): array
     {
+        // Return a list of crisis hotline contacts.
         return [
             ['number' => '119', 'name' => 'Police Sri Lanka', 'available' => '24/7'],
             ['number' => '1926', 'name' => 'National Mental Health Helpline (NIMH)', 'available' => '24/7'],
@@ -763,13 +926,16 @@ CONCERNING;
      */
     protected function messageIndicatesProblem(string $message): bool
     {
+        // Lowercase and trim the message for keyword checks.
         $lower = strtolower(trim($message));
 
         // Ignore completely empty or 1-2 character messages like "ok"
+        // Treat extremely short inputs as non-problem messages.
         if (strlen($lower) < 3) {
             return false;
         }
 
+        // Define a list of words and phrases associated with distress.
         $problemSignals = [
             'stress',
             'stressed',
@@ -819,12 +985,15 @@ CONCERNING;
             'tired',
         ];
 
+        // Check whether any distress signal appears in the message.
         foreach ($problemSignals as $signal) {
             if (str_contains($lower, $signal)) {
+                // Return true when the user appears to be describing a problem.
                 return true;
             }
         }
 
+        // Return false when no signal is detected.
         return false;
     }
 
@@ -833,6 +1002,7 @@ CONCERNING;
      */
     protected function shouldIncludePastConversations(string $userMessage): bool
     {
+        // Define patterns that indicate the user wants to reference previous chats.
         $patterns = [
             '/\bremember\b/i',
             '/\blast time\b/i',
@@ -845,12 +1015,15 @@ CONCERNING;
             '/\bfrom before\b/i',
         ];
 
+        // Check the message against each pattern.
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $userMessage)) {
+                // Return true when the user explicitly references the past.
                 return true;
             }
         }
 
+        // Otherwise, do not include past conversations.
         return false;
     }
 
@@ -860,6 +1033,7 @@ CONCERNING;
      */
     protected function getRedFlagSafeResponse(): string
     {
+        // Return the immediate human-reviewed safety response.
         return "I hear you, and I want you to know you matter. What you're feeling right now is real and serious — and you deserve real support, not just a chat. Can you tell me what's making you feel this way? I'm here to listen. You don't have to face this alone.";
     }
 
@@ -869,18 +1043,22 @@ CONCERNING;
      */
     public function generateAiConversationTitle(string $firstMessage): string
     {
+        // Log the start of title generation.
         Log::debug('AI conversation title generation started', [
             'message_length' => strlen($firstMessage),
             'message_preview' => substr($firstMessage, 0, 150) . (strlen($firstMessage) > 150 ? '...' : ''),
         ]);
 
+        // Generate the title using the stop-word based method.
         $title = $this->generateConversationTitle($firstMessage);
 
+        // Log the finished title generation result.
         Log::debug('AI conversation title generation completed', [
             'generated_title' => $title,
             'title_word_count' => str_word_count($title),
         ]);
 
+        // Return the generated title.
         return $title;
     }
 
@@ -890,11 +1068,13 @@ CONCERNING;
      */
     public function generateConversationTitle(string $firstMessage): string
     {
+        // Log the initial state for title generation.
         Log::debug('Title generation process started', [
             'original_message' => $firstMessage,
             'message_word_count' => str_word_count($firstMessage),
         ]);
 
+        // Define common stop words that should not appear in a title.
         $stopWords = [
             'i',
             'am',
@@ -936,38 +1116,50 @@ CONCERNING;
         ];
 
         // Strip punctuation, lowercase, split
+        // Remove punctuation and normalize casing.
         $cleaned = preg_replace('/[^a-zA-Z0-9\s]/', '', strtolower($firstMessage));
+        // Split the cleaned text into words and filter out noise.
         $words = array_filter(explode(' ', $cleaned), fn($w) => strlen($w) > 2 && !in_array($w, $stopWords));
 
+        // Log the intermediate title generation state.
         Log::debug('Title generation processing', [
             'cleaned_text' => $cleaned,
             'extracted_words' => array_values($words),
             'words_after_filtering' => count($words),
         ]);
 
+        // Keep only the first five meaningful words.
         $meaningful = array_slice(array_values($words), 0, 5);
 
+        // Fall back when no meaningful words are available.
         if (empty($meaningful)) {
             // Fallback: just take first 6 raw words
+            // Use the first few raw words as a simple fallback title.
             $raw = array_slice(explode(' ', $firstMessage), 0, 6);
+            // Build the fallback title string.
             $fallbackTitle = ucfirst(implode(' ', $raw)) ?: 'New Conversation';
 
+            // Log that fallback generation was required.
             Log::warning('Title generation used fallback method', [
                 'reason' => 'no meaningful words found after filtering',
                 'raw_words_used' => $raw,
                 'fallback_title' => $fallbackTitle,
             ]);
 
+            // Return the fallback title.
             return $fallbackTitle;
         }
 
+        // Build the final title from the meaningful words.
         $finalTitle = ucfirst(implode(' ', $meaningful));
 
+        // Log the successful title generation result.
         Log::debug('Title generation completed successfully', [
             'meaningful_words' => $meaningful,
             'final_title' => $finalTitle,
         ]);
 
+        // Return the generated title.
         return $finalTitle;
     }
 }

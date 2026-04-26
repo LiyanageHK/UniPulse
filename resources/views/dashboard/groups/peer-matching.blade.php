@@ -125,10 +125,10 @@
                             $score = $match['match_score'] ?? 0;
                             $rank  = $match['rank']        ?? ($index + 1);
 
-                            if      ($score >= 80) { $barBg = '#22c55e'; $badgeStyle = 'background:#dcfce7;color:#15803d;';  $qlabel = 'Excellent'; }
-                            elseif  ($score >= 60) { $barBg = '#3b82f6'; $badgeStyle = 'background:#dbeafe;color:#1d4ed8;';  $qlabel = 'Great';     }
-                            elseif  ($score >= 40) { $barBg = '#eab308'; $badgeStyle = 'background:#fef9c3;color:#a16207;';  $qlabel = 'Good';      }
-                            else                   { $barBg = '#f97316'; $badgeStyle = 'background:#ffedd5;color:#c2410c;';  $qlabel = 'Fair';      }
+                            if      ($score >= 80) { $barBg = '#22c55e'; }
+                            elseif  ($score >= 60) { $barBg = '#3b82f6'; }
+                            elseif  ($score >= 40) { $barBg = '#eab308'; }
+                            else                   { $barBg = '#f97316'; }
 
                             $initials  = $user ? strtoupper(substr($user->name, 0, 2)) : '??';
                             $gradients = ['from-blue-400 to-blue-600','from-purple-400 to-purple-600','from-green-400 to-green-600',
@@ -160,10 +160,9 @@
 
                                 {{-- Main content --}}
                                 <div class="flex-1 min-w-0">
-                                    {{-- Name + badge --}}
+                                    {{-- Name --}}
                                     <div class="flex flex-wrap items-center gap-2 mb-2">
                                         <p class="font-bold text-gray-900 text-base leading-tight">{{ $user->name ?? 'Unknown Student' }}</p>
-                                        <span style="font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:9999px;{{ $badgeStyle }}">{{ $qlabel }}</span>
                                     </div>
 
                                     {{-- Tags --}}
@@ -240,7 +239,7 @@
                                             </form>
                                         @endif
 
-                                        <a href="{{ route('profile.view', $user->id) }}"
+                                        <a href="{{ route('profile.view', ['id' => $user->id, 'from' => 'ai-group']) }}"
                                             class="w-full flex items-center justify-center gap-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 text-xs font-bold px-3 py-2 rounded-xl transition">
                                             View Profile
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

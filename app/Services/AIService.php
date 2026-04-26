@@ -17,7 +17,18 @@ class AIService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.ai.base_url', 'http://127.0.0.1:8001');
+        $baseUrl = config('services.ai.base_url', 'http://127.0.0.1:8000');
+
+        // Normalize the configured AI service URL.
+        // - Trim trailing slashes to avoid double-slash URLs.
+        // - Ensure a scheme is present (common misconfiguration: "127.0.0.1:8000").
+        $baseUrl = rtrim($baseUrl, '/');
+        if (!preg_match('#^https?://#i', $baseUrl)) {
+            $baseUrl = 'http://' . $baseUrl;
+        }
+
+        $this->baseUrl = $baseUrl;
+
         // Keep timeout low: (timeout × (retries+1)) + retries × 1s sleep must stay < PHP max_execution_time (60s)
         // Default: 15s × 2 attempts + 1s sleep = ~31s total — safely under 60s
         $this->timeout = config('services.ai.timeout', 15);

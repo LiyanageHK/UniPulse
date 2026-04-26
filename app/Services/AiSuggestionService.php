@@ -24,7 +24,7 @@ class AiSuggestionService
     public function __construct()
     {
         $this->apiKey = config('services.gemini.api_key', env('GEMINI_API_KEY', ''));
-        $this->apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        $this->apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
         $this->timeout = 30;
     }
 
@@ -93,9 +93,7 @@ class AiSuggestionService
                     ],
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.7,
-                    'maxOutputTokens' => 500,
-                    'topP' => 0.9,
+                    'temperature' => 0.95,
                 ],
                 'safetySettings' => [
                     [
@@ -118,13 +116,11 @@ class AiSuggestionService
         return $this->parseGeminiResponse($data);
     }
 
-    /**
-     * Build the prompt to send to Gemini.
-     */
     protected function buildPrompt(string $journalText, string $riskLevel): string
     {
         // Truncate journal text to avoid exceeding token limits
         $truncatedText = mb_substr($journalText, 0, 2000);
+        $randomSeed = time() . '-' . rand(1000, 9999);
 
         return <<<PROMPT
 You are a supportive wellbeing assistant for university students.
@@ -134,10 +130,12 @@ A student wrote the following weekly journal entry:
 
 Risk level: {$riskLevel}
 
-Provide exactly 3 short supportive suggestions such as:
+Provide exactly 3 UNIQUE, FRESH, and RANDOMIZED short supportive suggestions. Do not repeat standard responses. (Random seed for variety: {$randomSeed})
+Suggestions can include:
 - watching a helpful video
 - trying a short online activity
 - practicing a simple relaxation exercise
+- actionable stress-relief tasks
 
 Rules:
 - Avoid any medical or diagnostic advice
@@ -160,6 +158,9 @@ PROMPT;
             return [];
         }
 
+        // Log the raw text for debugging
+        Log::info('Raw Gemini Response:', ['text' => $text]);
+
         // Split by newlines and clean up
         $lines = array_filter(
             array_map(function ($line) {
@@ -171,6 +172,8 @@ PROMPT;
             }, explode("\n", $text)),
             fn($line) => !empty($line) && strlen($line) > 5
         );
+
+        Log::info('Parsed Gemini Lines:', ['lines' => $lines]);
 
         // Take exactly 3 suggestions
         $suggestions = array_values(array_slice($lines, 0, 3));
@@ -193,19 +196,22 @@ PROMPT;
     public function getFallbackSuggestions(string $riskLevel): array
     {
         if ($riskLevel === 'High') {
-            return [
+            $suggestions = [
                 'Try a 5-minute guided breathing exercise on YouTube to help calm your mind — search for "5-minute breathing exercise for students".',
                 'Write down 3 small things that went well today, no matter how simple. This can help shift your focus to positive moments.',
                 'Take a short walk outside or stretch for a few minutes — even a brief change of scenery can help reset your mood.',
             ];
+        } else {
+            // Moderate risk fallback
+            $suggestions = [
+                'Watch a short motivational video or a calming nature video to take a mental break — even 5 minutes can refresh your mind.',
+                'Try a quick online mindfulness activity like a body scan or gratitude journaling to center yourself.',
+                'Do a simple stretching or desk yoga routine — search for "5-minute desk stretches" to release tension.',
+            ];
         }
 
-        // Moderate risk fallback
-        return [
-            'Watch a short motivational video or a calming nature video to take a mental break — even 5 minutes can refresh your mind.',
-            'Try a quick online mindfulness activity like a body scan or gratitude journaling to center yourself.',
-            'Do a simple stretching or desk yoga routine — search for "5-minute desk stretches" to release tension.',
-        ];
+        shuffle($suggestions);
+        return array_slice($suggestions, 0, 3);
     }
 
     /**

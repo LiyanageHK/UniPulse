@@ -18,9 +18,9 @@ app = Flask(__name__)
 def get_db_connection():
     return pymysql.connect(
         host=os.environ.get("DB_HOST", "127.0.0.1"),
-        database=os.environ.get("DB_DATABASE", "peer_db"),
+        database=os.environ.get("DB_DATABASE", "laravel1"),
         user=os.environ.get("DB_USERNAME", "root"),
-        password=os.environ.get("DB_PASSWORD", "root"),
+        password=os.environ.get("DB_PASSWORD", ""),
         port=int(os.environ.get("DB_PORT", "3306")),
         charset="utf8mb4",
     )
@@ -554,8 +554,8 @@ def find_my_group():
             score += w['overwhelmed']
 
         if my_c and other_c:
-            # weekly mood (first question): exact match = 5 pts
-            if _safe_float(my_c.get('mood'), 0) == _safe_float(other_c.get('mood'), 0):
+            # weekly mood (first question): award points if my mood <= other mood
+            if _safe_float(my_c.get('mood'), 0) <= _safe_float(other_c.get('mood'), 0):
                 score += w['mood']
             # feel_left_out (Social & Academic Behavior): exact match = 5 pts
             if _safe_float(my_c.get('feel_left_out'), 0) == _safe_float(other_c.get('feel_left_out'), 0):

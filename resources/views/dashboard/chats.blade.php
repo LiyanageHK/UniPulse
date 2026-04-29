@@ -58,7 +58,7 @@
         // Initialize Supabase
         const SUPABASE_URL = '{{ $supabaseUrl }}';
         const SUPABASE_KEY = '{{ $supabaseKey }}';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // Current user and chat state
         const currentUserId = {{ auth()->id() }};
@@ -77,7 +77,7 @@
                 const {
                     data,
                     error
-                } = await supabase
+                } = await supabaseClient
                     .from('messages')
                     .select('*')
                     .eq('chat_id', chatId)
@@ -159,7 +159,7 @@
                 const {
                     data,
                     error
-                } = await supabase
+                } = await supabaseClient
                     .from('messages')
                     .insert([{
                         chat_id: currentChatId,
@@ -186,11 +186,11 @@
         function subscribeToMessages(chatId) {
             // Unsubscribe from previous chat if any
             if (messageSubscription) {
-                supabase.removeChannel(messageSubscription);
+                supabaseClient.removeChannel(messageSubscription);
             }
 
             // Subscribe to new messages
-            messageSubscription = supabase
+            messageSubscription = supabaseClient
                 .channel(`chat-${chatId}`)
                 .on(
                     'postgres_changes', {
@@ -336,7 +336,7 @@
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (messageSubscription) {
-                supabase.removeChannel(messageSubscription);
+                supabaseClient.removeChannel(messageSubscription);
             }
         });
 

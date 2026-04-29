@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\PeerRequest;
 use App\Models\Chat;
 use App\Models\PeerRating;
+use App\Models\WeeklySummary;
 use Illuminate\Support\Facades\Http;
 
 class DashboardPoornimaController extends Controller
@@ -111,6 +112,44 @@ class DashboardPoornimaController extends Controller
             $a['suggestion_priority'] <=> $b['suggestion_priority'] ?: array_search($a['area'], $areaOrder) - array_search($b['area'], $areaOrder)
         );
 
+        // Journal-based risk data (from NLP analysis of journal entries)
+        $journalSummary = WeeklySummary::where('user_id', $userId)
+            ->orderByDesc('week_start')
+            ->first();
+
+        $journalRisk = null;
+        if ($journalSummary) {
+            $journalRisk = [
+                'week_index'       => $journalSummary->week_index,
+                'lri_score'        => round($journalSummary->lri_score, 2),
+                'risk_level'       => $journalSummary->risk_level,
+                'risk_color'       => $journalSummary->risk_color,
+                'risk_message'     => $journalSummary->risk_message,
+                'escalation_flag'  => $journalSummary->escalation_flag,
+                'stress_score'     => round($journalSummary->stress_score, 4),
+                'sentiment_score'  => round($journalSummary->sentiment_score, 4),
+                'pronoun_ratio'    => round($journalSummary->pronoun_ratio, 4),
+                'absolutist_score' => round($journalSummary->absolutist_score, 4),
+                'withdrawal_score' => round($journalSummary->withdrawal_score, 4),
+                'week_start'       => $journalSummary->week_start->format('M d, Y'),
+                'week_end'         => $journalSummary->week_end->format('M d, Y'),
+                'summary_text'     => $journalSummary->summary_text,
+            ];
+        }
+
+        // Last 6 weeks LRI trend for chart
+        $journalTrend = WeeklySummary::where('user_id', $userId)
+            ->orderByDesc('week_start')
+            ->take(6)
+            ->get()
+            ->sortBy('week_start')
+            ->values()
+            ->map(fn($s, $i) => [
+                'label'      => 'Week #' . ($s->week_index ?? ($i + 1)),
+                'lri_score'  => round($s->lri_score, 2),
+                'risk_level' => $s->risk_level,
+            ])->toArray();
+
         return view('dashboard-poornima', compact(
             'report',
             'checkins_count',
@@ -118,7 +157,9 @@ class DashboardPoornimaController extends Controller
             'mood_change',
             'peer_connections',
             'support_level',
-            'survey_count'
+            'survey_count',
+            'journalRisk',
+            'journalTrend'
         ));
     }
 
@@ -508,9 +549,12 @@ class DashboardPoornimaController extends Controller
             $otherCheckin = $latestCheckins->get($profile->user_id);
             if ($myCheckin && $otherCheckin) {
                 // Overall weekly mood – first question (5%)
-                if ((int) $myCheckin->overall_mood === (int) $otherCheckin->overall_mood) {
+                $scoret = $score;
+                if ((int) $myCheckin->overall_mood <= (int) $otherCheckin->overall_mood) {
                     $score += 5;
                 }
+               
+                //dd($myCheckin->overall_mood, $otherCheckin->overall_mood);
                 // Feel left out / disconnected – Social & Academic Behavior (5%)
                 if ((int) $myCheckin->feel_left_out === (int) $otherCheckin->feel_left_out) {
                     $score += 5;

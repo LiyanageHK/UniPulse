@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\WeeklyChecking;
 use App\Models\WeeklyCheckin;
 use App\Models\KpiSnapshot;
+use App\Models\Journal;
 use App\Services\AiRecommender;
+use App\Services\JournalAccessService;
 use Carbon\Carbon;
 use App\Models\Conversation;
 use App\Models\Feedback;
@@ -17,6 +19,13 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected JournalAccessService $journalAccess;
+
+    public function __construct(JournalAccessService $journalAccess)
+    {
+        $this->journalAccess = $journalAccess;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -36,17 +45,6 @@ class DashboardController extends Controller
             ->orderBy('week_start', 'desc')
             ->first();
 
-        // ✅ STEP 3 — Enforce weekly check-in ONLY after onboarding week
-        if ($onboardingDate->diffInDays($now) >= 7) {
-            if (
-                !$lastCheckin ||
-                Carbon::parse($lastCheckin->week_start)->lt($now->copy()->subDays(7))
-            ) {
-                return redirect()->route('weekly.checkin')
-                    ->with('info', 'Please complete a weekly check-in.');
-            }
-        }
-
         // ✅ STEP 4 — Conversational Support Stats
         $activeChatsCount = Conversation::where('user_id', $user->id)->active()->count();
         $archivedChatsCount = Conversation::where('user_id', $user->id)->archived()->count();
@@ -65,6 +63,11 @@ class DashboardController extends Controller
             $onboardAt = $user->onboarding_completed_at ?? $user->created_at;
             $availableDate = Carbon::parse($onboardAt)->addWeek()->format('j M Y');
 
+            $hasJournals      = Journal::where('user_id', $user->id)->exists();
+            $isFirstJournal   = !$hasJournals;
+            // week_end based: use JournalAccessService (NOT created_at)
+            $showJournalModal = $this->journalAccess->shouldShowJournalModal($user->id);
+
             return view('dashboard', [
                 'user' => $user,
                 'motivationScore' => null,
@@ -77,6 +80,8 @@ class DashboardController extends Controller
                 'aiRecommendation' => null,
                 'isFirstWeek' => true,
                 'kpiAvailableDate' => $availableDate,
+                'showJournalModal' => $showJournalModal,
+                'isFirstJournal'   => $isFirstJournal ?? false,
                 // Chat Stats
                 'activeChatsCount' => $activeChatsCount,
                 'archivedChatsCount' => $archivedChatsCount,
@@ -91,10 +96,10 @@ class DashboardController extends Controller
          * =====================================================
          */
 
-        // ✅ STEP 5 — Calculate KPIs from weekly check-in
+        // ✅ STEP 4 — Calculate KPIs from weekly check-in
         $kpiData = $this->calculateKPIsFromCheckin($lastCheckin);
 
-        // ✅ STEP 6 — Save / update current week snapshot
+        // ✅ STEP 5 — Save / update current week snapshot
         KpiSnapshot::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -107,7 +112,7 @@ class DashboardController extends Controller
             ]
         );
 
-        // ✅ STEP 7 — Load KPI history
+        // ✅ STEP 6 — Load KPI history
         $kpiHistory = KpiSnapshot::where('user_id', $user->id)
             ->orderBy('week_start', 'asc')
             ->get();
@@ -127,12 +132,16 @@ class DashboardController extends Controller
 
         // Get actual peer count from available matches for the user
         $userProfile = $user->profile;
-        $peerCount = 0;
-        
-        if ($userProfile) {
-            $allProfiles = StudentProfile::where('user_id', '!=', $user->id)->get();
-            $peerCount = $allProfiles->count();
-        }
+$peerCount = 0;
+
+if ($userProfile) {
+    $peerCount = PeerRequest::where(function ($query) use ($user) {
+                    $query->where('sender_id', $user->id)
+                          ->orWhere('receiver_id', $user->id);
+                })
+                ->where('status', 'accepted')
+                ->count();
+}
         
         // Peer history: show available peer count consistently (since it's current availability)
         // use the raw count so zeros are reflected too
@@ -141,7 +150,7 @@ class DashboardController extends Controller
         $aiRecommender = new AiRecommender();
 
 
-        // ✅ STEP 8 — AI Recommendation
+        // ✅ STEP 7 — AI Recommendation
         if ($kpiData['emotionalScore'] <= 2.0) {
             $recommendation = [
                 'type' => 'risk_detection',
@@ -156,6 +165,10 @@ class DashboardController extends Controller
             );
         }
 
+        $isFirstJournal   = !Journal::where('user_id', $user->id)->exists();
+        // week_end based: use JournalAccessService (NOT created_at or entry_date)
+        $showJournalModal = $this->journalAccess->shouldShowJournalModal($user->id);
+
         return view('dashboard', [
             'user' => $user,
             'motivationScore' => $kpiData['motivationScore'],
@@ -166,6 +179,8 @@ class DashboardController extends Controller
             'emotionalInterpretation' => $kpiData['emotionalInterpretation'],
             'kpiHistory' => $kpiHistory,
             'aiRecommendation' => $recommendation,
+            'showJournalModal' => $showJournalModal,
+            'isFirstJournal'   => $isFirstJournal,
             // Chat Stats
             'activeChatsCount' => $activeChatsCount,
             'archivedChatsCount' => $archivedChatsCount,
